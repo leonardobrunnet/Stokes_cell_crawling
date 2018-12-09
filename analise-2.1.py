@@ -8,6 +8,37 @@ import sys
 # <window_size> : this is the space averaging window size
 # The outuput files will be in directory named 'output'
 
+def read_param():
+    while 1 :
+        line = f.readline()
+        print(line)
+        if not line:
+            break #EOF
+        a=line.split()
+        if a[0] == 'window' :
+            window_size = int(a[1])
+        if a[0] == 'time_0' :
+            time_0 = int(a[1])
+        if a[0] == 'time_f' :
+            time_f = int(a[1])
+        if a[0] == 'voronoi' :
+            voronoi = a[1]
+        if a[0] == 'x0' :
+            x0 = float(a[1])
+        if a[0] == 'xf' :
+            xf = float(a[1])
+        if a[0] == 'y0' :
+            y0 = float(a[1])
+        if a[0] == 'yf' :
+            yf = float(a[1])
+        if a[0] == 'file' :
+            filename = a[1]
+            print(filename)
+            exit()
+    return window_size,time_0,time_f,obstacle,voronoi,x0,xf,yf,filename
+
+
+
 def box_variables_definition_simu(caixas_por_coluna,caixas_por_linha):
     caixas_total = caixas_por_coluna*caixas_por_linha
     vx_now = list(0. for i in range(caixas_total))
@@ -315,6 +346,16 @@ def imag_count(system_type):
             if a[0] == 'x' :
                 counter += 1
 
+    if system_type == 'boids-particle' :
+        while 1:
+            line = fd.readline()           
+            if not line:
+                break #EOF
+            a=line.split()
+            counter += 1
+            print a
+            for i in range(int(a[1])):
+                fd.readline()
             
     print "Counted", counter, "images.\n"
     print "Type initial and final image number you want to analyse (min=0, max=",counter,") - Use spaces to separate the two numbers"
@@ -325,12 +366,12 @@ def imag_count(system_type):
 
 f=open("parameter.in")
 a=f.readline().split()
-f.close() # f will be used once more, so we close it here
 
-system_type=a[0]
+system_type=a[1]
 fileout=a[1]
-path='output/'+system_type+'/'+fileout
+path='output/'+system_type
 print path
+
 #Creating the directory structure for output
 os.system('mkdir -p %s' % path)
 os.system('cp axis12.par %s' % path)
@@ -358,6 +399,7 @@ nn = open("%s/axis2.dat"%path,"w")
 oo = open("%s/axis3.dat"%path,"w")
 pp = open("%s/axis4.dat"%path,"w")
 qq = open("%s/axis5.dat"%path,"w")
+
 
 if system_type == 'experiment':
     arq_in="%s/%s"%(a[0],a[1])
@@ -564,6 +606,7 @@ if system_type == "szabo-boids":
     image_counter=image_f-image_0
     image =0
     line_counter=0
+    count_events=0
     v0=0.1
     #Reading szabo-boids  data file
     while 1 :
@@ -590,47 +633,69 @@ if system_type == "szabo-boids":
 
 
             if a[0] == "Radius:" : R_OBST = int(a[1])
-            if a[0] == "Obst_position" :
+            if a[0] == "Obst_position:" :
                 X_OBST = int(a[1])
-                print X_OBST
-                exit()
                 Y_OBST = int(a[2])
         if line_counter > 6 :
-#            line = fd.readline()
-#            a=line.split()
-            image += 1
-            boids_counter = 0
-            while a[0] != 'x' :
-                boids_counter += 1
-                x,y=float(a[0]),float(a[1])
-                print x
-                if x>x0 and x<xf and y>y0 and y<yf:
-                    xx=int((x-x0)/box_size)
-                    yy=int((y-y0)/box_size) * caixas_por_linha
-                    box = xx+yy
-                    vx_now[box]+=float(a[2])
-                    vy_now[box]+=float(a[3])
-                    density_now[box] += 1.0
-                line = fd.readline()
-                if not line : break
-                a =line.split()
-            print image, boids_counter
-            if image > image_0 and image <= image_f:
+            if image <= image_0 :
+                print "Skipping image:",image 
+                while a[0] != 'x' :
+                    line = fd.readline()
+                    if not line : break
+                    a =line.split()
+                image+=1
+            elif image <= image_f :
+                boids_counter = 0
+                while a[0] != 'x' :
+                    boids_counter += 1
+                    x,y=float(a[0]),float(a[1])
+                    if x>x0 and x<xf and y>y0 and y<yf:
+                        xx=int((x-x0)/box_size)
+                        yy=int((y-y0)/box_size) * caixas_por_linha
+                        box = xx+yy
+                        vx_now[box]+=float(a[2])
+                        vy_now[box]+=float(a[3])
+                        density_now[box] += 1.0
+                        line = fd.readline()
+                        if not line : break
+                        a =line.split()
+                image+=1
+                count_events+=1
+                print image, boids_counter
                 #Calculate the average velocity over boxes
                 for box in range(caixas_total):
                     if density_now[box] > 0 :
                         vx_now[box] = vx_now[box] / density_now[box]
 		        vy_now[box] = vy_now[box] / density_now[box]
-                #Function call to write velocity-density gnu script
+                        #Function call to write velocity-density gnu script
                 velocity_density_script(caixas_por_linha,caixas_por_coluna,x,y,vx_now,vy_now,density_now,system_type,image,v0)
                 #Summing each box at different times
-                if image > image_0 and image <= image_f:
-                    for box in range(caixas_total) :
-                        density_tot[box] += density_now[box]
-                        vx_tot[box] += vx_now[box]
-                        vy_tot[box] += vy_now[box]
+                for box in range(caixas_total) :
+                    density_tot[box] += density_now[box]
+                    vx_tot[box] += vx_now[box]
+                    vy_tot[box] += vy_now[box]
 
-    
+            else:
+                break
+
+if system_type == "vicsek":
+
+    window_size,time_0,time_f,obstacle,voronoi,x0,xf,yf,filename=read_param()
+    arq_data_in = "%s/%s.dat"%(a[0],a[1])
+    print "\nYou analise a", a[0], "system, data is read from files:\n", arq_data_in
+    fd=open(arq_data_in)
+#    fn=open(arq_neigh_in)
+    imag_count(system_type)
+    fd.close()
+    fd=open(arq_data_in)
+    a=sys.stdin.readline().split()
+    image_0=int(a[0])
+    image_f=int(a[1])
+    image_counter=image_f-image_0
+    image =0
+    line_counter=0
+    count_events=0
+    v0=0.1    
 
 # Before starting time averages we exclude box at the borders. 
 r_obst=R_OBST/box_size
