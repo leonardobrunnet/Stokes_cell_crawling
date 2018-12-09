@@ -8,10 +8,39 @@ import sys
 # <window_size> : this is the space averaging window size
 # The outuput files will be in directory named 'output'
 
-def read_param():
+def read_param_vic_greg(file_par_simu):
+    while 1 :
+        line = file_par_simu.readline()
+        if not line:
+            break #EOF
+        if line.replace( '\r', '' ) == '\n' : #identifies blank lines
+            while line.replace( '\r' , '' ) == '\n' : # skip blank lines
+                line = file_par_simu.readline()
+        if not line:
+            break #EOF
+        a=line.split()
+        if a[1] == 'Lx' :
+            Lx = int(a[2])
+        if a[1] == 'Ly' :
+            Ly = int(a[2])
+        if a[1] == 'R_ESFERA' :
+            R_OBST = float(a[2])
+        if a[1] == 'L_CENTRO_X' :
+            X_OBST = float(a[2])
+        if a[1] == 'L_CENTRO_Y' :
+            Y_OBST = float(a[2])
+        if a[1] == 'R_MAX' :
+            box_size = float(a[2])
+    return Lx,Ly,R_OBST,X_OBST,Y_OBST,box_size
+
+def read_param(f):
     while 1 :
         line = f.readline()
-        print(line)
+        if not line:
+            break #EOF
+        if line.replace( '\r', '' ) == '\n' : #identifies blank lines
+            while line.replace( '\r' , '' ) == '\n' : # skip blank lines
+                line = f.readline()
         if not line:
             break #EOF
         a=line.split()
@@ -23,6 +52,8 @@ def read_param():
             time_f = int(a[1])
         if a[0] == 'voronoi' :
             voronoi = a[1]
+        if a[0] == 'obstacle' :
+            obstacle = a[1]
         if a[0] == 'x0' :
             x0 = float(a[1])
         if a[0] == 'xf' :
@@ -33,9 +64,7 @@ def read_param():
             yf = float(a[1])
         if a[0] == 'file' :
             filename = a[1]
-            print(filename)
-            exit()
-    return window_size,time_0,time_f,obstacle,voronoi,x0,xf,yf,filename
+    return window_size,time_0,time_f,obstacle,voronoi,x0,xf,y0,yf,filename
 
 
 
@@ -346,19 +375,19 @@ def imag_count(system_type):
             if a[0] == 'x' :
                 counter += 1
 
-    if system_type == 'boids-particle' :
+    if system_type == 'vicsek-gregoire' :
         while 1:
             line = fd.readline()           
             if not line:
                 break #EOF
             a=line.split()
             counter += 1
-            print a
+#            print a, counter
             for i in range(int(a[1])):
                 fd.readline()
             
-    print "Counted", counter, "images.\n"
-    print "Type initial and final image number you want to analyse (min=0, max=",counter,") - Use spaces to separate the two numbers"
+    print "Counted", counter-1, "images.\n"
+    print "Type initial and final image number you want to analyse (min=1, max=",counter-1,") - Use spaces to separate the two numbers"
 
 ################## Here starts the main program ###############
 
@@ -370,7 +399,6 @@ a=f.readline().split()
 system_type=a[1]
 fileout=a[1]
 path='output/'+system_type
-print path
 
 #Creating the directory structure for output
 os.system('mkdir -p %s' % path)
@@ -678,31 +706,83 @@ if system_type == "szabo-boids":
             else:
                 break
 
-if system_type == "vicsek":
+if system_type == "vicsek-gregoire":
 
-    window_size,time_0,time_f,obstacle,voronoi,x0,xf,yf,filename=read_param()
-    arq_data_in = "%s/%s.dat"%(a[0],a[1])
-    print "\nYou analise a", a[0], "system, data is read from files:\n", arq_data_in
+    window_size,time_0,time_f,obstacle,voronoi,x0,xf,y0,yf,filename=read_param(f)
+    f.close()
+    aux="%s/include/%s"%(system_type,filename)
+    file_par_simu=open(aux)
+    Lx,Ly,R_OBST,X_OBST,Y_OBST,box_size=read_param_vic_greg(file_par_simu)
+    file_par_simu.close()
+    #definindo as caixas e as matrizes
+    caixas_por_linha,caixas_por_coluna = int(Lx/box_size),int(Ly/box_size)
+    caixas_total,ratio,vx_now,vy_now,density_now,vx_tot,vy_tot,density_tot,vx_win,vy_win,density_win,eixo_a_tot,eixo_b_tot,ang_elipse_tot,eixo_a_win,eixo_b_win,ang_elipse_win=box_variables_definition_simu(caixas_por_coluna,caixas_por_linha)
+    #arquivo de posicoes e velocidades
+    arq_data_in = "%s/data/posicoes.dat"%(system_type)
+    print "\nYou analise a", system_type, "system, data is read from files:\n", arq_data_in
     fd=open(arq_data_in)
-#    fn=open(arq_neigh_in)
-    imag_count(system_type)
+    imag_count(system_type) #conta o numero de imagens
     fd.close()
-    fd=open(arq_data_in)
-    a=sys.stdin.readline().split()
+    fd=open(arq_data_in)  #reabre o arquivo para leituras das posicoes e vel.
+    a=sys.stdin.readline().split() #le da linha de comando o intervalo de imagens desejado
     image_0=int(a[0])
     image_f=int(a[1])
     image_counter=image_f-image_0
-    image =0
+    image =1
     line_counter=0
     count_events=0
-    v0=0.1    
+    v0=0.05
+    while 1 :
+        line = fd.readline()
+        if not line:
+            break #EOF
+        a=line.split()
+        nlines=int(a[1])
+        if image <= image_0 :
+            print "Skipping image:",image
+            for i in range(nlines) :
+                fd.readline()
+            image += 1
+        elif image <= image_f :
+            print "Reading image:",image
+            for i in range(nlines) :
+                z=fd.readline().split()
+                x,y=float(z[0]),float(z[1])
+                if x>x0 and x<xf and y>y0 and y<yf:
+                    xx=int((x-x0)/box_size)
+                    yy=int((y-y0)/box_size) * caixas_por_linha
+                    box = xx+yy
+                    vx_now[box]+=float(z[2])
+                    vy_now[box]+=float(z[3])
+                    density_now[box] += 1.0
+            image += 1
+            count_events += 1
+            #Calculate the average velocity over boxes
+            for box in range(caixas_total):
+                if density_now[box] > 0 :
+                    vx_now[box] = vx_now[box] / density_now[box]
+	            vy_now[box] = vy_now[box] / density_now[box]
+                    #Function call to write velocity-density gnu script
+            velocity_density_script(caixas_por_linha,caixas_por_coluna,x,y,vx_now,vy_now,density_now,system_type,image,v0)
+                #Summing each box at different times
+            for box in range(caixas_total) :
+                density_tot[box] += density_now[box]
+                vx_tot[box] += vx_now[box]
+                vy_tot[box] += vy_now[box]
 
+        else:
+                break
+
+
+
+
+
+    
 # Before starting time averages we exclude box at the borders. 
 r_obst=R_OBST/box_size
 x_obst=X_OBST/box_size
 y_obst=Y_OBST/box_size
 zero_borders_and_obstacle(caixas_por_linha,caixas_por_coluna,r_obst,x_obst,y_obst,density_tot,vx_tot,vy_tot,eixo_a_tot,eixo_b_tot,ang_elipse_tot,system_type)
-
 
 if system_type == 'experiment':
 
