@@ -8,7 +8,7 @@ import sys
 # <window_size> : this is the space averaging window size
 # The outuput files will be in directory named 'output'
 
-def create_gnu_script(arrow_size, box_per_line_x, box_per_row_y, vel_win_file_name, dens_win_file_name, path):
+def create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path):
     proportion_x, proportion_y             = 1.0, 0.7
     grid_x, grid_y, levels                 = 200, 200, 4
     image_resolution_x, image_resolution_y = 1300, 1300
@@ -34,7 +34,7 @@ def create_gnu_script(arrow_size, box_per_line_x, box_per_row_y, vel_win_file_na
     file_script_den_vel.write(" \n")
     file_script_den_vel.write(" \n")
     file_script_den_vel.write("set pm3d map \n")
-    file_script_den_vel.write("splot [%d:%d][%d:%d] \"toto.dat\" \n"% (0, box_per_line_x, 0, box_per_row_y))
+    file_script_den_vel.write("splot [%d:%d][%d:%d] \"toto.dat\" \n"% (0, box_per_line_x, 0, box_per_column_y))
     file_script_den_vel.write("replot \"%s\" u($1):($2):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors head size 1.5,20,60 lt rgb \"black\" \n"% vel_win_file_name)
     file_script_den_vel.write("pause -1 \n")
     file_script_den_vel.write("set terminal png large size %d,%d \n"% (image_resolution_x, image_resolution_y)) 
@@ -102,8 +102,8 @@ def read_param(file_input_parameter) :
 
 
 
-def box_variables_definition_simu(box_per_row_y, box_per_line_x, x0, y0, xf, yf) :
-    box_total   = box_per_row_y * box_per_line_x
+def box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf) :
+    box_total   = box_per_column_y * box_per_line_x
     vx_now         = list(0. for i in range(box_total))
     vy_now         = list(0. for i in range(box_total))
     density_now    = list(0  for i in range(box_total))
@@ -119,7 +119,7 @@ def box_variables_definition_simu(box_per_row_y, box_per_line_x, x0, y0, xf, yf)
     eixo_a_win     = list(0. for i in range(box_total))
     eixo_b_win     = list(0. for i in range(box_total))
     ang_elipse_win = list(0. for i in range(box_total))
-    #    ratio=float(box_per_row_y)/box_per_line_x
+    #    ratio=float(box_per_column_y)/box_per_line_x
     ratio = float((yf-y0) / (xf-x0))
     vid_def.write("set size ratio %f  \n" % ratio)
     vel_win.write("set size ratio %f  \n" % ratio)
@@ -137,9 +137,9 @@ def box_variables_definition_simu(box_per_row_y, box_per_line_x, x0, y0, xf, yf)
     return box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, density_tot, vx_win, vy_win, \
            density_win, eixo_a_tot, eixo_b_tot, ang_elipse_tot, eixo_a_win, eixo_b_win, ang_elipse_win
 
-def box_variables_definition_experiment(box_per_row_y, box_per_line_x):
-    box_total   = box_per_row_y * box_per_line_x
-    ratio          = float(box_per_row_y) / box_per_line_x
+def box_variables_definition_experiment(box_per_column_y, box_per_line_x):
+    box_total   = box_per_column_y * box_per_line_x
+    ratio          = float(box_per_column_y) / box_per_line_x
     vx_tot         = list(0. for i in range(box_total))
     vy_tot         = list(0. for i in range(box_total))
     density_tot    = list(0  for i in range(box_total))
@@ -162,7 +162,7 @@ def box_variables_definition_experiment(box_per_row_y, box_per_line_x):
     return box_total, ratio, vx_tot, vy_tot, density_tot, eixo_a_tot, eixo_b_tot, ang_elipse_tot
 
 
-def velocity_density_script(box_per_line_x, box_per_row_y, x, y, vx_now, vy_now, density_now, system_type, image, v0, x0, y0, xf, yf):
+def velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0, x0, y0, xf, yf):
     #Here we write each image to the gnuplot velocity-density movie script
     vid_veloc_dens.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(arrow*$3):(arrow*$4):($5) with vectors head size  0.6,20,60  filled palette title \"%d\"\n" % \
     (0, xf-x0, 0, yf-y0, image))
@@ -195,17 +195,17 @@ def deformation_elipsis_script(x, y, eixo_b, eixo_a, ang_elipse, system_type) :
         vid_def.write("pause .1 \n")
         vid_def.write("unset for [i=1:%i] object i \n" % (box_total+1))
 
-def  zero_borders_and_obstacle(box_per_line_x, box_per_row_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, ang_elipse_tot, system_type) :
+def  zero_borders_and_obstacle(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, ang_elipse_tot, system_type) :
     center_x = box_per_line_x/2
-    center_y = box_per_row_y/2
+    center_y = box_per_column_y/2
     for i in range(box_total):
         if system_type == 'experiment':
-            bx = int(i/box_per_row_y)
-            by = i%box_per_row_y
+            bx = int(i/box_per_column_y)
+            by = i%box_per_column_y
         else:
             bx = i%box_per_line_x
             by = int(i/box_per_line_x)        
-        if bx == 0 or bx == box_per_line_x-1 or by == 0 or by == box_per_row_y-1 :
+        if bx == 0 or bx == box_per_line_x-1 or by == 0 or by == box_per_column_y-1 :
             density_tot[i]    = -10
             vx_tot[i]         = 0.
             vy_tot[i]         = 0.
@@ -237,17 +237,16 @@ def  zero_borders_and_obstacle(box_per_line_x, box_per_row_y, r_obst, x_obst, y_
                 eixo_b_tot[i]     = 0.
                 ang_elipse_tot[i] = 0.
 
-    return box_per_line_x, box_per_row_y, density_tot, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, ang_elipse_tot
+    return box_per_line_x, box_per_column_y, density_tot, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, ang_elipse_tot
 
-def average_density_velocity_deformation_experiment(box_per_line_x, box_total, x, y, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, image_counter):
+def average_density_velocity_deformation_experiment(box_per_line_x, box_per_column_y, x, y, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, image_counter):
     arrow = 1.5
-
+    box_total = box_per_line_x*box_per_column_y
     for i in range(box_total):
         vx_tot[i] /= image_counter
         vy_tot[i] /= image_counter
 
-    box_per_row_y = box_total / box_per_line_x
-    vel_win.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(%f*$3):(%f*$4):($5)  with vectors notitle head size  0.3,20,60  filled palette \n" % (0, box_per_line_x, 0, box_per_row_y, arrow, arrow))
+    vel_win.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(%f*$3):(%f*$4):($5)  with vectors notitle head size  0.3,20,60  filled palette \n" % (0, box_per_line_x, 0, box_per_column_y, arrow, arrow))
 
     for i in range(box_total):
         dens_win.write("%d %d %f \n" % (x[i],y[i],density_tot[i]))
@@ -259,14 +258,18 @@ def average_density_velocity_deformation_experiment(box_per_line_x, box_total, x
     vel_win.write("e \n")
     vel_win.write("pause -1 \n")
 
-def average_density_velocity_deformation(box_per_line_x, box_total, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, density_tot, vx_win, vy_win, eixo_a_win, eixo_b_win, \
-    density_win, count_events, v0, vel_win_file_name, dens_win_file_name, path) :
-    box_per_row_y = box_total / box_per_line_x
+def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, density_tot, vx_win, vy_win, eixo_a_win, eixo_b_win, \
+                                         density_win, count_events, v0, vel_win_file_name, dens_win_file_name, path, image_counter) :
+
+    
+    
+    box_total = box_per_column_y*box_per_line_x
+
     window_size_h     = window_size/2
     if system_type != 'experiment':
         count_box_win = list(0 for i in range(box_total))
         for bx in range(window_size_h+1, box_per_line_x-window_size_h):
-            for by in range(window_size_h+1, box_per_row_y-window_size_h):
+            for by in range(window_size_h+1, box_per_column_y-window_size_h):
                 for k in range(-window_size_h, window_size_h):
                     for l in range(-window_size_h, window_size_h):
                         if density_tot[(bx+k)+(by+l)*box_per_line_x] > 0 :
@@ -281,28 +284,28 @@ def average_density_velocity_deformation(box_per_line_x, box_total, vx_tot, vy_t
                             
         #Average win calculus and data print (gnuplot script for velocity)
 
-        box_per_row_y = box_total / box_per_line_x
-        module            = 0;
-        count_events      = 0;
+        module_mean         = 0
+        count_busy_box      = 0
         for box in range(box_total):
 	    if density_tot[box] > 0 :
-	        module       += math.sqrt(vx_tot[box]*vx_tot[box] + vy_tot[box]*vy_tot[box])
-	        count_events += 1
+	        module_mean       += math.sqrt(vx_tot[box]*vx_tot[box] + vy_tot[box]*vy_tot[box])
+	        count_busy_box += 1
    
-        arrow_size =  0.05 * float(count_events) / module
-        #        vel_win.write("arrow=%f\n"%arrow_size)
-        #        vel_win.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(arrow*$3):(arrow*$4):($5)  with vectors notitle  head size  0.3,20,60  filled palette \n" % (window_size_h,box_per_line_x-window_size_h,window_size_h,box_per_row_y-window_size_h))
-
-        create_gnu_script(arrow_size, box_per_line_x, box_per_row_y, vel_win_file_name, dens_win_file_name, path)
+        arrow_size = 16*count_busy_box/module_mean
+        #create script gnu to plot velocity-density map
+        create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path)
+        
         for bx in range(window_size_h+1, box_per_line_x-window_size_h):
-            for by in range(window_size_h+1, box_per_row_y-window_size_h):
+            for by in range(window_size_h+1, box_per_column_y-window_size_h):
             	box = bx + (by*box_per_line_x)
                 module = math.sqrt((vx_win[box]*vx_win[box]) + (vy_win[box]*vy_win[box]))
-                #                if bx%2 == 0 and by%2 == 0 :
 	        if density_win[box] > 0.0 and module > 0.0 :
-                    normalization = float(count_events*count_box_win[box])*v0
-	            dens_win.write("%d %d %f \n" % (bx, by, density_win[box]/normalization))
-	            vel_win.write("%d %d %f %f %f %f %f \n"% (bx, by, vx_win[box], vy_win[box], module, density_tot[box]/float(count_events), density_win[box]/normalization))
+                    normalization = float(image_counter*count_box_win[box])
+                    density_win[box]/=normalization
+	            dens_win.write("%d %d %f \n" % (bx, by, density_win[box]))
+                    vx_win[box]/=normalization
+                    vy_win[box]/=normalization
+	            vel_win.write("%d %d %f %f %f %f %f \n"% (bx, by, vx_win[box], vy_win[box], module, density_tot[box]/float(count_events), density_win[box]))
 	        else :
 	            vx_win[box] = 0.0
 	            vy_win[box] = 0.0
@@ -316,9 +319,9 @@ def average_density_velocity_deformation(box_per_line_x, box_total, vx_tot, vy_t
 
 
 
-def five_axis(box_total, box_per_line_x, box_per_row_y, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, ang_elipse_tot, system_type, image_counter):
-    caixas_meia_altura    = box_per_row_y/2
-    caixas_quarto_altura  = box_per_row_y/4
+def five_axis(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, ang_elipse_tot, system_type, image_counter):
+    caixas_meia_altura    = box_per_column_y/2
+    caixas_quarto_altura  = box_per_column_y/4
     caixas_meia_largura   = box_per_line_x/2
     caixas_quarto_largura = box_per_line_x/4
     vx_axis1, vx_axis2, vx_axis3, vx_axis4, vx_axis5, vx_axis6                                                 = [], [], [], [], [], []
@@ -330,8 +333,8 @@ def five_axis(box_total, box_per_line_x, box_per_row_y, vx_tot, vy_tot, eixo_a_t
     
     for i in range(box_total):
         if system_type == 'experiment':
-            bx = int(i/box_per_row_y)
-            by = i%box_per_row_y
+            bx = int(i/box_per_column_y)
+            by = i%box_per_column_y
         else:
             bx = i%box_per_line_x
             by = int(i/box_per_line_x)
@@ -391,7 +394,7 @@ def five_axis(box_total, box_per_line_x, box_per_row_y, vx_tot, vy_tot, eixo_a_t
         nn.write("%d %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis2[i], vy_axis2[i], eixo_a_axis2[i], eixo_b_axis2[i], ang_elipse_axis2[i]))
 
 
-    for i in range(box_per_row_y):
+    for i in range(box_per_column_y):
         oo.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis3[i], vy_axis3[i], eixo_a_axis3[i], eixo_b_axis3[i], ang_elipse_axis3[i]))
         pp.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis4[i], vy_axis4[i], eixo_a_axis4[i], eixo_b_axis4[i], ang_elipse_axis4[i]))
         qq.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis5[i], vy_axis5[i], eixo_a_axis5[i], eixo_b_axis5[i], ang_elipse_axis5[i]))
@@ -478,8 +481,8 @@ def_win            = open("%s/deformation-win.dat"%path,"w")
 
 mm = open("%s/axis1.dat"%path,"w")
 nn = open("%s/axis2.dat"%path,"w")
-oo = open("%s/axis3.dat"%path,"w")
-pp = open("%s/axis4.dat"%path,"w")
+oo = open("%s/axis4.dat"%path,"w")
+pp = open("%s/axis3.dat"%path,"w")
 qq = open("%s/axis5.dat"%path,"w")
 #print system_type
 
@@ -503,7 +506,7 @@ if system_type == 'experiment':
     while(line_splitted[0] != 'X') : #'X' marks the line just before data in experiment data file, that is, the end of the header
         line_splitted = file_input_parameter.readline().split()
         if(line_splitted[0] == 'Box_end:') :
-            box_per_row_y, box_per_line_x = int(line_splitted[1]), int(line_splitted[2])
+            box_per_column_y, box_per_line_x = int(line_splitted[1]), int(line_splitted[2])
         if(line_splitted[0] == 'Box_size:') :
             box_size = int(line_splitted[1])/4
         if(line_splitted[0] == 'Obstacle_diameter:') :
@@ -515,10 +518,10 @@ if system_type == 'experiment':
             X_OBST   = int(line_splitted[1])
             Y_OBST   = int(line_splitted[2])
 
-        x0, xf, y0, yf=0., float(box_per_line_x), 0., float(box_per_row_y)
+        x0, xf, y0, yf=0., float(box_per_line_x), 0., float(box_per_column_y)
             
     box_total, ratio, vx_tot, vy_tot, density_tot, eixo_a_tot, eixo_b_tot, ang_elipse_tot = \
-    box_variables_definition_experiment(box_per_row_y, box_per_line_x)
+    box_variables_definition_experiment(box_per_column_y, box_per_line_x)
 
 
     #Reading x,y,density,vx,vy data on experiment file
@@ -564,7 +567,7 @@ if system_type == 'experiment':
         if image > image_0 and image <= image_f :
             print "Analising image ",image, "..."
             #Function call to write velocity-density gnu script
-            velocity_density_script(box_per_line_x, box_per_row_y, x, y, vx_now, vy_now, density_now, system_type, image, v0, x0, y0, xf, yf)
+            velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0, x0, y0, xf, yf)
             #Function call to write deformation elipse gnu script
             deformation_elipsis_script(x, y, eixo_b, eixo_a, ang_elipse, system_type)
         elif image > image_f:
@@ -613,13 +616,13 @@ if system_type == "superboids":
                 X_OBST        = float(line_splitted[3])
                 Y_OBST        = float(line_splitted[4])
                 
-    box_per_line_x, box_per_row_y = Lx/box_size, Ly/box_size
+    box_per_line_x, box_per_column_y = Lx/box_size, Ly/box_size
     x0, y0 = -Lx/2, -Ly/2
     xf, yf = Lx/2, Ly/2
     
     #defining all matrices
     box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, density_tot, vx_win, vy_win, density_win, eixo_a_tot, eixo_b_tot, \
-    ang_elipse_tot, eixo_a_win, eixo_b_win, ang_elipse_win = box_variables_definition_simu(box_per_row_y, box_per_line_x, x0, y0, xf, yf)
+    ang_elipse_tot, eixo_a_win, eixo_b_win, ang_elipse_win = box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf)
 
     
     #Reading superboids plainprint data file
@@ -642,7 +645,7 @@ if system_type == "superboids":
                         vx_now[box] = vx_now[box] / density_now[box]
 		        vy_now[box] = vy_now[box] / density_now[box]
                 #Function call to write velocity-density gnu script
-                velocity_density_script(box_per_line_x, box_per_row_y, x, y, vx_now, vy_now, density_now, system_type, image, v0, x0, y0, xf, yf)
+                velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0, x0, y0, xf, yf)
             #Summing each box at different times
             if image > image_0 and image <= image_f:
                 for box in range(box_total) :
@@ -713,13 +716,13 @@ if system_type == "szabo-boids":
             if line_splitted[0] == "Dimensions:" :
                 Lx = int(line_splitted[1])
                 Ly = int(line_splitted[2])
-                box_per_line_x, box_per_row_y = Lx / box_size, Ly / box_size
+                box_per_line_x, box_per_column_y = Lx / box_size, Ly / box_size
                 x0 = -Lx/2
                 y0 = -Ly/2
                 xf = Lx/2
                 yf = Ly/2
                 box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, density_tot, vx_win, vy_win, density_win, eixo_a_tot, eixo_b_tot, \
-                ang_elipse_tot, eixo_a_win, eixo_b_win, ang_elipse_win = box_variables_definition_simu(box_per_row_y, box_per_line_x, x0, y0, xf, yf)
+                ang_elipse_tot, eixo_a_win, eixo_b_win, ang_elipse_win = box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf)
 
 
             if line_splitted[0] == "Radius:" : R_OBST = int(line_splitted[1])
@@ -761,7 +764,7 @@ if system_type == "szabo-boids":
                         vx_now[box] = vx_now[box] / density_now[box]
 		        vy_now[box] = vy_now[box] / density_now[box]
                         #Function call to write velocity-density gnu script
-                velocity_density_script(box_per_line_x, box_per_row_y, x, y, vx_now, vy_now, density_now, system_type, image, v0, x0, y0, xf, yf)
+                velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0, x0, y0, xf, yf)
                 #Summing each box at different times
                 for box in range(box_total) :
                     density_tot[box] += density_now[box]
@@ -781,10 +784,10 @@ if system_type == "vicsek-gregoire":
     file_par_simu.close()
 
     #definindo as caixas e as matrizes
-    box_per_line_x, box_per_row_y = int((xf-x0) / box_size), int((yf-y0) / box_size)
+    box_per_line_x, box_per_column_y = int((xf-x0) / box_size), int((yf-y0) / box_size)
     box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, density_tot, vx_win, vy_win, density_win, eixo_a_tot, eixo_b_tot, ang_elipse_tot, \
-    eixo_a_win, eixo_b_win, ang_elipse_win = box_variables_definition_simu(box_per_row_y, box_per_line_x, x0, y0, xf, yf)
-
+    eixo_a_win, eixo_b_win, ang_elipse_win = box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf)
+    print box_per_line_x,box_per_column_y,box_total
     #arquivo de posicoes e velocidades
     arq_data_in = "%s/data/posicoes.dat"% (system_type)
     print "\nYou analise a", system_type, "system, data is read from files:\n", arq_data_in
@@ -834,7 +837,7 @@ if system_type == "vicsek-gregoire":
                     vx_now[box] = vx_now[box] / density_now[box]
 	            vy_now[box] = vy_now[box] / density_now[box]
                     #Function call to write velocity-density gnu script
-            velocity_density_script(box_per_line_x, box_per_row_y, x, y, vx_now, vy_now, density_now, system_type, image, v0, x0, y0, xf, yf)
+            velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0, x0, y0, xf, yf)
                 #Summing each box at different times
             for box in range(box_total) :
                 density_tot[box] += density_now[box]
@@ -851,29 +854,29 @@ if system_type == "vicsek-gregoire":
     
 # Before starting time averages we exclude box at the borders. 
 r_obst = R_OBST / box_size
-x_obst = X_OBST / box_size
-y_obst = Y_OBST / box_size
+x_obst = (X_OBST-x0) / box_size
+y_obst = (Y_OBST-y0) / box_size
 
-zero_borders_and_obstacle(box_per_line_x, box_per_row_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, ang_elipse_tot, system_type)
+zero_borders_and_obstacle(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, ang_elipse_tot, system_type)
 
 if system_type == 'experiment':
 
     # Here we write the time averages of density, velocity and deformation elipse for experiment
-    average_density_velocity_deformation_experiment(box_per_line_x, box_total, x, y, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, image_counter)
+    average_density_velocity_deformation_experiment(box_per_line_x, box_per_column_y, x, y, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, image_counter)
 
 #    for i in range(box_total):
 #        print i%box_per_line_x,i/box_per_line_x,x[i],y[i],vx_tot[i]
     
     # Five axis analysis for experiment
-    five_axis(box_total, box_per_line_x, box_per_row_y, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, ang_elipse_tot, system_type, image_counter)
+    five_axis(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, ang_elipse_tot, system_type, image_counter)
     
 else:
     # Here we write the time averages of density, velocity and deformation elipse for simus
-    vx_win, vy_win, eixo_a_win, eixo_b_win, density_win = average_density_velocity_deformation(box_per_line_x, box_total, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, \
-    density_tot, vx_win, vy_win,eixo_a_win, eixo_b_win, density_win, count_events, v0, vel_win_file_name, dens_win_file_name, path)
+    vx_win, vy_win, eixo_a_win, eixo_b_win, density_win = average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, \
+                                                                                               density_tot, vx_win, vy_win,eixo_a_win, eixo_b_win, density_win, count_events, v0, vel_win_file_name, dens_win_file_name, path, image_counter)
 
     # Five axis analysis for simulations
-    five_axis(box_total, box_per_line_x, box_per_row_y, vx_win, vy_win, eixo_a_win, eixo_b_win, ang_elipse_win, system_type, image_counter)
+    five_axis(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, eixo_a_win, eixo_b_win, ang_elipse_win, system_type, image_counter)
 
 
 file_input_parameter.close()
