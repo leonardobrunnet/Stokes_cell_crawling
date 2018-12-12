@@ -8,6 +8,40 @@ import sys
 # <window_size> : this is the space averaging window size
 # The outuput files will be in directory named 'output'
 
+def create_gnu_script(arrow_size,caixas_por_linha,caixas_por_coluna,vel_win_file_name,dens_win_file_name,path):
+    proportion_x,proportion_y = 1.0,0.7
+    grid_x,grid_y,levels = 200,200,4
+    res_x,res_y = 1300,1300
+    name_output_map="densidade-velocidade.png"
+    file_script_den_vel=open(path+"/scriptdenvel.gnu","w")
+   
+    file_script_den_vel.write("set size %1.2f,%1.2f \n"%(proportion_x,proportion_y))
+    file_script_den_vel.write("set palette defined ( 0 '#000000',\\\n")
+    file_script_den_vel.write("                      1 '#0000ff',\\\n")
+    file_script_den_vel.write("                      2 '#00ffff',\\\n")
+    file_script_den_vel.write("                      3 '#00ff00',\\\n")
+    file_script_den_vel.write("                      4 '#ffff00',\\\n")
+    file_script_den_vel.write("                      5 '#ff0000')\n")
+    file_script_den_vel.write("set nokey \n")
+    file_script_den_vel.write("set dgrid3d %d,%d,%d \n"% (grid_x, grid_y, levels))
+    file_script_den_vel.write("set pm3d explicit \n")
+    file_script_den_vel.write("set output \"| head -n -2 > toto.dat\" \n")
+    file_script_den_vel.write("set table \n")
+    file_script_den_vel.write("splot \"%s\" using 1:2:3 \n"% dens_win_file_name)
+    file_script_den_vel.write("unset table \n")
+    file_script_den_vel.write("unset dgrid3d \n")
+    file_script_den_vel.write("mtf = %f \n"% arrow_size)
+    file_script_den_vel.write(" \n")
+    file_script_den_vel.write(" \n")
+    file_script_den_vel.write("set pm3d map \n")
+    file_script_den_vel.write("splot [%d:%d][%d:%d] \"toto.dat\" \n"%(0,caixas_por_linha,0,caixas_por_coluna))
+    file_script_den_vel.write("replot \"%s\" u($1):($2):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors head size 1.5,20,60 lt rgb \"black\" \n"% vel_win_file_name)
+    file_script_den_vel.write("pause -1 \n")
+    file_script_den_vel.write("set terminal png large size %d,%d \n"%(res_x, res_y)) 
+    file_script_den_vel.write("set output \"%s\" \n"% name_output_map)
+    file_script_den_vel.write("replot \n")  
+
+
 def read_param_vic_greg(file_par_simu):
     while 1 :
         line = file_par_simu.readline()
@@ -68,7 +102,7 @@ def read_param(f):
 
 
 
-def box_variables_definition_simu(caixas_por_coluna,caixas_por_linha):
+def box_variables_definition_simu(caixas_por_coluna,caixas_por_linha,x0,y0,xf,yf):
     caixas_total = caixas_por_coluna*caixas_por_linha
     vx_now = list(0. for i in range(caixas_total))
     vy_now = list(0. for i in range(caixas_total))
@@ -85,7 +119,8 @@ def box_variables_definition_simu(caixas_por_coluna,caixas_por_linha):
     eixo_a_win = list(0. for i in range(caixas_total))
     eixo_b_win = list(0. for i in range(caixas_total))
     ang_elipse_win = list(0. for i in range(caixas_total))
-    ratio=float(caixas_por_coluna)/caixas_por_linha
+    #    ratio=float(caixas_por_coluna)/caixas_por_linha
+    ratio = float((yf-y0)/(xf-x0))
     vid_def.write("set size ratio %f  \n" % ratio)
     vel_win.write("set size ratio %f  \n" % ratio)
     vel_win.write("arrow=2.5\n")
@@ -126,9 +161,9 @@ def box_variables_definition_experiment(caixas_por_coluna,caixas_por_linha):
     return caixas_total,ratio,vx_tot,vy_tot,density_tot,eixo_a_tot,eixo_b_tot,ang_elipse_tot
 
 
-def velocity_density_script(caixas_por_linha,caixas_por_coluna,x,y,vx_now,vy_now,density_now,system_type,image,v0):
+def velocity_density_script(caixas_por_linha,caixas_por_coluna,x,y,vx_now,vy_now,density_now,system_type,image,v0,x0,y0,xf,yf):
     #Here we write each image to the gnuplot velocity-density movie script
-    vid_veloc_dens.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(arrow*$3):(arrow*$4):($5) with vectors head size  0.6,20,60  filled palette title \"%d\"\n" % (0,caixas_por_linha,0,caixas_por_coluna,image))
+    vid_veloc_dens.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(arrow*$3):(arrow*$4):($5) with vectors head size  0.6,20,60  filled palette title \"%d\"\n" % (0,xf-x0,0,yf-y0,image))
     if system_type == "experiment":
         v0=1 #this should be the real velocity, if we can measure...
         density=1 #this should be changed if we measure real density (density_now)
@@ -159,7 +194,6 @@ def deformation_elipsis_script(x,y,eixo_b,eixo_a,ang_elipse,system_type):
         vid_def.write("unset for [i=1:%i] object i \n" % (caixas_total+1))
 
 def  zero_borders_and_obstacle(caixas_por_linha,caixas_por_coluna,r_obst,x_obst,y_obst,density_tot,vx_tot,vy_tot,eixo_a_tot,eixo_b_tot,ang_elipse_tot,system_type):
-
     center_x = caixas_por_linha/2
     center_y = caixas_por_coluna/2
     for i in range(caixas_total):
@@ -177,7 +211,7 @@ def  zero_borders_and_obstacle(caixas_por_linha,caixas_por_coluna,r_obst,x_obst,
             eixo_b_tot[i]=0.
             ang_elipse_tot[i]=0.
         if system_type == 'experiment' :
-            if math.sqrt((bx-x_obst)**2+(by-y_obst)**2) < r_obst :
+            if math.sqrt((bx-x_obst)**2+(by-y_obst)**2) <= r_obst :
                 density_tot[i] = -10
                 vx_tot[i] = 0.
                 vy_tot[i] = 0.
@@ -192,6 +226,14 @@ def  zero_borders_and_obstacle(caixas_por_linha,caixas_por_coluna,r_obst,x_obst,
                 eixo_a_tot[i]=0.
                 eixo_b_tot[i]=0.
                 ang_elipse_tot[i]=0.
+        if system_type == 'vicsek-gregoire' :
+            if math.sqrt((bx-x_obst)**2+(by-y_obst)**2) <= r_obst:
+                density_tot[i] = -10
+                vx_tot[i] = 0.
+                vy_tot[i] = 0.
+                eixo_a_tot[i] = 0.
+                eixo_b_tot[i] = 0.
+                ang_elipse_tot[i] = 0.
 
     return caixas_por_linha,caixas_por_coluna,density_tot,vx_tot,vy_tot,eixo_a_tot,eixo_b_tot,ang_elipse_tot
 
@@ -216,14 +258,15 @@ def average_density_velocity_deformation_experiment(caixas_por_linha,caixas_tota
     vel_win.write("e \n")
     vel_win.write("pause -1 \n")
 
-def average_density_velocity_deformation(caixas_por_linha,caixas_total,vx_tot,vy_tot,eixo_a_tot,eixo_b_tot,density_tot,vx_win,vy_win,eixo_a_win,eixo_b_win,density_win,count_events,v0):
+def average_density_velocity_deformation(caixas_por_linha,caixas_total,vx_tot,vy_tot,eixo_a_tot,eixo_b_tot,density_tot,vx_win,vy_win,eixo_a_win,eixo_b_win,density_win,count_events,v0,vel_win_file_name,dens_win_file_name,path):
     caixas_por_coluna=caixas_total/caixas_por_linha
+    window_size_h=window_size/2
     if system_type != 'experiment':
         count_box_win = list(0 for i in range(caixas_total))
-        for bx in range(window_size+1,caixas_por_linha-window_size-1):
-            for by in range(window_size+1,caixas_por_coluna-window_size-1):
-                for k in range(-window_size,window_size):
-                    for l in range(-window_size,window_size):
+        for bx in range(window_size_h+1,caixas_por_linha-window_size_h):
+            for by in range(window_size_h+1,caixas_por_coluna-window_size_h):
+                for k in range(-window_size_h,window_size_h):
+                    for l in range(-window_size_h,window_size_h):
                         if density_tot[(bx+k)+(by+l)*caixas_por_linha]>0:
                             box = bx + (by*caixas_por_linha)
 		            density_win[box] += density_tot[(bx+k)+((by+l)*caixas_por_linha)]
@@ -237,26 +280,32 @@ def average_density_velocity_deformation(caixas_por_linha,caixas_total,vx_tot,vy
         #Average win calculus and data print (gnuplot script for velocity)
 
         caixas_por_coluna=caixas_total/caixas_por_linha
-        
-        vel_win.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(arrow*$3):(arrow*$4):($5)  with vectors notitle  head size  0.3,20,60  filled palette \n" % (0,caixas_por_linha,0,caixas_por_coluna))
+        module = 0;
+        count_events = 0;
+        for box in range(caixas_total):
+	    if density_tot[box]>0 :
+	        module += math.sqrt(vx_tot[box]*vx_tot[box]+vy_tot[box]*vy_tot[box])
+	        count_events += 1
+   
+        arrow_size =  0.05*float(count_events) / module
+        #        vel_win.write("arrow=%f\n"%arrow_size)
+        #        vel_win.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(arrow*$3):(arrow*$4):($5)  with vectors notitle  head size  0.3,20,60  filled palette \n" % (window_size_h,caixas_por_linha-window_size_h,window_size_h,caixas_por_coluna-window_size_h))
 
-
-
-        for bx in range(window_size+1,caixas_por_linha-window_size-1):
-            for by in range(window_size+1,caixas_por_coluna-window_size-1):
+        create_gnu_script(arrow_size,caixas_por_linha,caixas_por_coluna,vel_win_file_name,dens_win_file_name,path)
+        for bx in range(window_size_h+1,caixas_por_linha-window_size_h):
+            for by in range(window_size_h+1,caixas_por_coluna-window_size_h):
             	box = bx + (by*caixas_por_linha)
                 module = math.sqrt((vx_win[box]*vx_win[box])+(vy_win[box]*vy_win[box]))
-                if bx%4 == 0 and by%4 == 0 :
-	            if density_win[box]>0.0 and module > 0.0 :
-                        normalization=float(count_events*count_box_win[box])*v0
-                        
-	                dens_win.write("%d %d %f \n" % (bx, by,density_win[box]/normalization))
-	                vel_win.write("%d %d %f %f %f %f %f \n"% (bx, by, vx_win[box]/module, vy_win[box]/module, module/normalization, density_tot[box]/float(count_events), density_win[box]/normalization))
-	            else :
-	                vx_win[box] = 0.0
-	                vy_win[box] = 0.0
-	                dens_win.write("%d %d %f \n"%(bx, by, 0.0))
-                        vel_win.write("%d %d %f %f %f %f %f \n" % (bx, by, 0.0, 0.0, 0.0,0.0, 0.0))
+                #                if bx%2 == 0 and by%2 == 0 :
+	        if density_win[box]>0.0 and module > 0.0 :
+                    normalization=float(count_events*count_box_win[box])*v0
+	            dens_win.write("%d %d %f \n" % (bx, by,density_win[box]/normalization))
+	            vel_win.write("%d %d %f %f %f %f %f \n"% (bx, by, vx_win[box], vy_win[box], module, density_tot[box]/float(count_events), density_win[box]/normalization))
+	        else :
+	            vx_win[box] = 0.0
+	            vy_win[box] = 0.0
+	            dens_win.write("%d %d %f \n"%(bx, by, 0.0))
+                    vel_win.write("%d %d %f %f %f %f %f \n" % (bx, by, 0.0, 0.0, 0.0,0.0, 0.0))
         vel_win.write("e \n")
         vel_win.write("pause -1 \n")
                  
@@ -395,8 +444,9 @@ def imag_count(system_type):
 
 f=open("parameter.in")
 a=f.readline().split()
-
 system_type=a[1]
+if system_type == 'superboids' :
+    a=f.readline().split()
 fileout=a[1]
 path='output/'+system_type
 
@@ -414,10 +464,11 @@ vid_def=open("%s/video_deformation.gnu"%path,"w")
 vid_def.write("unset key \n")
 
 #Opening time averages files
-
-dens_win=open("%s/density-win.dat"%path,"w")
-vel_win=open("%s/velocity-win.dat"%path,"w")
-
+dens_win_file_name="density-win.dat"
+dens_win=open(path+'/'+dens_win_file_name,"w")
+vel_win_file_name="velocity-win.dat"
+vel_win=open(path+'/'+vel_win_file_name,"w")
+#print vel_win_file_name,dens_win_file_name
 def_win=open("%s/deformation-win.dat"%path,"w")
 
 # Opening five axis analysis files
@@ -427,6 +478,7 @@ nn = open("%s/axis2.dat"%path,"w")
 oo = open("%s/axis3.dat"%path,"w")
 pp = open("%s/axis4.dat"%path,"w")
 qq = open("%s/axis5.dat"%path,"w")
+#print system_type
 
 
 if system_type == 'experiment':
@@ -460,7 +512,8 @@ if system_type == 'experiment':
             X_OBST=int(a[1])
             Y_OBST=int(a[2])
 
-
+        x0,xf,y0,yf=0.,float(caixas_por_linha),0.,float(caixas_por_coluna)
+            
     caixas_total,ratio,vx_tot,vy_tot,density_tot,eixo_a_tot,eixo_b_tot,ang_elipse_tot=box_variables_definition_experiment(caixas_por_coluna,caixas_por_linha)
 
 
@@ -507,7 +560,7 @@ if system_type == 'experiment':
         if image > image_0 and image <= image_f :
             print "Analising image ",image, "..."
             #Function call to write velocity-density gnu script
-            velocity_density_script(caixas_por_linha,caixas_por_coluna,x,y,vx_now,vy_now,density_now,system_type,image,v0)
+            velocity_density_script(caixas_por_linha,caixas_por_coluna,x,y,vx_now,vy_now,density_now,system_type,image,v0,x0,y0,xf,yf)
             #Function call to write deformation elipse gnu script
             deformation_elipsis_script(x,y,eixo_b,eixo_a,ang_elipse,system_type)
         elif image > image_f:
@@ -515,14 +568,17 @@ if system_type == 'experiment':
         
 
 if system_type == "superboids":
-    arq_header_in = "%s/%s.dat"%(a[0],a[1])
-    arq_data_in = "%s/%s_plainprint.dat"%(a[0],a[1])
-    arq_neigh_in = "%s/%s_neighbors.dat"%(a[0],a[1])
-    print "\nYou analise a", a[0], "system, data is read from files:\n", arq_header_in," (header)\n", arq_data_in," (data)\n", arq_neigh_in," (neighbors)"
+    a=f.readline().split()
+    arq_header_in = "%s/%s.dat"%(system_type,a[1])
+    arq_data_in = "%s/%s_plainprint.dat"%(system_type,a[1])
+    arq_neigh_in = "%s/%s_neighbors.dat"%(system_type,a[1])
+    print "\nYou analise a", system_type, "system, data is read from files:\n", arq_header_in," (header)\n", arq_data_in," (data)\n", arq_neigh_in," (neighbors)"
     fh=open(arq_header_in)
     fd=open(arq_data_in)
     fn=open(arq_neigh_in)
-    window_size=int(a[2])
+    a=f.readline().split()
+    window_size=int(a[1])
+#    print window_size
     imag_count(system_type)
     fn.close()
     fn=open(arq_neigh_in)
@@ -530,7 +586,7 @@ if system_type == "superboids":
     image_0=int(a[0])
     image_f=int(a[1])
     v0=0.007
-    # Reading superboids parameter file 
+    # Reading superboids parameter file
 
     while 1 :
         line = fh.readline()
@@ -554,11 +610,11 @@ if system_type == "superboids":
                 Y_OBST = float(a[4])
                 
     caixas_por_linha,caixas_por_coluna = Lx/box_size,Ly/box_size
-
-    #defining all matrices
-    caixas_total,ratio,vx_now,vy_now,density_now,vx_tot,vy_tot,density_tot,vx_win,vy_win,density_win,eixo_a_tot,eixo_b_tot,ang_elipse_tot,eixo_a_win,eixo_b_win,ang_elipse_win=box_variables_definition_simu(caixas_por_coluna,caixas_por_linha)
     x0,y0 = -Lx/2,-Ly/2
     xf,yf = Lx/2,Ly/2
+    
+    #defining all matrices
+    caixas_total,ratio,vx_now,vy_now,density_now,vx_tot,vy_tot,density_tot,vx_win,vy_win,density_win,eixo_a_tot,eixo_b_tot,ang_elipse_tot,eixo_a_win,eixo_b_win,ang_elipse_win=box_variables_definition_simu(caixas_por_coluna,caixas_por_linha,x0,y0,xf,yf)
 
     
     #Reading superboids plainprint data file
@@ -581,7 +637,7 @@ if system_type == "superboids":
                         vx_now[box] = vx_now[box] / density_now[box]
 		        vy_now[box] = vy_now[box] / density_now[box]
                 #Function call to write velocity-density gnu script
-                velocity_density_script(caixas_por_linha,caixas_por_coluna,x,y,vx_now,vy_now,density_now,system_type,image,v0)
+                velocity_density_script(caixas_por_linha,caixas_por_coluna,x,y,vx_now,vy_now,density_now,system_type,image,v0,x0,y0,xf,yf)
             #Summing each box at different times
             if image > image_0 and image <= image_f:
                 for box in range(caixas_total) :
@@ -591,12 +647,14 @@ if system_type == "superboids":
 
 #            print image_counter
             image+=1
+            vx_now = list(0. for i in range(caixas_total))
+            vy_now = list(0. for i in range(caixas_total))
+            density_now = list(0 for i in range(caixas_total))
             if image <= image_0 :
                 print "Skippin image:",image 
             elif image <= image_f :
                 print "Image number",image,". Number of super particles =", fat_boids_counter
                 count_events+=1
-
             else:
                 break
             fat_boids_counter = 0
@@ -612,7 +670,6 @@ if system_type == "superboids":
                         xx=int((x-x0)/box_size)
                         yy=int((y-y0)/box_size) * caixas_por_linha
                         box = xx+yy
-                        #                    if mx[0]<box : mx=[box,xx,yy]
                         vx_now[box]+=float(a[2])
                         vy_now[box]+=float(a[3])
                         density_now[box] += 1.0
@@ -657,7 +714,7 @@ if system_type == "szabo-boids":
                 y0=-Ly/2
                 xf=Lx/2
                 yf=Ly/2
-                caixas_total,ratio,vx_now,vy_now,density_now,vx_tot,vy_tot,density_tot,vx_win,vy_win,density_win,eixo_a_tot,eixo_b_tot,ang_elipse_tot,eixo_a_win,eixo_b_win,ang_elipse_win=box_variables_definition_simu(caixas_por_coluna,caixas_por_linha)
+                caixas_total,ratio,vx_now,vy_now,density_now,vx_tot,vy_tot,density_tot,vx_win,vy_win,density_win,eixo_a_tot,eixo_b_tot,ang_elipse_tot,eixo_a_win,eixo_b_win,ang_elipse_win=box_variables_definition_simu(caixas_por_coluna,caixas_por_linha,x0,y0,xf,yf)
 
 
             if a[0] == "Radius:" : R_OBST = int(a[1])
@@ -674,6 +731,9 @@ if system_type == "szabo-boids":
                 image+=1
             elif image <= image_f :
                 boids_counter = 0
+                vx_now = list(0. for i in range(caixas_total))
+                vy_now = list(0. for i in range(caixas_total))
+                density_now = list(0 for i in range(caixas_total))
                 while a[0] != 'x' :
                     boids_counter += 1
                     x,y=float(a[0]),float(a[1])
@@ -696,7 +756,7 @@ if system_type == "szabo-boids":
                         vx_now[box] = vx_now[box] / density_now[box]
 		        vy_now[box] = vy_now[box] / density_now[box]
                         #Function call to write velocity-density gnu script
-                velocity_density_script(caixas_por_linha,caixas_por_coluna,x,y,vx_now,vy_now,density_now,system_type,image,v0)
+                velocity_density_script(caixas_por_linha,caixas_por_coluna,x,y,vx_now,vy_now,density_now,system_type,image,v0,x0,y0,xf,yf)
                 #Summing each box at different times
                 for box in range(caixas_total) :
                     density_tot[box] += density_now[box]
@@ -714,9 +774,11 @@ if system_type == "vicsek-gregoire":
     file_par_simu=open(aux)
     Lx,Ly,R_OBST,X_OBST,Y_OBST,box_size=read_param_vic_greg(file_par_simu)
     file_par_simu.close()
+
     #definindo as caixas e as matrizes
-    caixas_por_linha,caixas_por_coluna = int(Lx/box_size),int(Ly/box_size)
-    caixas_total,ratio,vx_now,vy_now,density_now,vx_tot,vy_tot,density_tot,vx_win,vy_win,density_win,eixo_a_tot,eixo_b_tot,ang_elipse_tot,eixo_a_win,eixo_b_win,ang_elipse_win=box_variables_definition_simu(caixas_por_coluna,caixas_por_linha)
+    caixas_por_linha,caixas_por_coluna = int((xf-x0)/box_size),int((yf-y0)/box_size)
+    caixas_total,ratio,vx_now,vy_now,density_now,vx_tot,vy_tot,density_tot,vx_win,vy_win,density_win,eixo_a_tot,eixo_b_tot,ang_elipse_tot,eixo_a_win,eixo_b_win,ang_elipse_win=box_variables_definition_simu(caixas_por_coluna,caixas_por_linha,x0,y0,xf,yf)
+
     #arquivo de posicoes e velocidades
     arq_data_in = "%s/data/posicoes.dat"%(system_type)
     print "\nYou analise a", system_type, "system, data is read from files:\n", arq_data_in
@@ -745,6 +807,9 @@ if system_type == "vicsek-gregoire":
             image += 1
         elif image <= image_f :
             print "Reading image:",image
+            vx_now = list(0. for i in range(caixas_total))
+            vy_now = list(0. for i in range(caixas_total))
+            density_now = list(0 for i in range(caixas_total))
             for i in range(nlines) :
                 z=fd.readline().split()
                 x,y=float(z[0]),float(z[1])
@@ -763,7 +828,7 @@ if system_type == "vicsek-gregoire":
                     vx_now[box] = vx_now[box] / density_now[box]
 	            vy_now[box] = vy_now[box] / density_now[box]
                     #Function call to write velocity-density gnu script
-            velocity_density_script(caixas_por_linha,caixas_por_coluna,x,y,vx_now,vy_now,density_now,system_type,image,v0)
+            velocity_density_script(caixas_por_linha,caixas_por_coluna,x,y,vx_now,vy_now,density_now,system_type,image,v0,x0,y0,xf,yf)
                 #Summing each box at different times
             for box in range(caixas_total) :
                 density_tot[box] += density_now[box]
@@ -782,6 +847,7 @@ if system_type == "vicsek-gregoire":
 r_obst=R_OBST/box_size
 x_obst=X_OBST/box_size
 y_obst=Y_OBST/box_size
+
 zero_borders_and_obstacle(caixas_por_linha,caixas_por_coluna,r_obst,x_obst,y_obst,density_tot,vx_tot,vy_tot,eixo_a_tot,eixo_b_tot,ang_elipse_tot,system_type)
 
 if system_type == 'experiment':
@@ -798,7 +864,7 @@ if system_type == 'experiment':
     
 else:
     # Here we write the time averages of density, velocity and deformation elipse for simus
-    vx_win,vy_win,eixo_a_win,eixo_b_win,density_win=average_density_velocity_deformation(caixas_por_linha,caixas_total,vx_tot,vy_tot,eixo_a_tot,eixo_b_tot,density_tot,vx_win,vy_win,eixo_a_win,eixo_b_win,density_win,count_events,v0)
+    vx_win,vy_win,eixo_a_win,eixo_b_win,density_win=average_density_velocity_deformation(caixas_por_linha,caixas_total,vx_tot,vy_tot,eixo_a_tot,eixo_b_tot,density_tot,vx_win,vy_win,eixo_a_win,eixo_b_win,density_win,count_events,v0,vel_win_file_name,dens_win_file_name,path)
 
     # Five axis analysis for simulations
     five_axis(caixas_total,caixas_por_linha,caixas_por_coluna,vx_win,vy_win,eixo_a_win,eixo_b_win,ang_elipse_win,system_type,image_counter)
