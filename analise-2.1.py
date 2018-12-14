@@ -854,7 +854,6 @@ if system_type == "vicsek-gregoire":
             if len(points) > 0:
                 points=np.array(points)
                 list_neighbors=delaunay(points)
-                exit()
             #Calculate the average velocity over boxes
             for box in range(box_total):
                 if density_now[box] > 0 :
