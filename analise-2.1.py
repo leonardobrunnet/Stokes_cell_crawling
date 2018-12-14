@@ -406,14 +406,14 @@ def five_axis(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, eixo_
             ang_elipse_axis2[i] += ang_elipse_axis6[i]
 
     for i in range(box_per_line_x):
-        mm.write("%d %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis1[i], vy_axis1[i], eixo_a_axis1[i], eixo_b_axis1[i], ang_elipse_axis1[i]))
-        nn.write("%d %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis2[i], vy_axis2[i], eixo_a_axis2[i], eixo_b_axis2[i], ang_elipse_axis2[i]))
+        file_axis1.write("%d %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis1[i], vy_axis1[i], eixo_a_axis1[i], eixo_b_axis1[i], ang_elipse_axis1[i]))
+        file_axis2.write("%d %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis2[i], vy_axis2[i], eixo_a_axis2[i], eixo_b_axis2[i], ang_elipse_axis2[i]))
 
 
     for i in range(box_per_column_y):
-        oo.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis3[i], vy_axis3[i], eixo_a_axis3[i], eixo_b_axis3[i], ang_elipse_axis3[i]))
-        pp.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis4[i], vy_axis4[i], eixo_a_axis4[i], eixo_b_axis4[i], ang_elipse_axis4[i]))
-        qq.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis5[i], vy_axis5[i], eixo_a_axis5[i], eixo_b_axis5[i], ang_elipse_axis5[i]))
+        file_axis4.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis3[i], vy_axis3[i], eixo_a_axis3[i], eixo_b_axis3[i], ang_elipse_axis3[i]))
+        file_axis3.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis4[i], vy_axis4[i], eixo_a_axis4[i], eixo_b_axis4[i], ang_elipse_axis4[i]))
+        file_axis5.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis5[i], vy_axis5[i], eixo_a_axis5[i], eixo_b_axis5[i], ang_elipse_axis5[i]))
 
 
 def imag_count(system_type) :
@@ -495,11 +495,11 @@ def_win            = open("%s/deformation-win.dat"%path,"w")
 
 # Opening five axis analysis files
 
-mm = open("%s/axis1.dat"%path,"w")
-nn = open("%s/axis2.dat"%path,"w")
-oo = open("%s/axis4.dat"%path,"w")
-pp = open("%s/axis3.dat"%path,"w")
-qq = open("%s/axis5.dat"%path,"w")
+file_axis1 = open("%s/axis1.dat"%path,"w")
+file_axis2 = open("%s/axis2.dat"%path,"w")
+file_axis4 = open("%s/axis4.dat"%path,"w")
+file_axis3 = open("%s/axis3.dat"%path,"w")
+file_axis5 = open("%s/axis5.dat"%path,"w")
 #print system_type
 
 
@@ -909,11 +909,11 @@ vid_def.close()
 dens_win.close()
 vel_win.close()
 def_win.close()
-mm.close()
-nn.close()
-oo.close()
-pp.close()
-qq.close()
+file_axis1.close()
+file_axis2.close()
+file_axis4.close()
+file_axis3.close()
+file_axis5.close()
 
 
 
