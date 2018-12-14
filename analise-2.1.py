@@ -1,12 +1,28 @@
 import math as math
 import os
 import sys
+from scipy.spatial import Delaunay
+import numpy as np
 # To this program work correctly:
 # Create the file named 'parameter.in', it will have one line with three words: <system_type>, <data_file>, <window_size>
 # <system_type> is: 'experiment' or 'superboids' or 'voronoi' or 'boids' or 'szabo-boids' or ...
 # <data_file> is: data file name. It must be in a directory named <system_type>
 # <window_size> : this is the space averaging window size
 # The outuput files will be in directory named 'output'
+
+def delaunay(points):
+    tri = Delaunay(points)
+    list_neigh = [ [] for i in range(len(points)) ]
+    for i in tri.simplices:
+        for j in i:
+            for l in i:
+                if l != j :
+                    if np.linalg.norm(points[j]-points[l]) < 10 : 
+                        if l not in list_neigh[j]:
+                            list_neigh[j].append(l)
+                        if j not in list_neigh[l]:
+                            list_neigh[l].append(j)
+    return list_neigh
 
 def create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path):
     proportion_x, proportion_y             = 1.0, 0.7
@@ -819,18 +835,26 @@ if system_type == "vicsek-gregoire":
             vx_now = list(0. for i in range(box_total))
             vy_now = list(0. for i in range(box_total))
             density_now = list(0 for i in range(box_total))
+            points = []
+            index_particle = []
             for i in range(nlines) :
-                z    = fd.readline().split()
-                x, y = float(z[0]), float(z[1])
+                line_splitted    = fd.readline().split()
+                x, y = float(line_splitted[0]), float(line_splitted[1])
                 if x > x0 and x < xf and y > y0 and y < yf : 
                     xx  = int((x-x0) / box_size)
                     yy  = int((y-y0) / box_size) * box_per_line_x
                     box = xx+yy
-                    vx_now[box]      += float(z[2])
-                    vy_now[box]      += float(z[3])
+                    vx_now[box]      += float(line_splitted[2])
+                    vy_now[box]      += float(line_splitted[3])
+                    points.append([x,y])
+                    index_particle.append(i)
                     density_now[box] += 1.0
             image        += 1
             count_events += 1
+            if len(points) > 0:
+                points=np.array(points)
+                list_neighbors=delaunay(points)
+                exit()
             #Calculate the average velocity over boxes
             for box in range(box_total):
                 if density_now[box] > 0 :
