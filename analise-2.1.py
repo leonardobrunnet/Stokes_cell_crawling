@@ -16,7 +16,7 @@ def delaunay(points):
     x,y=[],[]
     z,zz=[],[]
     for i,w in enumerate(points):
-        if i%60 == 0:
+        if i%50 == 0:
             x.append(w[0])
             y.append(w[1])
         else :
@@ -37,11 +37,12 @@ def delaunay(points):
                             list_neigh[l].append(j)
     x,y=[],[]
     for i,w in enumerate(list_neigh) :
-        if i%60 ==  0 :
+        if i%50==0 :
             for j in w :
                 x.append(points[j][0])
                 y.append(points[j][1])
     fig=plt.scatter(x,y,s=30,c='r')
+    fig=plt.triplot(points[:,0], points[:,1], tri.simplices.copy())
     plt.show()
     exit()
 
