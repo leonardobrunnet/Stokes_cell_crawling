@@ -3,6 +3,7 @@ import os
 import sys
 from scipy.spatial import Delaunay
 import numpy as np
+import matplotlib.pyplot as plt
 # To this program work correctly:
 # Create the file named 'parameter.in', it will have one line with three words: <system_type>, <data_file>, <window_size>
 # <system_type> is: 'experiment' or 'superboids' or 'voronoi' or 'boids' or 'szabo-boids' or ...
@@ -12,16 +13,38 @@ import numpy as np
 
 def delaunay(points):
     tri = Delaunay(points)
+    x,y=[],[]
+    z,zz=[],[]
+    for i,w in enumerate(points):
+        if i%60 == 0:
+            x.append(w[0])
+            y.append(w[1])
+        else :
+            z.append(w[0])
+            zz.append(w[1])
+    fig=plt.scatter(x,y,s=30,c='b')
+    fig=plt.scatter(z,zz,s=30,c='g')
+    # plt.show()
     list_neigh = [ [] for i in range(len(points)) ]
     for i in tri.simplices:
         for j in i:
             for l in i:
                 if l != j :
-                    if np.linalg.norm(points[j]-points[l]) < 10 : 
+                    if np.linalg.norm(points[j]-points[l]) < 10 : #
                         if l not in list_neigh[j]:
                             list_neigh[j].append(l)
                         if j not in list_neigh[l]:
                             list_neigh[l].append(j)
+    x,y=[],[]
+    for i,w in enumerate(list_neigh) :
+        if i%60 ==  0 :
+            for j in w :
+                x.append(points[j][0])
+                y.append(points[j][1])
+    fig=plt.scatter(x,y,s=30,c='r')
+    plt.show()
+    exit()
+
     return list_neigh
 
 def create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path):
@@ -274,14 +297,11 @@ def average_density_velocity_deformation_experiment(box_per_line_x, box_per_colu
     vel_win.write("e \n")
     vel_win.write("pause -1 \n")
 
-def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, density_tot, vx_win, vy_win, eixo_a_win, eixo_b_win, \
-                                         density_win, count_events, v0, vel_win_file_name, dens_win_file_name, path, image_counter) :
+def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, density_tot, vx_win, vy_win, eixo_a_win, eixo_b_win, density_win, count_events, v0, vel_win_file_name, dens_win_file_name, path, image_counter) :
 
-    
-    
-    box_total = box_per_column_y*box_per_line_x
-
+    box_total         = box_per_column_y*box_per_line_x
     window_size_h     = window_size/2
+
     if system_type != 'experiment':
         count_box_win = list(0 for i in range(box_total))
         for bx in range(window_size_h+1, box_per_line_x-window_size_h):
@@ -289,10 +309,10 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
                 for k in range(-window_size_h, window_size_h):
                     for l in range(-window_size_h, window_size_h):
                         if density_tot[(bx+k)+(by+l)*box_per_line_x] > 0 :
-                            box                 = bx + (by*box_per_line_x)
-		            density_win[box]   += density_tot[(bx+k)+((by+l)*box_per_line_x)]
-		            vx_win[box]        += vx_tot[(bx+k)+((by+l)*box_per_line_x)]
-		            vy_win[box]        += vy_tot[(bx+k)+((by+l)*box_per_line_x)]
+                            box = bx + (by*box_per_line_x)
+                            density_win[box] += density_tot[(bx+k)+((by+l)*box_per_line_x)]
+		            vx_win[box] += vx_tot[(bx+k)+((by+l)*box_per_line_x)]
+		            vy_win[box] += vy_tot[(bx+k)+((by+l)*box_per_line_x)]
 		            count_box_win[box] += 1
                         else:
                             box                 = bx + (by*box_per_line_x)
@@ -305,7 +325,7 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
         for box in range(box_total):
 	    if density_tot[box] > 0 :
 	        module_mean       += math.sqrt(vx_tot[box]*vx_tot[box] + vy_tot[box]*vy_tot[box])
-	        count_busy_box += 1
+	        count_busy_box    += 1
    
         arrow_size = 16*count_busy_box/module_mean
         #create script gnu to plot velocity-density map
@@ -582,6 +602,7 @@ if system_type == 'experiment':
         if image < image_0 : print "Skipping image ",image
         if image > image_0 and image <= image_f :
             print "Analising image ",image, "..."
+
             #Function call to write velocity-density gnu script
             velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0, x0, y0, xf, yf)
             #Function call to write deformation elipse gnu script
