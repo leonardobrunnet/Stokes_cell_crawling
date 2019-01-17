@@ -1,3 +1,4 @@
+import copy
 import math as math
 import os
 import sys
@@ -18,7 +19,7 @@ class texture:
         self.r=np.array(r)
         self.ident=ident
         self.list_neigh=l_n
-        self.average_m=np.zeros((2,2))
+        self.M=np.zeros((2,2))
         self.number_of_links=len(l_n)
         self.m_list=[]
 
@@ -28,9 +29,9 @@ class texture:
 #            print text[i].r
             l=self.r-text[i].r
             m=np.outer(l,l)
-            self.average_m=+m
+            self.M=+m
             self.m_list.append(m.tolist())
-
+        self.M/=self.number_of_links
 
     def zeros(self):
         self.average_m=np.zeros((2,2))
@@ -908,9 +909,10 @@ if system_type == "vicsek-gregoire":
                 list_neighbors=delaunay(points)
                 text=list(texture(points[i],i,list_neighbors[i]) for i in range(number_particles))
                 map(lambda i:i.mat(), text)
-                # for i in range(number_particles):
-                #     print text[i].number_of_links,text[i].m_list[text[i].number_of_links-1]
-                # exit()
+                text_old=copy.copy(text)
+                for i in range(number_particles):
+                    print text[i].number_of_links,text[i].m_list[text[i].number_of_links-1],text[i].M
+                exit()
             #Calculate the average velocity over boxes
             for box in range(box_total):
                 if density_now[box] > 0 :
