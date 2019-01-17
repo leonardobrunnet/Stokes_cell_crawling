@@ -11,19 +11,48 @@ import matplotlib.pyplot as plt
 # <window_size> : this is the space averaging window size
 # The outuput files will be in directory named 'output'
 
+############Texture class definition##############
+class texture:
+
+    def __init__(self,r,ident,l_n):
+        self.r=np.array(r)
+        self.ident=ident
+        self.list_neigh=l_n
+        self.average_m=np.zeros((2,2))
+        self.number_of_links=len(l_n)
+        self.m_list=[]
+
+    def mat(self):
+        #        print self.ident,self.list_neigh
+        for i in self.list_neigh:
+#            print text[i].r
+            l=self.r-text[i].r
+            m=np.outer(l,l)
+            self.average_m=+m
+            self.m_list.append(m.tolist())
+
+
+    def zeros(self):
+        self.average_m=np.zeros((2,2))
+        self.m_list=[]
+            
+###############Texture class definition ends here###########
+
+
+
 def delaunay(points):
     tri = Delaunay(points)
-    x,y=[],[]
-    z,zz=[],[]
-    for i,w in enumerate(points):
-        if i%50 == 0:
-            x.append(w[0])
-            y.append(w[1])
-        else :
-            z.append(w[0])
-            zz.append(w[1])
-    fig=plt.scatter(x,y,s=30,c='b')
-    fig=plt.scatter(z,zz,s=30,c='g')
+    # x,y=[],[]
+    # z,zz=[],[]
+    # for i,w in enumerate(points):
+    #     if i%50 == 0:
+    #         x.append(w[0])
+    #         y.append(w[1])
+    #     else :
+    #         z.append(w[0])
+    #         zz.append(w[1])
+    # fig=plt.scatter(x,y,s=30,c='b')
+    # fig=plt.scatter(z,zz,s=30,c='g')
     # plt.show()
     list_neigh = [ [] for i in range(len(points)) ]
     for i in tri.simplices:
@@ -35,16 +64,16 @@ def delaunay(points):
                             list_neigh[j].append(l)
                         if j not in list_neigh[l]:
                             list_neigh[l].append(j)
-    x,y=[],[]
-    for i,w in enumerate(list_neigh) :
-        if i%50==0 :
-            for j in w :
-                x.append(points[j][0])
-                y.append(points[j][1])
-    fig=plt.scatter(x,y,s=30,c='r')
-    fig=plt.triplot(points[:,0], points[:,1], tri.simplices.copy())
-    plt.show()
-    exit()
+    # x,y=[],[]
+    # for i,w in enumerate(list_neigh) :
+    #     if i%50==0 :
+    #         for j in w :
+    #             x.append(points[j][0])
+    #             y.append(points[j][1])
+    # fig=plt.scatter(x,y,s=30,c='r')
+    # fig=plt.triplot(points[:,0], points[:,1], tri.simplices.copy())
+    # plt.show()
+    # exit()
 
     return list_neigh
 
@@ -873,9 +902,15 @@ if system_type == "vicsek-gregoire":
                     density_now[box] += 1.0
             image        += 1
             count_events += 1
-            if len(points) > 0:
+            number_particles = len(points)
+            if number_particles > 0:
                 points=np.array(points)
                 list_neighbors=delaunay(points)
+                text=list(texture(points[i],i,list_neighbors[i]) for i in range(number_particles))
+                map(lambda i:i.mat(), text)
+                # for i in range(number_particles):
+                #     print text[i].number_of_links,text[i].m_list[text[i].number_of_links-1]
+                # exit()
             #Calculate the average velocity over boxes
             for box in range(box_total):
                 if density_now[box] > 0 :
