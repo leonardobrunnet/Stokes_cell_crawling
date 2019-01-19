@@ -22,20 +22,36 @@ class texture:
         self.M=np.zeros((2,2))
         self.number_of_links=len(l_n)
         self.m_list=[]
-
+        self.dm_list=[]
+        self.l_list=[]
+        
     def mat(self):
-        #        print self.ident,self.list_neigh
         for i in self.list_neigh:
-#            print text[i].r
             l=self.r-text[i].r
+            self.l_list.append(l)
             m=np.outer(l,l)
             self.M=+m
             self.m_list.append(m.tolist())
         self.M/=self.number_of_links
 
+    def dmat(self):
+        
+#        print text[self.ident].ident
+        if set(self.list_neigh) == set(text_old[self.ident].list_neigh) :
+            print "sets are equal"
+            exit()
+        else:
+            print  set(self.list_neigh) - set(text_old[self.ident].list_neigh)
+            exit()
+#        for i,w in enumerate(self.l_list):
+#            l_av=(w+text
+
+
+              
     def zeros(self):
         self.average_m=np.zeros((2,2))
         self.m_list=[]
+        self.dm_list=[]
             
 ###############Texture class definition ends here###########
 
@@ -871,6 +887,7 @@ if system_type == "vicsek-gregoire":
     line_counter  = 0
     count_events  = 0
     v0            = 0.05
+    text_old=[]
     while 1 :
         line   = fd.readline()
         if not line:
@@ -909,10 +926,14 @@ if system_type == "vicsek-gregoire":
                 list_neighbors=delaunay(points)
                 text=list(texture(points[i],i,list_neighbors[i]) for i in range(number_particles))
                 map(lambda i:i.mat(), text)
+                if  text_old != []:
+                    map(lambda i:i.dmat(), text_old)
+                    exit()
+#                    for i in range(number_particles):
+                        
                 text_old=copy.copy(text)
-                for i in range(number_particles):
-                    print text[i].number_of_links,text[i].m_list[text[i].number_of_links-1],text[i].M
-                exit()
+#                for i in range(number_particles):
+#                    print text[i].number_of_links,text[i].m_list[text[i].number_of_links-1],text[i].M
             #Calculate the average velocity over boxes
             for box in range(box_total):
                 if density_now[box] > 0 :
