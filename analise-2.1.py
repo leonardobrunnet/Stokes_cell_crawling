@@ -15,9 +15,10 @@ import matplotlib.pyplot as plt
 ############Texture class definition##############
 class texture:
 
-    def __init__(self,r,ident,l_n):
+    def __init__(self,r,ident,index_part,l_n):
         self.r=np.array(r)
-        self.ident=ident
+        self.ident=ident  #ordem das particulas na regiao de foco
+        self.index_part=index_part #indice da particula
         self.list_neigh=l_n
         self.M=np.zeros((2,2))
         self.number_of_links=len(l_n)
@@ -35,12 +36,21 @@ class texture:
         self.M/=self.number_of_links
 
     def dmat(self):
-        
-#        print text[self.ident].ident
+
+        print self.index_part, self.list_neigh
+        print text_old[self.ident].index_part, text_old[self.ident].list_neigh
+ #       print text[self.index_part].list_neigh, self.index_part
+ #       print text_old[self.index_part].list_neigh, text_old[self.id].ident
+#        print self.list_neigh
+#        print text_old[self.ident].list_neigh
         if set(self.list_neigh) == set(text_old[self.ident].list_neigh) :
-            print "sets are equal"
-            exit()
+            dm_list=[]
+            for i,w in enumerate(self.l_list) :
+                dm_list.append(w-text_old[self.ident].l_list[i])
+#            print dm_list
+#            print text_old[self.ident].list_neigh
         else:
+            print "sets are not equal"
             print  set(self.list_neigh) - set(text_old[self.ident].list_neigh)
             exit()
 #        for i,w in enumerate(self.l_list):
@@ -924,17 +934,26 @@ if system_type == "vicsek-gregoire":
             if number_particles > 0:
                 points=np.array(points)
                 list_neighbors=delaunay(points)
-                text=list(texture(points[i],i,list_neighbors[i]) for i in range(number_particles))
+                text=list(texture(points[i],i,index_particle[i],list_neighbors[i]) for i in range(number_particles))
+
                 map(lambda i:i.mat(), text)
+#                print len(text),len(text_old)
                 if  text_old != []:
+                                    
+                    for i in range(len(text_old)):
+                        for j in range(len(text_old)):
+                            if text[i].index_part == text_old[j].index_part :
+                                print text[i].r-text_old[i].r
+#                        print i,text[i].index_part,text_old[i].index_part
+                    exit()
+                    print text[0].list_neigh
+                    print text_old[0].list_neigh
                     map(lambda i:i.dmat(), text_old)
                     exit()
-#                    for i in range(number_particles):
                         
-                text_old=copy.copy(text)
-#                for i in range(number_particles):
-#                    print text[i].number_of_links,text[i].m_list[text[i].number_of_links-1],text[i].M
-            #Calculate the average velocity over boxes
+                text_old=copy.deepcopy(text)
+
+                #Calculate the average velocity over boxes
             for box in range(box_total):
                 if density_now[box] > 0 :
                     vx_now[box] = vx_now[box] / density_now[box]
