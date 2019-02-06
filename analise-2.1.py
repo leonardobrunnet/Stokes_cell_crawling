@@ -12,50 +12,50 @@ import matplotlib.pyplot as plt
 # <window_size> : this is the space averaging window size
 # The outuput files will be in directory named 'output'
 
-############Texture class definition##############
-class texture:
+# function mapping delaunay out index to particle index
 
-    def __init__(self,r,ident,index_part,l_n):
-        self.r=np.array(r)
-        self.ident=ident  #ordem das particulas na regiao de foco
-        self.index_part=index_part #indice da particula
-        self.list_neigh=l_n
+def map_focus_region_to_part(points,list_neighbors,index_particle):
+    for i,w in enumerate(points):
+        aux=index_particle[i]
+        part[aux].r=np.array(w)
+        part[aux].list_neigh=[]
+        for j in list_neighbors[i]:
+            part[aux].list_neigh.append(index_particle[j])
+
+############Particle class definition##############
+class particle:
+
+    def __init__(self,ident):
+        self.r=np.array([0,0])
+        self.r_old=np.array([0,0])
+        self.ident=ident  #indice geral da particula
+        self.list_neigh=[]
+        self.list_neigh_old=[]
         self.M=np.zeros((2,2))
-        self.number_of_links=len(l_n)
         self.m_list=[]
         self.dm_list=[]
-        self.l_list=[]
+        self.lc_list=[] 
+        self.la_list=[]
+        self.ld_list=[]
         
     def mat(self):
         for i in self.list_neigh:
-            l=self.r-text[i].r
+            l=self.r-part[i].r
             self.l_list.append(l)
             m=np.outer(l,l)
             self.M=+m
             self.m_list.append(m.tolist())
         self.M/=self.number_of_links
 
+    def copy_to_old(self):
+        self.list_neigh_old=copy.deepcopy(self.list_neigh)
+        self.r_old=copy.deepcopy(self.r)
+        
     def dmat(self):
-
-        print self.index_part, self.list_neigh
-        print text_old[self.ident].index_part, text_old[self.ident].list_neigh
- #       print text[self.index_part].list_neigh, self.index_part
- #       print text_old[self.index_part].list_neigh, text_old[self.id].ident
-#        print self.list_neigh
-#        print text_old[self.ident].list_neigh
-        if set(self.list_neigh) == set(text_old[self.ident].list_neigh) :
-            dm_list=[]
-            for i,w in enumerate(self.l_list) :
-                dm_list.append(w-text_old[self.ident].l_list[i])
-#            print dm_list
-#            print text_old[self.ident].list_neigh
-        else:
-            print "sets are not equal"
-            print  set(self.list_neigh) - set(text_old[self.ident].list_neigh)
-            exit()
-#        for i,w in enumerate(self.l_list):
-#            l_av=(w+text
-
+        list_c=list(set(self.list_neigh).intersection(self.list_neigh_old))
+        list_a=list(set(self.list_neigh).difference(self.list_neigh_old))
+        list_d=list(set(self.list_neigh_old).difference(self.list_neigh))
+        for i # Parei aqui
 
               
     def zeros(self):
@@ -524,18 +524,22 @@ def imag_count(system_type) :
                 counter += 1
 
     if system_type == 'vicsek-gregoire' :
+        max_number_particles=0
         while 1:
             line = fd.readline()           
             if not line:
                 break #EOF
             line_splitted = line.split()
             counter += 1
+            n=int(line_splitted[1])
+            max_number_particles=max(max_number_particles,n)
 #            print a, counter
-            for i in range(int(line_splitted[1])):
+            for i in range(n):
                 fd.readline()
             
     print "Counted", counter-1, "images.\n"
     print "Type initial and final image number you want to analyse (min=1, max=",counter-1,") - Use spaces to separate the two numbers"
+    return max_number_particles
 
 ################## Here starts the main program ###############
 
@@ -886,7 +890,7 @@ if system_type == "vicsek-gregoire":
     arq_data_in = "%s/data/posicoes.dat"% (system_type)
     print "\nYou analise a", system_type, "system, data is read from files:\n", arq_data_in
     fd            = open(arq_data_in)
-    imag_count(system_type) #conta o numero de imagens
+    max_number_particles=imag_count(system_type) #conta o numero de imagens
     fd.close()
     fd            = open(arq_data_in)  #reabre o arquivo para leituras das posicoes e vel.
     line_splitted = sys.stdin.readline().split() #le da linha de comando o intervalo de imagens desejado
@@ -897,7 +901,8 @@ if system_type == "vicsek-gregoire":
     line_counter  = 0
     count_events  = 0
     v0            = 0.05
-    text_old=[]
+    part_old=[]
+    part=list(particle(i) for i in range(max_number_particles))
     while 1 :
         line   = fd.readline()
         if not line:
@@ -934,24 +939,16 @@ if system_type == "vicsek-gregoire":
             if number_particles > 0:
                 points=np.array(points)
                 list_neighbors=delaunay(points)
-                text=list(texture(points[i],i,index_particle[i],list_neighbors[i]) for i in range(number_particles))
-
-                map(lambda i:i.mat(), text)
-#                print len(text),len(text_old)
-                if  text_old != []:
-                                    
-                    for i in range(len(text_old)):
-                        for j in range(len(text_old)):
-                            if text[i].index_part == text_old[j].index_part :
-                                print text[i].r-text_old[i].r
-#                        print i,text[i].index_part,text_old[i].index_part
-                    exit()
-                    print text[0].list_neigh
-                    print text_old[0].list_neigh
-                    map(lambda i:i.dmat(), text_old)
-                    exit()
+                map_focus_region_to_part(points,list_neighbors,index_particle)
+                # for i in range(len(part_old)):
+                #     if part[i].list_neigh != []:
+                #         print i,part[i].list_neigh
+                #         print i,part_old[i].list_neigh
+                if  count_events > 1 :
                         
-                text_old=copy.deepcopy(text)
+                    map(lambda i:i.dmat(), part)
+                        
+                map(lambda i:i.copy_to_old(), part)
 
                 #Calculate the average velocity over boxes
             for box in range(box_total):
