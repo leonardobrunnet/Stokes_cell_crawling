@@ -37,32 +37,64 @@ class particle:
         self.lc_list=[] 
         self.la_list=[]
         self.ld_list=[]
+        self.C=np.zeros((2,2))
+        self.CT=np.zeros((2,2))
+        self.B=np.zeros((2,2))
+        self.T=np.zeros((2,2))
         
-    def mat(self):
-        for i in self.list_neigh:
-            l=self.r-part[i].r
-            self.l_list.append(l)
-            m=np.outer(l,l)
-            self.M=+m
-            self.m_list.append(m.tolist())
-        self.M/=self.number_of_links
-
+    def mat(self,i):
+        l=self.r-part[i].r
+        m=np.outer(l,l)
+        return m
+    
     def copy_to_old(self):
         self.list_neigh_old=copy.deepcopy(self.list_neigh)
         self.r_old=copy.deepcopy(self.r)
+
+    def l_av_dl(self,i):
+        l=self.r-part[i].r
+        l_old=self.r_old-part[i].r_old
+        lav=(l+l_old)/2.
+        dl=l-l_old
+        return lav,dl
         
-    def dmat(self):
+    def UT(self):
         list_c=list(set(self.list_neigh).intersection(self.list_neigh_old))
         list_a=list(set(self.list_neigh).difference(self.list_neigh_old))
         list_d=list(set(self.list_neigh_old).difference(self.list_neigh))
-        for i # Parei aqui
+        self.zeros()
+        Nc=len(list_c)
+        Na=len(list_a)
+        Nd=len(list_d)
+        Ntot=Nc+Na+Nd
+        for i in list_c:
+            lav,dl=self.l_av_dl(i)
+            c=np.outer(lav,dl)
+            ct=np.outer(dl,lav)
+            self.C+=c
+            self.CT+=ct
+        if Nc > 0 :
+            self.C/=Ntot
+            self.CT/=Ntot
+            self.B=self.C+self.CT
+        for i in list_a:
+            ma=self.mat(i)
+            self.T+=ma
+        for i in list_d:
+            md=self.mat(i)
+            self.T-=md
+        self.T/=Ntot
+            
 
               
     def zeros(self):
         self.average_m=np.zeros((2,2))
         self.m_list=[]
         self.dm_list=[]
-            
+        self.C=np.zeros((2,2))
+        self.CT=np.zeros((2,2))
+        self.B=np.zeros((2,2))
+        self.T=np.zeros((2,2))
 ###############Texture class definition ends here###########
 
 
@@ -901,7 +933,6 @@ if system_type == "vicsek-gregoire":
     line_counter  = 0
     count_events  = 0
     v0            = 0.05
-    part_old=[]
     part=list(particle(i) for i in range(max_number_particles))
     while 1 :
         line   = fd.readline()
@@ -940,13 +971,9 @@ if system_type == "vicsek-gregoire":
                 points=np.array(points)
                 list_neighbors=delaunay(points)
                 map_focus_region_to_part(points,list_neighbors,index_particle)
-                # for i in range(len(part_old)):
-                #     if part[i].list_neigh != []:
-                #         print i,part[i].list_neigh
-                #         print i,part_old[i].list_neigh
                 if  count_events > 1 :
                         
-                    map(lambda i:i.dmat(), part)
+                    map(lambda i:i.UT(), part)
                         
                 map(lambda i:i.copy_to_old(), part)
 
