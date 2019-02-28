@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 # <window_size> : this is the space averaging window size
 # The outuput files will be in directory named 'output'
 
+#************************************************************
+
 # function mapping delaunay out index to particle index
 
 def map_focus_region_to_part(points,list_neighbors,index_particle):
@@ -41,6 +43,16 @@ class particle:
         self.CT=np.zeros((2,2))
         self.B=np.zeros((2,2))
         self.T=np.zeros((2,2))
+
+    def texture(self):
+        self.M=np.zeros((2,2))
+        n=len(self.list_neigh)
+        if n > 0:
+            for i in self.list_neigh:
+                self.M+=self.mat(i)
+            self.M/=n
+#            w,v=np.linalg.eig(self.M)
+#            print 
         
     def mat(self,i):
         l=self.r-part[i].r
@@ -95,7 +107,7 @@ class particle:
         self.CT=np.zeros((2,2))
         self.B=np.zeros((2,2))
         self.T=np.zeros((2,2))
-###############Texture class definition ends here###########
+###############Particle class definition ends here###########
 
 
 
@@ -949,7 +961,8 @@ if system_type == "vicsek-gregoire":
             print "Reading image:",image
             vx_now = list(0. for i in range(box_total))
             vy_now = list(0. for i in range(box_total))
-            density_now = list(0 for i in range(box_total))
+            density_now = list(0. for i in range(box_total))
+            texture_box = list(np.zeros((2,2)) for i in range(box_total))
             points = []
             index_particle = []
             for i in range(nlines) :
@@ -971,6 +984,12 @@ if system_type == "vicsek-gregoire":
                 points=np.array(points)
                 list_neighbors=delaunay(points)
                 map_focus_region_to_part(points,list_neighbors,index_particle)
+                map(lambda i:i.texture(), part)
+                for i in index_particle:
+                    xx  = int((part[i].r[0]-x0) / box_size)
+                    yy  = int((part[i].r[1]-y0) / box_size) * box_per_line_x
+                    box = xx+yy
+                    texture_box[box]+=part[i].M
                 if  count_events > 1 :
                         
                     map(lambda i:i.UT(), part)
