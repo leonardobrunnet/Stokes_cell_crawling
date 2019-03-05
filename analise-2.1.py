@@ -13,6 +13,10 @@ import matplotlib.pyplot as plt
 # The outuput files will be in directory named 'output'
 
 #************************************************************
+# diagonalization of texture matrices. Input: texture_box
+# output: axis and angle
+
+
 
 # function mapping delaunay out index to particle index
 
@@ -52,7 +56,7 @@ class particle:
                 self.M+=self.mat(i)
             self.M/=n
 #            w,v=np.linalg.eig(self.M)
-#            print 
+
         
     def mat(self,i):
         l=self.r-part[i].r
@@ -541,14 +545,22 @@ def imag_count(system_type) :
     counter = 0
     print "Counting images... wait... it may take 5s to count 1000 images\n"
     if system_type == 'superboids' :
+        max_number_particles=0
+        part_counter=0
         while 1 :
-            line = fn.readline()
+            line          = fn.readline()
             if not line :
                 break #EOF
             if line.replace( '\r', '' ) == '\n' : #identifies blank lines
-                counter += 1
+                counter             += 1
+                max_number_particles = max(max_number_particles,part_counter)
+                part_counter = 0
+
                 while line.replace( '\r' , '' ) == '\n' : # skip blank lines
                     line = fn.readline()
+            else:
+                part_counter = int(line.split()[0])
+
     if system_type == 'experiment' :
         while 1 :
             line = file_input_parameter.readline()
@@ -577,7 +589,6 @@ def imag_count(system_type) :
             counter += 1
             n=int(line_splitted[1])
             max_number_particles=max(max_number_particles,n)
-#            print a, counter
             for i in range(n):
                 fd.readline()
             
@@ -592,9 +603,8 @@ def imag_count(system_type) :
 file_input_parameter = open("parameter.in")
 line_splitted        = file_input_parameter.readline().split()
 system_type          = line_splitted[1]
-if system_type == 'superboids' :
-    line_splitted = file_input_parameter.readline().split()
-fileout = line_splitted[1]
+#if system_type == 'superboids' :
+#    line_splitted = file_input_parameter.readline().split()
 path    = 'output/'+system_type
 
 #Creating the directory structure for output
@@ -615,7 +625,6 @@ dens_win_file_name = "density-win.dat"
 dens_win           = open(path+'/'+dens_win_file_name,"w")
 vel_win_file_name  = "velocity-win.dat"
 vel_win            = open(path+'/'+vel_win_file_name,"w")
-#print vel_win_file_name,dens_win_file_name
 def_win            = open("%s/deformation-win.dat"%path,"w")
 
 # Opening five axis analysis files
@@ -625,8 +634,6 @@ file_axis2 = open("%s/axis2.dat"%path,"w")
 file_axis4 = open("%s/axis4.dat"%path,"w")
 file_axis3 = open("%s/axis3.dat"%path,"w")
 file_axis5 = open("%s/axis5.dat"%path,"w")
-#print system_type
-
 
 if system_type == 'experiment':
     arq_in      = "%s/%s"%(line_splitted[0], line_splitted[1])
@@ -673,7 +680,6 @@ if system_type == 'experiment':
         line          = file_input_parameter.readline()
         if not line : break # EOF
         line_splitted = line.split()
-#        print line_splitted
         counter       = 0
         image_counter = image_f - image_0
         x, y, eixo_a, eixo_b, ang_elipse, vx_now, vy_now, density_now=[], [], [], [], [], [], [], []
@@ -727,14 +733,14 @@ if system_type == "superboids":
     fn            = open(arq_neigh_in)
     line_splitted = file_input_parameter.readline().split()
     window_size   = int(line_splitted[1])
-#    print window_size
-    imag_count(system_type)
+    max_number_particles=imag_count(system_type)
     fn.close()
     fn            = open(arq_neigh_in)
     line_splitted = sys.stdin.readline().split()
     image_0       = int(line_splitted[0])
     image_f       = int(line_splitted[1])
     v0            = 0.007
+    part=list(particle(i) for i in range(max_number_particles))
     # Reading superboids parameter file
 
     while 1 :
@@ -744,7 +750,6 @@ if system_type == "superboids":
             continue
         else :
             line_splitted = line.split()
-            #            print line_splitted
             if line_splitted[0] == '#' and line_splitted[1]=='RECTANGLE:':
                 line_splitted = fh.readline().split()
                 Lx, Ly        = int(float(line_splitted[1])), int(float(line_splitted[2]))
@@ -752,7 +757,6 @@ if system_type == "superboids":
             if line_splitted[1] == 'Radial' and line_splitted[2]=='R_Eq:':
                 line_splitted = fh.readline().split()
                 box_size      = int(float(line_splitted[1]))
-                #                print box_size
             if line_splitted[0] == "#radius:":
                 R_OBST        = int(line_splitted[1])
                 X_OBST        = float(line_splitted[3])
@@ -770,10 +774,10 @@ if system_type == "superboids":
     #Reading superboids plainprint data file
     fat_boids_counter = 0
     image             = 0
-#    image_0=1
-#    image_f=100000
     count_events      = 0
-    #    mx=[0,0,0]
+    points            = []
+    index_particle    = []
+    
     while 1 :
         line = fd.readline()
         if not line :
@@ -795,16 +799,39 @@ if system_type == "superboids":
                     vx_tot[box]      += vx_now[box]
                     vy_tot[box]      += vy_now[box]
 
-#            print image_counter
             image      += 1
             vx_now      = list(0. for i in range(box_total))
             vy_now      = list(0. for i in range(box_total))
             density_now = list(0  for i in range(box_total))
+            texture_box = list(np.zeros((2,2)) for i in range(box_total))
             if image <= image_0 :
                 print "Skippin image:",image 
             elif image <= image_f :
                 print "Image number",image,". Number of super particles =", fat_boids_counter
-                count_events += 1
+                count_events     += 1
+                # Calculus of textures, B and T
+                number_particles = len(points)
+                if number_particles > 0:
+                    points=np.array(points)
+                    list_neighbors=delaunay(points)
+                    map_focus_region_to_part(points,list_neighbors,index_particle)
+                    map(lambda i:i.texture(), part)
+                    for i in index_particle:
+                        xx  = int((part[i].r[0]-x0) / box_size)
+                        yy  = int((part[i].r[1]-y0) / box_size) * box_per_line_x
+                        box = xx+yy
+                        texture_box[box]+=part[i].M
+                    if  count_events > 1 :
+                        
+                        map(lambda i:i.UT(), part)
+                        
+                    map(lambda i:i.copy_to_old(), part)
+
+
+                points            = []
+                index_particle    = []
+                
+
             else:
                 break
             fat_boids_counter = 0
@@ -823,8 +850,9 @@ if system_type == "superboids":
                         vx_now[box]      += float(line_splitted[2])
                         vy_now[box]      += float(line_splitted[3])
                         density_now[box] += 1.0
+                        points.append([x,y])
+                        index_particle.append(fat_boids_counter-1)
     image_counter = image_f - image_0
-
 
 if system_type == "szabo-boids":
     arq_data_in = "%s/%s.dat"% (line_splitted[0], line_splitted[1])
@@ -899,7 +927,6 @@ if system_type == "szabo-boids":
                         line_splitted = line.split()
                 image        += 1
                 count_events += 1
-                print image, boids_counter
                 #Calculate the average velocity over boxes
                 for box in range(box_total):
                     if density_now[box] > 0 :
@@ -929,7 +956,6 @@ if system_type == "vicsek-gregoire":
     box_per_line_x, box_per_column_y = int((xf-x0) / box_size), int((yf-y0) / box_size)
     box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, density_tot, vx_win, vy_win, density_win, eixo_a_tot, eixo_b_tot, ang_elipse_tot, \
     eixo_a_win, eixo_b_win, ang_elipse_win = box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf)
-    print box_per_line_x,box_per_column_y,box_total
     #arquivo de posicoes e velocidades
     arq_data_in = "%s/data/posicoes.dat"% (system_type)
     print "\nYou analise a", system_type, "system, data is read from files:\n", arq_data_in
@@ -974,11 +1000,13 @@ if system_type == "vicsek-gregoire":
                     box = xx+yy
                     vx_now[box]      += float(line_splitted[2])
                     vy_now[box]      += float(line_splitted[3])
+                    density_now[box] += 1.0
                     points.append([x,y])
                     index_particle.append(i)
-                    density_now[box] += 1.0
             image        += 1
             count_events += 1
+            
+            # Calculus of textures, B and T##################
             number_particles = len(points)
             if number_particles > 0:
                 points=np.array(points)
@@ -1012,11 +1040,6 @@ if system_type == "vicsek-gregoire":
         else:
                 break
 
-
-
-
-
-    
 # Before starting time averages we exclude box at the borders. 
 r_obst = R_OBST / box_size
 x_obst = (X_OBST-x0) / box_size
@@ -1029,8 +1052,6 @@ if system_type == 'experiment':
     # Here we write the time averages of density, velocity and deformation elipse for experiment
     average_density_velocity_deformation_experiment(box_per_line_x, box_per_column_y, x, y, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, image_counter)
 
-#    for i in range(box_total):
-#        print i%box_per_line_x,i/box_per_line_x,x[i],y[i],vx_tot[i]
     
     # Five axis analysis for experiment
     five_axis(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, ang_elipse_tot, system_type, image_counter)
