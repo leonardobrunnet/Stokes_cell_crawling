@@ -14,10 +14,16 @@ import matplotlib.pyplot as plt
 
 #************************************************************
 # diagonalization of texture matrices. Input: texture_box
-# output: axis and angle
-
-
-
+# output: axis_a, axis_b and angle
+def axis_angle(M):
+    w,v        = np.linalg.eig(M)
+    index_max  = np.argmax(w)
+    index_min  = np.argmin(w)
+    axis_a     = w[index_max]
+    axis_b     = w[index_min]
+    ang_elipse = math.atan2(v[1,index_max],v[0,index_max])*180/math.pi
+    return axis_a,axis_b,ang_elipse
+            
 # function mapping delaunay out index to particle index
 
 def map_focus_region_to_part(points,list_neighbors,index_particle):
@@ -55,7 +61,7 @@ class particle:
             for i in self.list_neigh:
                 self.M+=self.mat(i)
             self.M/=n
-#            w,v=np.linalg.eig(self.M)
+
 
         
     def mat(self,i):
@@ -257,11 +263,11 @@ def box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, 
     vx_win         = list(0. for i in range(box_total))
     vy_win         = list(0. for i in range(box_total))
     density_win    = list(0  for i in range(box_total))
-    eixo_a_tot     = list(0. for i in range(box_total))
-    eixo_b_tot     = list(0. for i in range(box_total))
+    axis_a_tot     = list(0. for i in range(box_total))
+    axis_b_tot     = list(0. for i in range(box_total))
     ang_elipse_tot = list(0. for i in range(box_total))
-    eixo_a_win     = list(0. for i in range(box_total))
-    eixo_b_win     = list(0. for i in range(box_total))
+    axis_a_win     = list(0. for i in range(box_total))
+    axis_b_win     = list(0. for i in range(box_total))
     ang_elipse_win = list(0. for i in range(box_total))
     #    ratio=float(box_per_column_y)/box_per_line_x
     ratio = float((yf-y0) / (xf-x0))
@@ -279,7 +285,7 @@ def box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, 
     vid_veloc_dens.write("                      4 '#ff0000')\n")
 
     return box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, density_tot, vx_win, vy_win, \
-           density_win, eixo_a_tot, eixo_b_tot, ang_elipse_tot, eixo_a_win, eixo_b_win, ang_elipse_win
+           density_win, axis_a_tot, axis_b_tot, ang_elipse_tot, axis_a_win, axis_b_win, ang_elipse_win
 
 def box_variables_definition_experiment(box_per_column_y, box_per_line_x):
     box_total   = box_per_column_y * box_per_line_x
@@ -287,8 +293,8 @@ def box_variables_definition_experiment(box_per_column_y, box_per_line_x):
     vx_tot         = list(0. for i in range(box_total))
     vy_tot         = list(0. for i in range(box_total))
     density_tot    = list(0  for i in range(box_total))
-    eixo_a_tot     = list(0. for i in range(box_total))
-    eixo_b_tot     = list(0. for i in range(box_total))
+    axis_a_tot     = list(0. for i in range(box_total))
+    axis_b_tot     = list(0. for i in range(box_total))
     ang_elipse_tot = list(0. for i in range(box_total))
     vid_def.write("set size ratio %f  \n" % ratio)
     vid_veloc_dens.write("set size ratio %f  \n" % ratio)
@@ -303,7 +309,7 @@ def box_variables_definition_experiment(box_per_column_y, box_per_line_x):
     vel_win.write("set size ratio %f  \n" % ratio)
     vel_win.write("arrow=1.\n")
 
-    return box_total, ratio, vx_tot, vy_tot, density_tot, eixo_a_tot, eixo_b_tot, ang_elipse_tot
+    return box_total, ratio, vx_tot, vy_tot, density_tot, axis_a_tot, axis_b_tot, ang_elipse_tot
 
 
 def velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0, x0, y0, xf, yf):
@@ -327,11 +333,11 @@ def velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_n
     vid_veloc_dens.write("e \n")
     vid_veloc_dens.write("pause .1 \n")
 
-def deformation_elipsis_script(x, y, eixo_b, eixo_a, ang_elipse, system_type) :
+def deformation_elipsis_script(x, y, axis_b, axis_a, ang_elipse, system_type) :
     #Deformation elipsis gnuplot script
     if system_type == 'experiment' :
         for i in range(box_total) :
-            vid_def.write("set object %i ellipse at %i,%i size %f,0.5 angle %f \n" % (i+1, x[i], y[i], eixo_b[i] / (2*eixo_a[i]), ang_elipse[i]))
+            vid_def.write("set object %i ellipse at %i,%i size %f,0.5 angle %f \n" % (i+1, x[i], y[i], axis_b[i] / (2*axis_a[i]), ang_elipse[i]))
         vid_def.write("plot \'-\' w d notitle\n")
         for i in range(box_total) :
             vid_def.write("%i %i \n" % (x[i], y[i]))
@@ -339,7 +345,20 @@ def deformation_elipsis_script(x, y, eixo_b, eixo_a, ang_elipse, system_type) :
         vid_def.write("pause .1 \n")
         vid_def.write("unset for [i=1:%i] object i \n" % (box_total+1))
 
-def  zero_borders_and_obstacle(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, ang_elipse_tot, system_type) :
+def deformation_elipsis_script_simu(box_per_line_x, box_total, axis_b, axis_a, ang_elipse) :
+    #Deformation elipsis gnuplot script for simus
+    for i in range(box_total) :
+        x = i % box_per_line_x
+        y = i / box_per_line_x
+        vid_def.write("set object %i ellipse at %i,%i size %f,0.5 angle %f \n" % (i+1, x, y, axis_b[i] / (2*axis_a[i]), ang_elipse[i]))
+        vid_def.write("plot \'-\' w d notitle\n")
+    for i in range(box_total) :
+        vid_def.write("%i %i \n" % (x, y))
+        vid_def.write("e \n")
+        vid_def.write("pause .1 \n")
+        vid_def.write("unset for [i=1:%i] object i \n" % (box_total+1))
+        
+def  zero_borders_and_obstacle(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, axis_a_tot, axis_b_tot, ang_elipse_tot, system_type) :
     center_x = box_per_line_x/2
     center_y = box_per_column_y/2
     for i in range(box_total):
@@ -353,37 +372,37 @@ def  zero_borders_and_obstacle(box_per_line_x, box_per_column_y, r_obst, x_obst,
             density_tot[i]    = -10
             vx_tot[i]         = 0.
             vy_tot[i]         = 0.
-            eixo_a_tot[i]     = 0.
-            eixo_b_tot[i]     = 0.
+            axis_a_tot[i]     = 0.
+            axis_b_tot[i]     = 0.
             ang_elipse_tot[i] = 0.
         if system_type == 'experiment' :
             if math.sqrt((bx-x_obst)**2 + (by-y_obst)**2) <= r_obst :
                 density_tot[i]    = -10
                 vx_tot[i]         = 0.
                 vy_tot[i]         = 0.
-                eixo_a_tot[i]     = 0.
-                eixo_b_tot[i]     = 0.
+                axis_a_tot[i]     = 0.
+                axis_b_tot[i]     = 0.
                 ang_elipse_tot[i] = 0.
         if system_type == 'superboids' :
             if math.sqrt((bx-center_x)**2 + (by-center_y)**2) < r_obst :
                 density_tot[i]    = -10
                 vx_tot[i]         = 0.
                 vy_tot[i]         = 0.
-                eixo_a_tot[i]     = 0.
-                eixo_b_tot[i]     = 0.
+                axis_a_tot[i]     = 0.
+                axis_b_tot[i]     = 0.
                 ang_elipse_tot[i] = 0.
         if system_type == 'vicsek-gregoire' :
             if math.sqrt((bx-x_obst)**2 + (by-y_obst)**2) <= r_obst:
                 density_tot[i]    = -10
                 vx_tot[i]         = 0.
                 vy_tot[i]         = 0.
-                eixo_a_tot[i]     = 0.
-                eixo_b_tot[i]     = 0.
+                axis_a_tot[i]     = 0.
+                axis_b_tot[i]     = 0.
                 ang_elipse_tot[i] = 0.
 
-    return box_per_line_x, box_per_column_y, density_tot, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, ang_elipse_tot
+    return box_per_line_x, box_per_column_y, density_tot, vx_tot, vy_tot, axis_a_tot, axis_b_tot, ang_elipse_tot
 
-def average_density_velocity_deformation_experiment(box_per_line_x, box_per_column_y, x, y, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, image_counter):
+def average_density_velocity_deformation_experiment(box_per_line_x, box_per_column_y, x, y, vx_tot, vy_tot, axis_a_tot, axis_b_tot, image_counter):
     arrow = 1.5
     box_total = box_per_line_x*box_per_column_y
     for i in range(box_total):
@@ -397,12 +416,12 @@ def average_density_velocity_deformation_experiment(box_per_line_x, box_per_colu
         module=math.sqrt(vx_tot[i]**2 + vy_tot[i]**2)
         if module >0 :
             vel_win.write("%d %d %f %f %f \n" % (x[i], y[i], vx_tot[i]/module, vy_tot[i]/module, module))
-            def_win.write("%d %d %f %f %f \n" % (x[i], y[i], eixo_a_tot[i],    eixo_b_tot[i],    ang_elipse_tot[i]))
+            def_win.write("%d %d %f %f %f \n" % (x[i], y[i], axis_a_tot[i],    axis_b_tot[i],    ang_elipse_tot[i]))
 
     vel_win.write("e \n")
     vel_win.write("pause -1 \n")
 
-def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, density_tot, vx_win, vy_win, eixo_a_win, eixo_b_win, density_win, count_events, v0, vel_win_file_name, dens_win_file_name, path, image_counter) :
+def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_tot, vy_tot, axis_a_tot, axis_b_tot, density_tot, vx_win, vy_win, axis_a_win, axis_b_win, density_win, count_events, v0, vel_win_file_name, dens_win_file_name, path, image_counter) :
 
     box_total         = box_per_column_y*box_per_line_x
     window_size_h     = window_size/2
@@ -455,20 +474,20 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
         vel_win.write("e \n")
         vel_win.write("pause -1 \n")
                  
-    return vx_win, vy_win, eixo_a_win, eixo_b_win, density_win
+    return vx_win, vy_win, axis_a_win, axis_b_win, density_win
 
 
 
 
-def five_axis(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, ang_elipse_tot, system_type, image_counter):
+def five_axis(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, axis_a_tot, axis_b_tot, ang_elipse_tot, system_type, image_counter):
     caixas_meia_altura    = box_per_column_y/2
     caixas_quarto_altura  = box_per_column_y/4
     caixas_meia_largura   = box_per_line_x/2
     caixas_quarto_largura = box_per_line_x/4
     vx_axis1, vx_axis2, vx_axis3, vx_axis4, vx_axis5, vx_axis6                                                 = [], [], [], [], [], []
     vy_axis1, vy_axis2, vy_axis3, vy_axis4, vy_axis5, vy_axis6                                                 = [], [], [], [], [], []
-    eixo_a_axis1, eixo_a_axis2, eixo_a_axis3, eixo_a_axis4, eixo_a_axis5, eixo_a_axis6                         = [], [], [], [], [], []
-    eixo_b_axis1, eixo_b_axis2, eixo_b_axis3, eixo_b_axis4, eixo_b_axis5, eixo_b_axis6                         = [], [], [], [], [], []
+    axis_a_axis1, axis_a_axis2, axis_a_axis3, axis_a_axis4, axis_a_axis5, axis_a_axis6                         = [], [], [], [], [], []
+    axis_b_axis1, axis_b_axis2, axis_b_axis3, axis_b_axis4, axis_b_axis5, axis_b_axis6                         = [], [], [], [], [], []
     ang_elipse_axis1, ang_elipse_axis2, ang_elipse_axis3, ang_elipse_axis4, ang_elipse_axis5, ang_elipse_axis6 = [], [], [], [], [], []
 
     
@@ -483,62 +502,62 @@ def five_axis(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, eixo_
         if by == caixas_meia_altura :
             vx_axis1.append(vx_tot[i])
             vy_axis1.append(vy_tot[i])
-            eixo_a_axis1.append(eixo_a_tot[i])
-            eixo_b_axis1.append(eixo_b_tot[i])
+            axis_a_axis1.append(axis_a_tot[i])
+            axis_b_axis1.append(axis_b_tot[i])
             ang_elipse_axis1.append(ang_elipse_tot[i])
 
         if by == caixas_quarto_altura :
             vx_axis2.append(vx_tot[i]/2.)
             vy_axis2.append(vy_tot[i]/2.)
-            eixo_a_axis2.append(eixo_a_tot[i]/2.)
-            eixo_b_axis2.append(eixo_b_tot[i]/2.)
+            axis_a_axis2.append(axis_a_tot[i]/2.)
+            axis_b_axis2.append(axis_b_tot[i]/2.)
             ang_elipse_axis2.append(ang_elipse_tot[i]/2.)
 
         if by == 3*caixas_quarto_altura :
             vx_axis6.append(vx_tot[i]/2.)
             vy_axis6.append(vy_tot[i]/2.)
-            eixo_a_axis6.append(eixo_a_tot[i]/2.)
-            eixo_b_axis6.append(eixo_b_tot[i]/2.)
+            axis_a_axis6.append(axis_a_tot[i]/2.)
+            axis_b_axis6.append(axis_b_tot[i]/2.)
             ang_elipse_axis6.append(ang_elipse_tot[i]/2.)
 
         if bx == caixas_meia_largura :
             vx_axis3.append(vx_tot[i]/2.)
             vy_axis3.append(vy_tot[i]/2.)
-            eixo_a_axis3.append(eixo_a_tot[i]/2.)
-            eixo_b_axis3.append(eixo_b_tot[i]/2.)
+            axis_a_axis3.append(axis_a_tot[i]/2.)
+            axis_b_axis3.append(axis_b_tot[i]/2.)
             ang_elipse_axis3.append(ang_elipse_tot[i]/2.)
 
         if bx == caixas_meia_largura-caixas_quarto_largura :
             vx_axis4.append(vx_tot[i]/2.)
             vy_axis4.append(vy_tot[i]/2.)
-            eixo_a_axis4.append(eixo_a_tot[i]/2.)
-            eixo_b_axis4.append(eixo_b_tot[i]/2.)
+            axis_a_axis4.append(axis_a_tot[i]/2.)
+            axis_b_axis4.append(axis_b_tot[i]/2.)
             ang_elipse_axis4.append(ang_elipse_tot[i]/2.)
 
         if bx == caixas_meia_largura+caixas_quarto_largura :
             vx_axis5.append(vx_tot[i]/2.)
             vy_axis5.append(vy_tot[i]/2.)
-            eixo_a_axis5.append(eixo_a_tot[i]/2.)
-            eixo_b_axis5.append(eixo_b_tot[i]/2.)
+            axis_a_axis5.append(axis_a_tot[i]/2.)
+            axis_b_axis5.append(axis_b_tot[i]/2.)
             ang_elipse_axis5.append(ang_elipse_tot[i]/2.)
 
 
     for i in range(len(vx_axis2)):
             vx_axis2[i] += vx_axis6[i]
             vy_axis2[i] += vy_axis6[i]
-            eixo_a_axis2[i] += eixo_a_axis6[i]
-            eixo_b_axis2[i] += eixo_b_axis6[i]
+            axis_a_axis2[i] += axis_a_axis6[i]
+            axis_b_axis2[i] += axis_b_axis6[i]
             ang_elipse_axis2[i] += ang_elipse_axis6[i]
 
     for i in range(box_per_line_x):
-        file_axis1.write("%d %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis1[i], vy_axis1[i], eixo_a_axis1[i], eixo_b_axis1[i], ang_elipse_axis1[i]))
-        file_axis2.write("%d %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis2[i], vy_axis2[i], eixo_a_axis2[i], eixo_b_axis2[i], ang_elipse_axis2[i]))
+        file_axis1.write("%d %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis1[i], vy_axis1[i], axis_a_axis1[i], axis_b_axis1[i], ang_elipse_axis1[i]))
+        file_axis2.write("%d %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis2[i], vy_axis2[i], axis_a_axis2[i], axis_b_axis2[i], ang_elipse_axis2[i]))
 
 
     for i in range(box_per_column_y):
-        file_axis4.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis3[i], vy_axis3[i], eixo_a_axis3[i], eixo_b_axis3[i], ang_elipse_axis3[i]))
-        file_axis3.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis4[i], vy_axis4[i], eixo_a_axis4[i], eixo_b_axis4[i], ang_elipse_axis4[i]))
-        file_axis5.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis5[i], vy_axis5[i], eixo_a_axis5[i], eixo_b_axis5[i], ang_elipse_axis5[i]))
+        file_axis4.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis3[i], vy_axis3[i], axis_a_axis3[i], axis_b_axis3[i], ang_elipse_axis3[i]))
+        file_axis3.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis4[i], vy_axis4[i], axis_a_axis4[i], axis_b_axis4[i], ang_elipse_axis4[i]))
+        file_axis5.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis5[i], vy_axis5[i], axis_a_axis5[i], axis_b_axis5[i], ang_elipse_axis5[i]))
 
 
 def imag_count(system_type) :
@@ -668,7 +687,7 @@ if system_type == 'experiment':
 
         x0, xf, y0, yf=0., float(box_per_line_x), 0., float(box_per_column_y)
             
-    box_total, ratio, vx_tot, vy_tot, density_tot, eixo_a_tot, eixo_b_tot, ang_elipse_tot = \
+    box_total, ratio, vx_tot, vy_tot, density_tot, axis_a_tot, axis_b_tot, ang_elipse_tot = \
     box_variables_definition_experiment(box_per_column_y, box_per_line_x)
 
 
@@ -682,7 +701,7 @@ if system_type == 'experiment':
         line_splitted = line.split()
         counter       = 0
         image_counter = image_f - image_0
-        x, y, eixo_a, eixo_b, ang_elipse, vx_now, vy_now, density_now=[], [], [], [], [], [], [], []
+        x, y, axis_a, axis_b, ang_elipse, vx_now, vy_now, density_now=[], [], [], [], [], [], [], []
         while line_splitted[0] != 'Time_start:' :
             if image >= image_0 :
                 if line_splitted[7] == 'NaN': 
@@ -693,14 +712,14 @@ if system_type == 'experiment':
                     vy_now.append(float(line_splitted[8]))
                 x.append(int(line_splitted[0]) / box_size)
                 y.append(int(line_splitted[1]) / box_size)
-                eixo_a.append(float(line_splitted[4]))
-                eixo_b.append(float(line_splitted[5]))
+                axis_a.append(float(line_splitted[4]))
+                axis_b.append(float(line_splitted[5]))
                 ang_elipse.append(float(line_splitted[6]) / (math.pi) * 180)
                 density_now.append(float(line_splitted[9]))
                 vx_tot[counter]         += vx_now[counter]
                 vy_tot[counter]         += vy_now[counter]
                 density_tot[counter]    += density_now[counter]
-                eixo_a_tot[counter]     += eixo_a[counter]
+                axis_a_tot[counter]     += axis_a[counter]
                 ang_elipse_tot[counter] += ang_elipse[counter]
                 counter                 += 1
             line = file_input_parameter.readline()
@@ -717,7 +736,7 @@ if system_type == 'experiment':
             #Function call to write velocity-density gnu script
             velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0, x0, y0, xf, yf)
             #Function call to write deformation elipse gnu script
-            deformation_elipsis_script(x, y, eixo_b, eixo_a, ang_elipse, system_type)
+            deformation_elipsis_script(x, y, axis_b, axis_a, ang_elipse, system_type)
         elif image > image_f:
             break
         
@@ -767,8 +786,8 @@ if system_type == "superboids":
     xf, yf = Lx/2, Ly/2
     
     #defining all matrices
-    box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, density_tot, vx_win, vy_win, density_win, eixo_a_tot, eixo_b_tot, \
-    ang_elipse_tot, eixo_a_win, eixo_b_win, ang_elipse_win = box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf)
+    box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, density_tot, vx_win, vy_win, density_win, axis_a_tot, axis_b_tot, \
+    ang_elipse_tot, axis_a_win, axis_b_win, ang_elipse_win = box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf)
 
     
     #Reading superboids plainprint data file
@@ -785,20 +804,28 @@ if system_type == "superboids":
             break #EOF
         if line.replace( '\r', '' ) == '\n' : #identifies blank lines
             if image > image_0 and image <= image_f:
-                #Calculate the average velocity over boxes
+                #Blank lines indicate end of an image so we
+                #calculate the average velocity over boxes
                 for box in range(box_total):
                     if density_now[box] > 0 :
-                        vx_now[box] = vx_now[box] / density_now[box]
-		        vy_now[box] = vy_now[box] / density_now[box]
+                        vx_now[box]         = vx_now[box] / density_now[box]
+		        vy_now[box]         = vy_now[box] / density_now[box]
+                        texture_box[box]    = texture_box / density_now[box]
+                        ax_a,ax_b,angle     = axis_angle(texture_box[box])
+                        axis_a_win[box]     = ax_a
+                        axis_b_win[box]     = ax_b
+                        ang_elipse_win[box] = angle
                 #Function call to write velocity-density gnu script
                 velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0, x0, y0, xf, yf)
+                #Function call to write deformation elipsis gnu script
+                deformation_elipsis_script_simu(box_per_line_x, box_total, axis_b, axis_a, ang_elipse)
             #Summing each box at different times
             if image > image_0 and image <= image_f:
                 for box in range(box_total) :
                     density_tot[box] += density_now[box]
                     vx_tot[box]      += vx_now[box]
                     vy_tot[box]      += vy_now[box]
-
+                    
             image      += 1
             vx_now      = list(0. for i in range(box_total))
             vy_now      = list(0. for i in range(box_total))
@@ -891,8 +918,8 @@ if system_type == "szabo-boids":
                 y0 = -Ly/2
                 xf = Lx/2
                 yf = Ly/2
-                box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, density_tot, vx_win, vy_win, density_win, eixo_a_tot, eixo_b_tot, \
-                ang_elipse_tot, eixo_a_win, eixo_b_win, ang_elipse_win = box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf)
+                box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, density_tot, vx_win, vy_win, density_win, axis_a_tot, axis_b_tot, \
+                ang_elipse_tot, axis_a_win, axis_b_win, ang_elipse_win = box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf)
 
 
             if line_splitted[0] == "Radius:" : R_OBST = int(line_splitted[1])
@@ -954,8 +981,8 @@ if system_type == "vicsek-gregoire":
 
     #definindo as caixas e as matrizes
     box_per_line_x, box_per_column_y = int((xf-x0) / box_size), int((yf-y0) / box_size)
-    box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, density_tot, vx_win, vy_win, density_win, eixo_a_tot, eixo_b_tot, ang_elipse_tot, \
-    eixo_a_win, eixo_b_win, ang_elipse_win = box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf)
+    box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, density_tot, vx_win, vy_win, density_win, axis_a_tot, axis_b_tot, ang_elipse_tot, \
+    axis_a_win, axis_b_win, ang_elipse_win = box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf)
     #arquivo de posicoes e velocidades
     arq_data_in = "%s/data/posicoes.dat"% (system_type)
     print "\nYou analise a", system_type, "system, data is read from files:\n", arq_data_in
@@ -1045,24 +1072,24 @@ r_obst = R_OBST / box_size
 x_obst = (X_OBST-x0) / box_size
 y_obst = (Y_OBST-y0) / box_size
 
-zero_borders_and_obstacle(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, ang_elipse_tot, system_type)
+zero_borders_and_obstacle(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, axis_a_tot, axis_b_tot, ang_elipse_tot, system_type)
 
 if system_type == 'experiment':
 
     # Here we write the time averages of density, velocity and deformation elipse for experiment
-    average_density_velocity_deformation_experiment(box_per_line_x, box_per_column_y, x, y, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, image_counter)
+    average_density_velocity_deformation_experiment(box_per_line_x, box_per_column_y, x, y, vx_tot, vy_tot, axis_a_tot, axis_b_tot, image_counter)
 
     
     # Five axis analysis for experiment
-    five_axis(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, ang_elipse_tot, system_type, image_counter)
+    five_axis(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, axis_a_tot, axis_b_tot, ang_elipse_tot, system_type, image_counter)
     
 else:
     # Here we write the time averages of density, velocity and deformation elipse for simus
-    vx_win, vy_win, eixo_a_win, eixo_b_win, density_win = average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_tot, vy_tot, eixo_a_tot, eixo_b_tot, \
-                                                                                               density_tot, vx_win, vy_win,eixo_a_win, eixo_b_win, density_win, count_events, v0, vel_win_file_name, dens_win_file_name, path, image_counter)
+    vx_win, vy_win, axis_a_win, axis_b_win, density_win = average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_tot, vy_tot, axis_a_tot, axis_b_tot, \
+                                                                                               density_tot, vx_win, vy_win,axis_a_win, axis_b_win, density_win, count_events, v0, vel_win_file_name, dens_win_file_name, path, image_counter)
 
     # Five axis analysis for simulations
-    five_axis(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, eixo_a_win, eixo_b_win, ang_elipse_win, system_type, image_counter)
+    five_axis(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, axis_a_win, axis_b_win, ang_elipse_win, system_type, image_counter)
 
 
 file_input_parameter.close()
