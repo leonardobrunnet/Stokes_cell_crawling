@@ -5,16 +5,10 @@ import sys
 from scipy.spatial import Delaunay
 import numpy as np
 import matplotlib.pyplot as plt
-# To this program work correctly:
-# Create the file named 'parameter.in', it will have one line with three words: <system_type>, <data_file>, <window_size>
-# <system_type> is: 'experiment' or 'superboids' or 'voronoi' or 'boids' or 'szabo-boids' or ...
-# <data_file> is: data file name. It must be in a directory named <system_type>
-# <window_size> : this is the space averaging window size
-# The outuput files will be in directory named 'output'
 
 #************************************************************
 # diagonalization of texture matrices. Input: texture_box
-# output: axis_a, axis_b and angle
+# output: axis_a, axis_b and angle in degrees
 def axis_angle(M):
     w,v        = np.linalg.eig(M)
     index_max  = np.argmax(w)
@@ -768,6 +762,7 @@ if system_type == "superboids":
     image_f       = int(line_splitted[1])
     v0            = 0.007
     part=list(particle(i) for i in range(max_number_particles))
+
     # Reading superboids parameter file
 
     while 1 :
