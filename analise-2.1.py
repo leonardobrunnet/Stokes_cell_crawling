@@ -123,18 +123,18 @@ class particle:
 
 def delaunay(points):
     tri = Delaunay(points)
-    # x,y=[],[]
-    # z,zz=[],[]
-    # for i,w in enumerate(points):
-    #     if i%50 == 0:
-    #         x.append(w[0])
-    #         y.append(w[1])
-    #     else :
-    #         z.append(w[0])
-    #         zz.append(w[1])
-    # fig=plt.scatter(x,y,s=30,c='b')
-    # fig=plt.scatter(z,zz,s=30,c='g')
-    # plt.show()
+    x,y=[],[]
+    z,zz=[],[]
+    for i,w in enumerate(points):
+        if i%50 == 0:
+            x.append(w[0])
+            y.append(w[1])
+        else :
+            z.append(w[0])
+            zz.append(w[1])
+    fig=plt.scatter(x,y,s=30,c='b')
+    fig=plt.scatter(z,zz,s=30,c='g')
+    plt.show()
     list_neigh = [ [] for i in range(len(points)) ]
     for i in tri.simplices:
         for j in i:
@@ -145,16 +145,16 @@ def delaunay(points):
                             list_neigh[j].append(l)
                         if j not in list_neigh[l]:
                             list_neigh[l].append(j)
-    # x,y=[],[]
-    # for i,w in enumerate(list_neigh) :
-    #     if i%50==0 :
-    #         for j in w :
-    #             x.append(points[j][0])
-    #             y.append(points[j][1])
-    # fig=plt.scatter(x,y,s=30,c='r')
-    # fig=plt.triplot(points[:,0], points[:,1], tri.simplices.copy())
-    # plt.show()
-    # exit()
+    x,y=[],[]
+    for i,w in enumerate(list_neigh) :
+        if i%50==0 :
+            for j in w :
+                x.append(points[j][0])
+                y.append(points[j][1])
+    fig=plt.scatter(x,y,s=30,c='r')
+    fig=plt.triplot(points[:,0], points[:,1], tri.simplices.copy())
+    plt.show()
+    exit()
 
     return list_neigh
 
@@ -270,8 +270,11 @@ def box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, 
     axis_b_win     = list(0. for i in range(box_total))
     ang_elipse_win = list(0. for i in range(box_total))
     #    ratio=float(box_per_column_y)/box_per_line_x
-    ratio = float((yf-y0) / (xf-x0))
+    ratio = float((yf-y0)) / (xf-x0)
     vid_def.write("set size ratio %f  \n" % ratio)
+    vid_def.write("set size ratio %f  \n" % ratio)
+    vid_def.write("set xrange [0:%f]  \n" % box_per_line_x)
+    vid_def.write("set yrange [0:%f]  \n" % box_per_column_y)    
     vel_win.write("set size ratio %f  \n" % ratio)
     vel_win.write("arrow=2.5\n")
     vid_veloc_dens.write("set size ratio %f  \n" % ratio)
@@ -345,18 +348,23 @@ def deformation_elipsis_script(x, y, axis_b, axis_a, ang_elipse, system_type) :
         vid_def.write("pause .1 \n")
         vid_def.write("unset for [i=1:%i] object i \n" % (box_total+1))
 
+        
 def deformation_elipsis_script_simu(box_per_line_x, box_total, axis_b, axis_a, ang_elipse) :
     #Deformation elipsis gnuplot script for simus
     for i in range(box_total) :
-        x = i % box_per_line_x
-        y = i / box_per_line_x
-        vid_def.write("set object %i ellipse at %i,%i size %f,0.5 angle %f \n" % (i+1, x, y, axis_b[i] / (2*axis_a[i]), ang_elipse[i]))
-        vid_def.write("plot \'-\' w d notitle\n")
+        if axis_a[i] != 0.0 : 
+            x = i % box_per_line_x
+            y = i / box_per_line_x
+            vid_def.write("set object %i ellipse at %i,%i size %f,1.0 angle %f \n" % (i+1, x, y, axis_b[i] / (axis_a[i]), ang_elipse[i]))
+    vid_def.write("plot \'-\' w d notitle\n")
     for i in range(box_total) :
-        vid_def.write("%i %i \n" % (x, y))
-        vid_def.write("e \n")
-        vid_def.write("pause .1 \n")
-        vid_def.write("unset for [i=1:%i] object i \n" % (box_total+1))
+        if axis_a[i] != 0 :
+            x = i % box_per_line_x
+            y = i / box_per_line_x
+            vid_def.write("%i %i \n" % (x, y))
+    vid_def.write("e \n")
+    vid_def.write("pause .1 \n")
+    vid_def.write("unset for [i=1:%i] object i \n" % (box_total+1))
         
 def  zero_borders_and_obstacle(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, axis_a_tot, axis_b_tot, ang_elipse_tot, system_type) :
     center_x = box_per_line_x/2
@@ -806,11 +814,12 @@ if system_type == "superboids":
             if image > image_0 and image <= image_f:
                 #Blank lines indicate end of an image so we
                 #calculate the average velocity over boxes
+
                 for box in range(box_total):
                     if density_now[box] > 0 :
                         vx_now[box]         = vx_now[box] / density_now[box]
 		        vy_now[box]         = vy_now[box] / density_now[box]
-                        texture_box[box]    = texture_box / density_now[box]
+                        texture_box[box]    = texture_box[box] / density_now[box]
                         ax_a,ax_b,angle     = axis_angle(texture_box[box])
                         axis_a_win[box]     = ax_a
                         axis_b_win[box]     = ax_b
@@ -818,7 +827,7 @@ if system_type == "superboids":
                 #Function call to write velocity-density gnu script
                 velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0, x0, y0, xf, yf)
                 #Function call to write deformation elipsis gnu script
-                deformation_elipsis_script_simu(box_per_line_x, box_total, axis_b, axis_a, ang_elipse)
+                deformation_elipsis_script_simu(box_per_line_x, box_total, axis_b_win, axis_a_win, ang_elipse_win)
             #Summing each box at different times
             if image > image_0 and image <= image_f:
                 for box in range(box_total) :
