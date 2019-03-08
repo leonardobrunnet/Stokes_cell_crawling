@@ -55,9 +55,7 @@ class particle:
             for i in self.list_neigh:
                 self.M+=self.mat(i)
             self.M/=n
-
-
-        
+            
     def mat(self,i):
         l=self.r-part[i].r
         m=np.outer(l,l)
@@ -111,44 +109,45 @@ class particle:
         self.CT=np.zeros((2,2))
         self.B=np.zeros((2,2))
         self.T=np.zeros((2,2))
+
 ###############Particle class definition ends here###########
 
 
 
 def delaunay(points):
     tri = Delaunay(points)
-    x,y=[],[]
-    z,zz=[],[]
-    for i,w in enumerate(points):
-        if i%50 == 0:
-            x.append(w[0])
-            y.append(w[1])
-        else :
-            z.append(w[0])
-            zz.append(w[1])
-    fig=plt.scatter(x,y,s=30,c='b')
-    fig=plt.scatter(z,zz,s=30,c='g')
-    plt.show()
+    # x,y=[],[]
+    # z,zz=[],[]
+    # for i,w in enumerate(points):
+    #     if i%50 == 0:
+    #         x.append(w[0])
+    #         y.append(w[1])
+    #     else :
+    #         z.append(w[0])
+    #         zz.append(w[1])
+    # fig=plt.scatter(x,y,s=30,c='b')
+    # fig=plt.scatter(z,zz,s=30,c='g')
+    # plt.show()
     list_neigh = [ [] for i in range(len(points)) ]
     for i in tri.simplices:
         for j in i:
             for l in i:
                 if l != j :
-                    if np.linalg.norm(points[j]-points[l]) < 10 : #
+                    if np.linalg.norm(points[j]-points[l]) < 4 : #
                         if l not in list_neigh[j]:
                             list_neigh[j].append(l)
                         if j not in list_neigh[l]:
                             list_neigh[l].append(j)
-    x,y=[],[]
-    for i,w in enumerate(list_neigh) :
-        if i%50==0 :
-            for j in w :
-                x.append(points[j][0])
-                y.append(points[j][1])
-    fig=plt.scatter(x,y,s=30,c='r')
-    fig=plt.triplot(points[:,0], points[:,1], tri.simplices.copy())
-    plt.show()
-    exit()
+    # x,y=[],[]
+    # for i,w in enumerate(list_neigh) :
+    #     if i%50==0 :
+    #         for j in w :
+    #             x.append(points[j][0])
+    #             y.append(points[j][1])
+    # fig=plt.scatter(x,y,s=30,c='r')
+    # fig=plt.triplot(points[:,0], points[:,1], tri.simplices.copy())
+    # plt.show()
+    # exit()
 
     return list_neigh
 
@@ -265,8 +264,10 @@ def box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, 
     ang_elipse_win = list(0. for i in range(box_total))
     #    ratio=float(box_per_column_y)/box_per_line_x
     ratio = float((yf-y0)) / (xf-x0)
-    vid_def.write("set size ratio %f  \n" % ratio)
-    vid_def.write("set size ratio %f  \n" % ratio)
+    image_resolution_x, image_resolution_y=1300,325
+    vid_def.write("set terminal png large size %d,%d \n"% (image_resolution_x, image_resolution_y)) 
+#    vid_def.write("set term png  \n")
+#    vid_def.write("set size ratio %f  \n" % ratio)
     vid_def.write("set xrange [0:%f]  \n" % box_per_line_x)
     vid_def.write("set yrange [0:%f]  \n" % box_per_column_y)    
     vel_win.write("set size ratio %f  \n" % ratio)
@@ -294,6 +295,7 @@ def box_variables_definition_experiment(box_per_column_y, box_per_line_x):
     axis_b_tot     = list(0. for i in range(box_total))
     ang_elipse_tot = list(0. for i in range(box_total))
     vid_def.write("set size ratio %f  \n" % ratio)
+    vid_def.write("set term png  \n")
     vid_veloc_dens.write("set size ratio %f  \n" % ratio)
     vid_veloc_dens.write("arrow=1.\n")
     vid_veloc_dens.write("unset key \n")
@@ -309,10 +311,10 @@ def box_variables_definition_experiment(box_per_column_y, box_per_line_x):
     return box_total, ratio, vx_tot, vy_tot, density_tot, axis_a_tot, axis_b_tot, ang_elipse_tot
 
 
-def velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0, x0, y0, xf, yf):
+def velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0):
     #Here we write each image to the gnuplot velocity-density movie script
     vid_veloc_dens.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(arrow*$3):(arrow*$4):($5) with vectors head size  0.6,20,60  filled palette title \"%d\"\n" % \
-    (0, xf-x0, 0, yf-y0, image))
+    (0, box_per_line_x, 0, box_per_column_y, image))
     if system_type == "experiment":
         v0      = 1 #this should be the real velocity, if we can measure...
         density = 1 #this should be changed if we measure real density (density_now)
@@ -343,13 +345,14 @@ def deformation_elipsis_script(x, y, axis_b, axis_a, ang_elipse, system_type) :
         vid_def.write("unset for [i=1:%i] object i \n" % (box_total+1))
 
         
-def deformation_elipsis_script_simu(box_per_line_x, box_total, axis_b, axis_a, ang_elipse) :
+def deformation_elipsis_script_simu(box_per_line_x, box_total, axis_b, axis_a, ang_elipse, image) :
     #Deformation elipsis gnuplot script for simus
+    vid_def.write("set output \"%d.png\"\n"%image)
     for i in range(box_total) :
         if axis_a[i] != 0.0 : 
             x = i % box_per_line_x
             y = i / box_per_line_x
-            vid_def.write("set object %i ellipse at %i,%i size %f,1.0 angle %f \n" % (i+1, x, y, axis_b[i] / (axis_a[i]), ang_elipse[i]))
+            vid_def.write("set object %i ellipse at %i,%i size %f,1.0 angle %f fc \"red\"\n" % (i+1, x, y, axis_b[i] / (axis_a[i]), ang_elipse[i]))
     vid_def.write("plot \'-\' w d notitle\n")
     for i in range(box_total) :
         if axis_a[i] != 0 :
@@ -736,7 +739,7 @@ if system_type == 'experiment':
             print "Analising image ",image, "..."
 
             #Function call to write velocity-density gnu script
-            velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0, x0, y0, xf, yf)
+            velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0)
             #Function call to write deformation elipse gnu script
             deformation_elipsis_script(x, y, axis_b, axis_a, ang_elipse, system_type)
         elif image > image_f:
@@ -778,7 +781,11 @@ if system_type == "superboids":
                 Lx            = 240 # corrigindo por enquanto o erro no arquivo de entrada. REVISAR!!!
             if line_splitted[1] == 'Radial' and line_splitted[2]=='R_Eq:':
                 line_splitted = fh.readline().split()
-                box_size      = int(float(line_splitted[1]))
+                #                box_size      = int(float(line_splitted[1]))
+                box_size = 6
+                if Lx%box_size != 0 or Ly%box_size != 0 :
+                    print "wrong box_size"
+                    exit()
             if line_splitted[0] == "#radius:":
                 R_OBST        = int(line_splitted[1])
                 X_OBST        = float(line_splitted[3])
@@ -809,20 +816,24 @@ if system_type == "superboids":
             if image > image_0 and image <= image_f:
                 #Blank lines indicate end of an image so we
                 #calculate the average velocity over boxes
-
                 for box in range(box_total):
+#                    if texture_box[box][0,0] != 0.0:
+#                        print box,texture_box[box],density_now[box]
+
                     if density_now[box] > 0 :
+
                         vx_now[box]         = vx_now[box] / density_now[box]
 		        vy_now[box]         = vy_now[box] / density_now[box]
                         texture_box[box]    = texture_box[box] / density_now[box]
                         ax_a,ax_b,angle     = axis_angle(texture_box[box])
+#                        print box, ax_a,ax_b,angle, texture_box[box]
                         axis_a_win[box]     = ax_a
                         axis_b_win[box]     = ax_b
                         ang_elipse_win[box] = angle
                 #Function call to write velocity-density gnu script
-                velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0, x0, y0, xf, yf)
+                velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0)
                 #Function call to write deformation elipsis gnu script
-                deformation_elipsis_script_simu(box_per_line_x, box_total, axis_b_win, axis_a_win, ang_elipse_win)
+                deformation_elipsis_script_simu(box_per_line_x, box_total, axis_b_win, axis_a_win, ang_elipse_win, image-image_0)
             #Summing each box at different times
             if image > image_0 and image <= image_f:
                 for box in range(box_total) :
@@ -851,6 +862,7 @@ if system_type == "superboids":
                         xx  = int((part[i].r[0]-x0) / box_size)
                         yy  = int((part[i].r[1]-y0) / box_size) * box_per_line_x
                         box = xx+yy
+                        density_now[box] += 1.0
                         texture_box[box]+=part[i].M
                     if  count_events > 1 :
                         
@@ -861,7 +873,7 @@ if system_type == "superboids":
 
                 points            = []
                 index_particle    = []
-                
+
 
             else:
                 break
@@ -880,7 +892,6 @@ if system_type == "superboids":
                         box = xx + yy
                         vx_now[box]      += float(line_splitted[2])
                         vy_now[box]      += float(line_splitted[3])
-                        density_now[box] += 1.0
                         points.append([x,y])
                         index_particle.append(fat_boids_counter-1)
     image_counter = image_f - image_0
@@ -964,7 +975,7 @@ if system_type == "szabo-boids":
                         vx_now[box] = vx_now[box] / density_now[box]
 		        vy_now[box] = vy_now[box] / density_now[box]
                         #Function call to write velocity-density gnu script
-                velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0, x0, y0, xf, yf)
+                velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0)
                 #Summing each box at different times
                 for box in range(box_total) :
                     density_tot[box] += density_now[box]
@@ -1061,7 +1072,7 @@ if system_type == "vicsek-gregoire":
                     vx_now[box] = vx_now[box] / density_now[box]
 	            vy_now[box] = vy_now[box] / density_now[box]
                     #Function call to write velocity-density gnu script
-            velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0, x0, y0, xf, yf)
+            velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0)
                 #Summing each box at different times
             for box in range(box_total) :
                 density_tot[box] += density_now[box]
