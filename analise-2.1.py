@@ -345,24 +345,34 @@ def deformation_elipsis_script(x, y, axis_b, axis_a, ang_elipse, system_type) :
         vid_def.write("unset for [i=1:%i] object i \n" % (box_total+1))
 
         
-def deformation_elipsis_script_simu(box_per_line_x, box_total, axis_b, axis_a, ang_elipse, image) :
+def deformation_elipsis_script_simu(box_per_line_x, box_total, axis_b, axis_a, ang_elipse, image, points, x0, y0, box_size) :
     #Deformation elipsis gnuplot script for simus
     vid_def.write("set output \"%d.png\"\n"%image)
-    for i in range(box_total) :
-        if axis_a[i] != 0.0 : 
-            x = i % box_per_line_x
-            y = i / box_per_line_x
-            vid_def.write("set object %i ellipse at %i,%i size %f,1.0 angle %f fc \"red\"\n" % (i+1, x, y, axis_b[i] / (axis_a[i]), ang_elipse[i]))
-    vid_def.write("plot \'-\' w d notitle\n")
+
+    # for i in range(box_total) :
+    #     if axis_a[i] != 0.0 : 
+    #         x = i % box_per_line_x
+    #         y = i / box_per_line_x
+    #         vid_def.write("set object %i ellipse at %i,%i size %f,1.0 angle %f fc \"red\"\n" % (i+1, x, y, axis_b[i] / (axis_a[i]), ang_elipse[i]))
+    vid_def.write("set multiplot\n")
+    vid_def.write("plot \'-\' using 1:2:3:4:5 with ellipses\n")
     for i in range(box_total) :
         if axis_a[i] != 0 :
-            x = i % box_per_line_x
-            y = i / box_per_line_x
-            vid_def.write("%i %i \n" % (x, y))
+            x = i % box_per_line_x + 0.5
+            y = i / box_per_line_x + 0.5
+            vid_def.write("%f %f 1.0 %f %f \n" % (x,y,axis_b[i]/(axis_a[i]),ang_elipse[i]))
     vid_def.write("e \n")
+    
+    vid_def.write("set style line 1 lc rgb 'blue' pt 7\n")
+    vid_def.write("plot \'-\' w d ls 1 notitle\n")
+    points=(points-np.array([x0,y0]))/box_size
+    for i in range(len(points)) :
+        vid_def.write("%f %f\n"%(points[i][0],points[i][1]))
     vid_def.write("pause .1 \n")
-    vid_def.write("unset for [i=1:%i] object i \n" % (box_total+1))
-        
+    vid_def.write("e \n")
+    #    vid_def.write("unset for [i=1:%i] object i \n" % (box_total+1))
+    vid_def.write("unset multiplot \n")    
+
 def  zero_borders_and_obstacle(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, axis_a_tot, axis_b_tot, ang_elipse_tot, system_type) :
     center_x = box_per_line_x/2
     center_y = box_per_column_y/2
@@ -567,7 +577,7 @@ def five_axis(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, axis_
 
 def imag_count(system_type) :
     counter = 0
-    print "Counting images... wait... it may take 5s to count 1000 images\n"
+    print "Counting images... wait... it may take 5s to count 1000 images on a I7\n"
     if system_type == 'superboids' :
         max_number_particles=0
         part_counter=0
@@ -751,12 +761,14 @@ if system_type == "superboids":
     arq_header_in = "%s/%s.dat"%(system_type,line_splitted[1])
     arq_data_in   = "%s/%s_plainprint.dat"%(system_type,line_splitted[1])
     arq_neigh_in  = "%s/%s_neighbors.dat"%(system_type,line_splitted[1])
+    box_size      = int(file_input_parameter.readline().split()[1])
+    
     print "\nYou analise a", system_type, "system, data is read from files:\n", arq_header_in," (header)\n", arq_data_in," (data)\n", arq_neigh_in," (neighbors)"
     fh            = open(arq_header_in)
     fd            = open(arq_data_in)
     fn            = open(arq_neigh_in)
     line_splitted = file_input_parameter.readline().split()
-    window_size   = int(line_splitted[1])
+    window_size   = box_size
     max_number_particles=imag_count(system_type)
     fn.close()
     fn            = open(arq_neigh_in)
@@ -781,10 +793,8 @@ if system_type == "superboids":
                 Lx            = 240 # corrigindo por enquanto o erro no arquivo de entrada. REVISAR!!!
             if line_splitted[1] == 'Radial' and line_splitted[2]=='R_Eq:':
                 line_splitted = fh.readline().split()
-                #                box_size      = int(float(line_splitted[1]))
-                box_size = 6
                 if Lx%box_size != 0 or Ly%box_size != 0 :
-                    print "wrong box_size"
+                    print "Attention! System size not box_size multiple: Lx=%d, Ly=%d, box_size=%d."%(Lx,Ly,box_size)
                     exit()
             if line_splitted[0] == "#radius:":
                 R_OBST        = int(line_splitted[1])
@@ -833,7 +843,9 @@ if system_type == "superboids":
                 #Function call to write velocity-density gnu script
                 velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0)
                 #Function call to write deformation elipsis gnu script
-                deformation_elipsis_script_simu(box_per_line_x, box_total, axis_b_win, axis_a_win, ang_elipse_win, image-image_0)
+                deformation_elipsis_script_simu(box_per_line_x, box_total, axis_b_win, axis_a_win, ang_elipse_win, image-image_0,points,x0,y0,box_size)
+
+
             #Summing each box at different times
             if image > image_0 and image <= image_f:
                 for box in range(box_total) :
