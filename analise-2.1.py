@@ -424,7 +424,7 @@ def T_elipsis_script_simu(box_per_line_x, box_total, axis_b, axis_a, ang_elipse,
 
 def texture_elipsis_script_simu(box_per_line_x, box_total, axis_b, axis_a, ang_elipse, image, points, x0, y0, box_size) :
     #Texture elipsis gnuplot script for simus
-    vid_def.write("set output \"%d.png\"\n"%image)
+    vid_def.write("set output \"text-%d.png\"\n"%image)
     vid_def.write("set multiplot\n")
     vid_def.write("plot \'-\' using 1:2:3:4:5 with ellipses\n")
     for i in range(box_total) :
@@ -914,13 +914,13 @@ if system_type == "superboids":
                         axis_b_win_texture[box]     = ax_b
                         ang_elipse_win_texture[box] = angle
                         if count_events > 1 :
-                            B_box[box] = B_box[box] / density_now[box]
-                            ax_a,ax_b,angle             = axis_angle(B_box[box])
+                            B_box[box]            = B_box[box] / density_now[box]
+                            ax_a,ax_b,angle       = axis_angle(B_box[box])
                             axis_a_win_B[box]     = ax_a
                             axis_b_win_B[box]     = ax_b
                             ang_elipse_win_B[box] = angle
-                            T_box[box] = T_box[box] / density_now[box]
-                            ax_a,ax_b,angle             = axis_angle(T_box[box])
+                            T_box[box]            = T_box[box] / density_now[box]
+                            ax_a,ax_b,angle       = axis_angle(T_box[box])
                             axis_a_win_T[box]     = ax_a
                             axis_b_win_T[box]     = ax_b
                             ang_elipse_win_T[box] = angle
