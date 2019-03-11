@@ -5,6 +5,7 @@ import sys
 from scipy.spatial import Delaunay
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.patches import Ellipse
 
 #************************************************************
 # diagonalization of matrices. Input: Matrix (numpy 2x2)
@@ -47,6 +48,18 @@ class particle:
         self.CT=np.zeros((2,2))
         self.B=np.zeros((2,2))
         self.T=np.zeros((2,2))
+        self.axis_part_a = 0.0
+        self.axis_part_b = 0.0
+        self.ang_elipse_part = 0.0
+
+    def axis_angle_part(self):
+        w,v        = np.linalg.eig(self.M)
+        index_max  = np.argmax(w)
+        index_min  = np.argmin(w)
+        self.axis_part_a     = w[index_max]
+        self.axis_part_b     = w[index_min]
+        self.ang_elipse_part = math.atan2(v[1,index_max],v[0,index_max])*180/math.pi
+#        print self.ident, self.M
 
     def texture(self):
         self.M=np.zeros((2,2))
@@ -113,7 +126,25 @@ class particle:
 
 ###############Particle class definition ends here###########
 
+def plot_points_and_texture(tri,points,Lx,Ly):
+    map(lambda i:i.axis_angle_part(), part)
+    ells = [ Ellipse(xy=part[i].r, width=part[i].axis_part_a, height=part[i].axis_part_b, angle= part[i].ang_elipse_part) for i in range(len(points))]
+    fig, ax = plt.subplots(subplot_kw={'aspect': 'equal'})
+    for e in ells :
+        ax.add_artist(e)
+        e.set_alpha(0.2)
+        
+    ax.set_xlim(-Lx/2, Lx/2)
+    ax.set_ylim(-Ly/2, Ly/2)
 
+    fig=plt.triplot(points[:,0], points[:,1], tri.simplices.copy())
+    plt.show()
+    # x,y=[],[]                       
+    # for i,w in enumerate(points):   
+    #     x.append(w[0])          
+    #     y.append(w[1])          
+    # fig=plt.scatter(x,y,s=30,c='b')
+    
 
 def delaunay(points):
     tri = Delaunay(points)
@@ -134,7 +165,7 @@ def delaunay(points):
         for j in i:
             for l in i:
                 if l != j :
-                    if np.linalg.norm(points[j]-points[l]) < 4 : #
+                    if np.linalg.norm(points[j]-points[l]) < 4 : 
                         if l not in list_neigh[j]:
                             list_neigh[j].append(l)
                         if j not in list_neigh[l]:
@@ -150,7 +181,7 @@ def delaunay(points):
     # plt.show()
     # exit()
 
-    return list_neigh
+    return list_neigh, tri
 
 def create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path):
     proportion_x, proportion_y             = 1.0, 0.7
@@ -709,6 +740,7 @@ file_input_parameter = open("parameter.in")
 line_splitted        = file_input_parameter.readline().split()
 system_type          = line_splitted[1]
 path    = 'output/'+system_type
+debug = True
 
 #Creating the directory structure for output
 os.system('mkdir -p %s' % path)
@@ -959,9 +991,14 @@ if system_type == "superboids":
                 number_particles = len(points)
                 if number_particles > 0:
                     points=np.array(points)
-                    list_neighbors=delaunay(points)
+                    list_neighbors,tri = delaunay(points)
                     map_focus_region_to_part(points,list_neighbors,index_particle)
                     map(lambda i:i.texture(), part)
+                    if debug :
+                        plot_points_and_texture(tri,points,Lx,Ly)
+                        
+                        exit()
+                        
                     if  count_events > 1 :
                         map(lambda i:i.BT(), part)
                     for i in index_particle:
