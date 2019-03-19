@@ -128,7 +128,8 @@ class particle:
 
 def plot_points_and_texture(tri,points,Lx,Ly):
     map(lambda i:i.axis_angle_part(), part)
-    ells = [ Ellipse(xy=part[i].r, width=part[i].axis_part_a, height=part[i].axis_part_b, angle= part[i].ang_elipse_part) for i in range(len(points))]
+    ells = [ Ellipse(xy=part[i].r, width=part[i].axis_part_a/2., height=part[i].axis_part_b/2., angle= part[i].ang_elipse_part) for i in range(len(points))]
+    ells.append(Ellipse(xy=[0,0], width=18., height=18., angle= 0.0))
     fig, ax = plt.subplots(subplot_kw={'aspect': 'equal'})
     for e in ells :
         ax.add_artist(e)
@@ -161,16 +162,25 @@ def delaunay(points):
     # fig=plt.scatter(z,zz,s=30,c='g')
     # plt.show()
     list_neigh = [ [] for i in range(len(points)) ]
-    for i in tri.simplices:
-        for j in i:
-            for l in i:
+    del_list = np.ones(len(tri.simplices),dtype=bool)
+    for i,w in enumerate(tri.simplices):
+        for j in w:
+            for l in w:
                 if l != j :
-                    if np.linalg.norm(points[j]-points[l]) < 4 : 
+                    if np.linalg.norm(points[j]-points[l]) < 4.5 : 
+#                        line = np.array([points[j]-points[l]])
+#                        point = np.array([0,0])
+#                        seg_dist,intersection = point_to_line_dist(point,line)
                         if l not in list_neigh[j]:
                             list_neigh[j].append(l)
                         if j not in list_neigh[l]:
                             list_neigh[l].append(j)
-    # x,y=[],[]
+
+                    else:
+                        del_list[i]=0
+    tri.simplices=tri.simplices[del_list]
+    
+                            # x,y=[],[]
     # for i,w in enumerate(list_neigh) :
     #     if i%50==0 :
     #         for j in w :
@@ -731,6 +741,9 @@ def imag_count(system_type) :
     print "Counted", counter-1, "images.\n"
     print "Type initial and final image number you want to analyse (min=1, max=",counter-1,") - Use spaces to separate the two numbers"
     return max_number_particles
+
+
+
 
 ################## Here starts the main program ###############
 
