@@ -145,6 +145,24 @@ def plot_points_and_texture(tri,points,Lx,Ly):
     #     x.append(w[0])          
     #     y.append(w[1])          
     # fig=plt.scatter(x,y,s=30,c='b')
+
+def plot_points_and_links_two_images(tri,tri_old,points,points_old,Lx,Ly):
+#    map(lambda i:i.axis_angle_part(), part)
+    ells = []
+#    ells = [ Ellipse(xy=part[i].r, width=part[i].axis_part_a/2., height=part[i].axis_part_b/2., angle= part[i].ang_elipse_part) for i in range(len(points))]
+    ells.append(Ellipse(xy=[0,0], width=18., height=18., angle= 0.0))
+    fig, ax = plt.subplots(subplot_kw={'aspect': 'equal'})
+    for e in ells :
+        ax.add_artist(e)
+        e.set_alpha(0.2)
+        
+    ax.set_xlim(-Lx/2, Lx/2)
+    ax.set_ylim(-Ly/2, Ly/2)
+
+    fig=plt.triplot(points[:,0], points[:,1], tri.simplices.copy())
+    fig=plt.triplot(points_old[:,0], points_old[:,1], tri_old.simplices.copy())
+    
+    plt.show()
     
 
 def delaunay(points):
@@ -1006,11 +1024,11 @@ if system_type == "superboids":
                     points=np.array(points)
                     list_neighbors,tri = delaunay(points)
                     map_focus_region_to_part(points,list_neighbors,index_particle)
-                    map(lambda i:i.texture(), part)
-                    if debug :
-                        plot_points_and_texture(tri,points,Lx,Ly)
-                        
+                    if debug and count_events > 1 :
+                        plot_points_and_links_two_images(tri,tri_old,points,points_old,Lx,Ly)
                         exit()
+
+                    map(lambda i:i.texture(), part)
                         
                     if  count_events > 1 :
                         map(lambda i:i.BT(), part)
@@ -1026,7 +1044,8 @@ if system_type == "superboids":
 
                     map(lambda i:i.copy_to_old(), part)
 
-
+                points_old=copy.deepcopy(points)
+                tri_old=copy.deepcopy(tri)
                 points            = []
                 index_particle    = []
 
