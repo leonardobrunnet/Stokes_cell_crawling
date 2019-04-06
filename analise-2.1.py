@@ -502,6 +502,7 @@ def ellipsis_now_simu(box_per_line_x, box_total, texture_now, image, points, x0,
     ax.set_ylim(0, 2*y0)
     
     fig.savefig(name,dpi=300)
+    plt.close(fig)
 
         
 
@@ -636,6 +637,12 @@ def average_density_velocity_deformation(window_size, box_per_line_x, box_per_co
         #create script gnu to plot velocity-density map
         create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path)
         
+
+        print vy_win[270:280]
+        print image_counter, count_box_win[270:280]
+        print vy_tot[270:280]
+
+
         for bx in range(window_size_h+1, box_per_line_x-window_size_h):
             for by in range(window_size_h+1, box_per_column_y-window_size_h):
             	box = bx + (by*box_per_line_x)
@@ -657,7 +664,8 @@ def average_density_velocity_deformation(window_size, box_per_line_x, box_per_co
                     vel_win.write("%d %d %f %f %f %f %f \n" % (bx, by, 0.0, 0.0, 0.0,0.0, 0.0))
         vel_win.write("e \n")
         vel_win.write("pause -1 \n")
-    # Average ellipsis texture
+
+        # Average ellipsis texture
     name = ("%s/texture/texture-average.png"%(path))
     texture_axis_a_win, texture_axis_b_win, texture_ang_win = ellipsis_average_simu(box_per_line_x, box_total, texture_win, x0, y0, box_size, name)
 
@@ -821,7 +829,7 @@ file_input_parameter = open("parameter.in")
 line_splitted        = file_input_parameter.readline().split()
 system_type          = line_splitted[1]
 path    = 'output/'+system_type
-debug = False
+debug = True
 
 #Creating the directory structure for output
 os.system('mkdir -p %s' % path)
@@ -1015,40 +1023,7 @@ if system_type == "superboids":
             vid_veloc_dens.write("pause -1 \n")
             break #EOF
         if line.replace( '\r', '' ) == '\n' : #identifies blank lines
-            if image > image_0 and image <= image_f:
-                #Blank lines indicate end of an image so we
-                #calculate the average velocity over boxes
-                for box in range(box_total):
-                    if density_now[box] > 0 :
-
-                        vx_now[box]                 = vx_now[box] / density_now[box]
-		        vy_now[box]                 = vy_now[box] / density_now[box]
-                        texture_now[box]            = texture_now[box] / density_now[box]
-                        if count_events > 1 :
-                            B_now[box]            = B_now[box] / density_now[box]
-                            T_now[box]            = T_now[box] / density_now[box]
-                #Function call to write velocity-density gnu script
-                velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0)
-                #Function call to write texture elipsis gnu script
-                name = ("%s/texture/texture-%i.png"%(path,image-image_0))
-                ellipsis_now_simu(box_per_line_x, box_total, texture_now, image-image_0,points,x0,y0,box_size,name)
-                if count_events > 1 :
-                    name = ("%s/B/B-%i.png"%(path,image-image_0))
-                    ellipsis_now_simu(box_per_line_x, box_total, B_now, image-image_0,points,x0,y0,box_size,name)
-                    name = ("%s/T/T-%i.png"%(path,image-image_0))
-                    ellipsis_now_simu(box_per_line_x, box_total, T_now, image-image_0,points,x0,y0,box_size,name)
-
-
-            #Summing each box at different times
-            if image > image_0 and image <= image_f:
-                for box in range(box_total) :
-                    density_tot[box] += density_now[box]
-                    vx_tot[box]      += vx_now[box]
-                    vy_tot[box]      += vy_now[box]
-                    texture_tot[box] += texture_now[box]
-                    B_tot[box]       += B_now[box]
-                    T_tot[box]       += T_now[box]
-                    
+                #Blank lines indicate end of an image
             image      += 1
             if image <= image_0 :
                 print "Skippin image:",image 
@@ -1061,17 +1036,16 @@ if system_type == "superboids":
                     points=np.array(points)
                     list_neighbors,tri = delaunay(points)
                     map_focus_region_to_part(points,list_neighbors,index_particle)
-
                     map(lambda i:i.texture(), part)
                         
                     if  count_events > 1 :
                         map(lambda i:i.BT(), part)
 
-                        if debug :
-                            plot_points_and_texture(tri,points,Lx,Ly)
-                            plot_points_and_links_two_images_B(tri,tri_old,points,points_old,Lx,Ly)
-                            plot_points_and_links_two_images_T(tri,tri_old,points,points_old,Lx,Ly)
-                            exit()
+#                        if debug :
+#                            plot_points_and_texture(tri,points,Lx,Ly)
+#                            plot_points_and_links_two_images_B(tri,tri_old,points,points_old,Lx,Ly)
+#                            plot_points_and_links_two_images_T(tri,tri_old,points,points_old,Lx,Ly)
+#                            exit()
 
                     for i in index_particle:
                         xx  = int((part[i].r[0]-x0) / box_size)
@@ -1085,15 +1059,59 @@ if system_type == "superboids":
 
                     map(lambda i:i.copy_to_old(), part)
 
-                points_old=copy.deepcopy(points)
-                tri_old=copy.deepcopy(tri)
-                points            = []
-                index_particle    = []
+                    points_old=copy.deepcopy(points)
+                    tri_old=copy.deepcopy(tri)
+                    points            = []
+                    index_particle    = []
+                    print sum(density_now)
 
+                    #calculate the average velocity over boxes
+                    for box in range(box_total):
+                        if density_now[box] > 0 :
 
+                            vx_now[box]                 = vx_now[box] / density_now[box]
+		            vy_now[box]                 = vy_now[box] / density_now[box]
+                            texture_now[box]            = texture_now[box] / density_now[box]
+                            if count_events > 1 :
+                                B_now[box]            = B_now[box] / density_now[box]
+                                T_now[box]            = T_now[box] / density_now[box]
+
+                    #Function call to write velocity-density gnu script
+                    velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0)
+                    #Function call to write ellipsis
+                    name = ("%s/texture/texture-%i.png"%(path,image-image_0))
+                    ellipsis_now_simu(box_per_line_x, box_total, texture_now, image-image_0,points,x0,y0,box_size,name)
+                    if count_events > 1 :
+                        name = ("%s/B/B-%i.png"%(path,image-image_0))
+                        B_now = list(5*B_now[i] for i in range(box_total)) #artificially increasing B
+                        ellipsis_now_simu(box_per_line_x, box_total, B_now, image-image_0,points,x0,y0,box_size,name)
+                        name = ("%s/T/T-%i.png"%(path,image-image_0))
+                        T_now = list(T_now[i]/10 for i in range(box_total)) #artificially decreasing T
+                        ellipsis_now_simu(box_per_line_x, box_total, T_now, image-image_0,points,x0,y0,box_size,name)
+
+#                if debug :
+#                    print texture_now[270:280]
+                        
+                #Summing each box at different times
+                for box in range(box_total) :
+                    density_tot[box] += density_now[box]
+                    vx_tot[box]      += vx_now[box]
+                    vy_tot[box]      += vy_now[box]
+                    texture_tot[box] += texture_now[box]
+                    B_tot[box]       += B_now[box]
+                    T_tot[box]       += T_now[box]
+
+                density_now            = list(0  for i in range(box_total))
+                B_now                  = list(np.zeros([2,2]) for i in range(box_total))
+                texture_now                  = list(np.zeros([2,2]) for i in range(box_total))
+                T_now                  = list(np.zeros([2,2]) for i in range(box_total))
+
+                # if debug :
+                #     print density_tot
+                #     exit()
             else:
                 break
-            fat_boids_counter = 0
+            fat_boids_counter      = 0
             while line.replace( '\r' , '' ) == '\n' : # skip blank lines
                 line = fd.readline()
         else:
