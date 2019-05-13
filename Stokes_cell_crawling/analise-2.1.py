@@ -655,7 +655,7 @@ def imag_count(system_type) :
         max_number_particles=0
         part_counter=0
         while 1 :
-            line          = fn.readline()
+            line          = file_arq_neigh_in.readline()
             if not line :
                 break #EOF
             if line.replace( '\r', '' ) == '\n' : #identifies blank lines
@@ -664,7 +664,7 @@ def imag_count(system_type) :
                 part_counter = 0
 
                 while line.replace( '\r' , '' ) == '\n' : # skip blank lines
-                    line = fn.readline()
+                    line = file_arq_neigh_in.readline()
             else:
                 part_counter = int(line.split()[0])
 
@@ -679,7 +679,7 @@ def imag_count(system_type) :
                 
     if system_type == 'szabo-boids' :
         while 1:
-            line = fd.readline()
+            line = file_arq_data_in.readline()
             if not line:
                 break
             line_splitted = line.split()
@@ -689,7 +689,7 @@ def imag_count(system_type) :
     if system_type == 'vicsek-gregoire' :
         max_number_particles=0
         while 1:
-            line = fd.readline()           
+            line = file_arq_data_in.readline()           
             if not line:
                 break #EOF
             line_splitted = line.split()
@@ -697,7 +697,7 @@ def imag_count(system_type) :
             n=int(line_splitted[1])
             max_number_particles=max(max_number_particles,n)
             for i in range(n):
-                fd.readline()
+                file_arq_data_in.readline()
             
     print "Counted", counter-1, "images.\n"
     print "Type initial and final image number you want to analyse (min=1, max=",counter-1,") - Use spaces to separate the two numbers"
@@ -833,22 +833,25 @@ if system_type == 'experiment':
 
 if system_type == "superboids":
     line_splitted = file_input_parameter.readline().split()
-    arq_header_in = "%s/%s.dat"%(system_type,line_splitted[1])
-    arq_data_in   = "%s/%s_plainprint.dat"%(system_type,line_splitted[1])
-    arq_neigh_in  = "%s/%s_neighbors.dat"%(system_type,line_splitted[1])
+    name_arq_header_in = "%s/%s.dat"%(system_type,line_splitted[1])
+    name_arq_data_in   = "%s/%s_plainprint.dat"%(system_type,line_splitted[1])
+    name_arq_neigh_in  = "%s/%s_neighbors.dat"%(system_type,line_splitted[1])
     box_size      = int(file_input_parameter.readline().split()[1])
     max_dist      = float(file_input_parameter.readline().split()[1])
     
-    print "\nYou analise a", system_type, "system, data is read from files:\n", arq_header_in," (header)\n", arq_data_in," (data)\n", arq_neigh_in," (neighbors)"
-    fh            = open(arq_header_in)
-    fd            = open(arq_data_in)
-    fn            = open(arq_neigh_in)
-    line_splitted = file_input_parameter.readline().split()
+    print "\nYou analise a", system_type, "system, data is read from files:\n", name_arq_header_in," (header)\n", name_arq_data_in," (data)\n", name_arq_neigh_in," (neighbors)"
+    file_arq_header_in    = open(name_arq_header_in)
+    file_arq_data_in  = open(name_arq_data_in)
+    file_arq_neigh_in = open(name_arq_neigh_in)
     window_size   = box_size
+    line_splitted = file_input_parameter.readline().split()
+    x0 = int(line_splitted[1])
+    line_splitted = file_input_parameter.readline().split()
+    xf = int(line_splitted[1])
+    file_arq_neigh_in = open(name_arq_neigh_in)
     max_number_particles=imag_count(system_type)
-    fn.close()
-    fn            = open(arq_neigh_in)
-    line_splitted = sys.stdin.readline().split()
+    file_arq_neigh_in.close()
+    line_splitted = sys.stdin.readline().split() #lendo do teclado imagens final e inicial depois da analise do numero de imagens (funcao imag_count())
     image_0       = int(line_splitted[0])
     image_f       = int(line_splitted[1])
     v0            = 0.007
@@ -857,18 +860,18 @@ if system_type == "superboids":
     # Reading superboids parameter file
 
     while 1 :
-        line = fh.readline()
+        line = file_header_in.readline()
         if not line : break # EOF
         if line.replace( '\r' , '' ) == "\n" :
             continue
         else :
             line_splitted = line.split()
             if line_splitted[0] == '#' and line_splitted[1]=='RECTANGLE:':
-                line_splitted = fh.readline().split()
+                line_splitted = file_header_in.readline().split()
                 Lx, Ly        = int(float(line_splitted[1])), int(float(line_splitted[2]))
                 Lx            = 240 # corrigindo por enquanto o erro no arquivo de entrada. REVISAR!!!
             if line_splitted[1] == 'Radial' and line_splitted[2]=='R_Eq:':
-                line_splitted = fh.readline().split()
+                line_splitted = file_header_in.readline().split()
                 if Lx%box_size != 0 or Ly%box_size != 0 :
                     print "Attention! System size not a box_size multiple: Lx=%d, Ly=%d, box_size=%d."%(Lx,Ly,box_size)
                     print "Please, restart with the correct parameters"
@@ -879,9 +882,12 @@ if system_type == "superboids":
                 Y_OBST        = float(line_splitted[4])
                 
     box_per_line_x, box_per_column_y = Lx/box_size, Ly/box_size
-    x0, y0 = -Lx/2, -Ly/2
-    xf, yf = Lx/2, Ly/2
-    
+    x0,xf = X_OBST-x0*R_OBST, int((X_OBST+xf*R_OBST)/window_size)*window_size
+    y0, yf = -Ly/2, Ly/2
+    if x0 < -Lx/2 or xf > Lx/2 :
+        print "Warning: Reseting limits to -Lx/2, Lx/2"
+        x0 = -Lx/2
+        xf = Lx/2
     #defining all matrices
     box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, \
         density_tot, vx_win, vy_win, density_win, axis_a_tot, axis_b_tot, \
@@ -898,7 +904,7 @@ if system_type == "superboids":
     index_particle    = []
     
     while 1 :
-        line = fd.readline()
+        line = file_arq_data_in.readline()
         if not line :
             vid_veloc_dens.write("pause -1 \n")
             break #EOF
@@ -988,7 +994,7 @@ if system_type == "superboids":
                 break
             fat_boids_counter = 0
             while line.replace( '\r' , '' ) == '\n' : # skip blank lines
-                line = fd.readline()
+                line = file_arq_data_in.readline()
         else:
             line_splitted = line.split()
             if image >= image_0 and image <= image_f:
@@ -1006,14 +1012,13 @@ if system_type == "superboids":
     image_counter = image_f - image_0
 
 if system_type == "szabo-boids":
-    arq_data_in = "%s/%s.dat"% (line_splitted[0], line_splitted[1])
+    name_arq_data_in = "%s/%s.dat"% (line_splitted[0], line_splitted[1])
     print "\nYou analise a", line_splitted[0], "system, data is read from files:\n", arq_data_in
-    fd            = open(arq_data_in)
-#    fn=open(arq_neigh_in)
+    file_arq_data_in           = open(name_arq_data_in)
     window_size   = int(line_splitted[2])
     imag_count(system_type)
-    fd.close()
-    fd            = open(arq_data_in)
+    file_arq_data_in.close()
+    file_arq_data_in           = open(name_arq_data_in)
     line_splitted = sys.stdin.readline().split()
     image_0       = int(line_splitted[0])
     image_f       = int(line_splitted[1])
@@ -1024,7 +1029,7 @@ if system_type == "szabo-boids":
     v0            = 0.1
     #Reading szabo-boids  data file
     while 1 :
-        line = fd.readline()
+        line = file_arq_data_in.readline()
         if not line : break
         line_counter += 1
         if line.replace( '\r' , '' ) == "\n" :
@@ -1057,7 +1062,7 @@ if system_type == "szabo-boids":
             if image <= image_0 :
                 print "Skipping image:",image 
                 while line_splitted[0] != 'x' :
-                    line = fd.readline()
+                    line = file_arq_data_in.readline()
                     if not line : break
                     line_splitted = line.split()
                 image += 1
@@ -1076,7 +1081,7 @@ if system_type == "szabo-boids":
                         vx_now[box]      += float(line_splitted[2])
                         vy_now[box]      += float(line_splitted[3])
                         density_now[box] += 1.0
-                        line = fd.readline()
+                        line = file_arq_data_in.readline()
                         if not line : break
                         line_splitted = line.split()
                 image        += 1
@@ -1114,12 +1119,12 @@ if system_type == "vicsek-gregoire":
         axis_a_win_B, ang_elipse_win_B, axis_a_win_T, axis_a_win_T, ang_elipse_win_T = \
         box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf)
     #arquivo de posicoes e velocidades
-    arq_data_in = "%s/data/posicoes.dat"% (system_type)
+    name_arq_data_in = "%s/data/posicoes.dat"% (system_type)
     print "\nYou analise a", system_type, "system, data is read from files:\n", arq_data_in
-    fd            = open(arq_data_in)
-    max_number_particles=imag_count(system_type) #conta o numero de imagens
-    fd.close()
-    fd            = open(arq_data_in)  #reabre o arquivo para leituras das posicoes e vel.
+    file_arq_data_in       = open(name_arq_data_in)
+    max_number_particles   =imag_count(system_type) #conta o numero de imagens
+    file_arq_data_in.close()
+    file_arq_data_in       = open(name_arq_data_in)  #reabre o arquivo para leituras das posicoes e vel.
     line_splitted = sys.stdin.readline().split() #le da linha de comando o intervalo de imagens desejado
     image_0       = int(line_splitted[0])
     image_f       = int(line_splitted[1])
@@ -1130,7 +1135,7 @@ if system_type == "vicsek-gregoire":
     v0            = 0.05
     part=list(particle(i) for i in range(max_number_particles))
     while 1 :
-        line   = fd.readline()
+        line   = file_arq_data_in.readline()
         if not line:
             break #EOF
         line_splitted = line.split()
@@ -1138,7 +1143,7 @@ if system_type == "vicsek-gregoire":
         if image <= image_0 :
             print "Skipping image:",image
             for i in range(nlines) :
-                fd.readline()
+                file_arq_data_in.readline()
             image += 1
         elif image <= image_f :
             print "Reading image:",image
@@ -1149,7 +1154,7 @@ if system_type == "vicsek-gregoire":
             points = []
             index_particle = []
             for i in range(nlines) :
-                line_splitted    = fd.readline().split()
+                line_splitted    = file_arq_data_in.readline().split()
                 x, y = float(line_splitted[0]), float(line_splitted[1])
                 if x > x0 and x < xf and y > y0 and y < yf : 
                     xx  = int((x-x0) / box_size)
