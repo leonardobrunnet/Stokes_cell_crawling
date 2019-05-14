@@ -273,7 +273,8 @@ def box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, 
     ang_elipse_win_T       = list(0. for i in range(box_total))
     #    ratio=float(box_per_column_y)/box_per_line_x
     ratio = float((yf-y0)) / (xf-x0)
-    image_resolution_x, image_resolution_y=1300,325
+#    vid_def.write("set size 1,%f\n"% (ratio))
+    image_resolution_x, image_resolution_y=1300,1300*ratio
     vid_def.write("set terminal png large size %d,%d \n"% (image_resolution_x, image_resolution_y)) 
     vid_def.write("set xrange [0:%f]  \n" % box_per_line_x)
     vid_def.write("set yrange [0:%f]  \n" % box_per_column_y)    
@@ -860,30 +861,31 @@ if system_type == "superboids":
     # Reading superboids parameter file
 
     while 1 :
-        line = file_header_in.readline()
+        line = file_arq_header_in.readline()
         if not line : break # EOF
         if line.replace( '\r' , '' ) == "\n" :
             continue
         else :
             line_splitted = line.split()
             if line_splitted[0] == '#' and line_splitted[1]=='RECTANGLE:':
-                line_splitted = file_header_in.readline().split()
+                line_splitted = file_arq_header_in.readline().split()
                 Lx, Ly        = int(float(line_splitted[1])), int(float(line_splitted[2]))
                 Lx            = 240 # corrigindo por enquanto o erro no arquivo de entrada. REVISAR!!!
             if line_splitted[1] == 'Radial' and line_splitted[2]=='R_Eq:':
-                line_splitted = file_header_in.readline().split()
-                if Lx%box_size != 0 or Ly%box_size != 0 :
-                    print "Attention! System size not a box_size multiple: Lx=%d, Ly=%d, box_size=%d."%(Lx,Ly,box_size)
-                    print "Please, restart with the correct parameters"
-                    exit()
+                line_splitted = file_arq_header_in.readline().split()
+#                if Lx%box_size != 0 or Ly%box_size != 0 :
+#                    print "Attention! System size not a box_size multiple: Lx=%d, Ly=%d, box_size=%d."%(Lx,Ly,box_size)
+#                    print "Please, restart with the correct parameters"
+#                    exit()
             if line_splitted[0] == "#radius:":
                 R_OBST        = int(line_splitted[1])
                 X_OBST        = float(line_splitted[3])
                 Y_OBST        = float(line_splitted[4])
                 
-    box_per_line_x, box_per_column_y = Lx/box_size, Ly/box_size
-    x0,xf = X_OBST-x0*R_OBST, int((X_OBST+xf*R_OBST)/window_size)*window_size
+    x0,xf = int((X_OBST-x0*R_OBST)/window_size)*window_size , int((X_OBST+xf*R_OBST)/window_size)*window_size
     y0, yf = -Ly/2, Ly/2
+    box_per_line_x, box_per_column_y = (xf-x0)/box_size, (yf-y0)/box_size
+
     if x0 < -Lx/2 or xf > Lx/2 :
         print "Warning: Reseting limits to -Lx/2, Lx/2"
         x0 = -Lx/2
