@@ -904,16 +904,60 @@ if system_type == "superboids":
     count_events      = 0
     points            = []
     index_particle    = []
+    texture_box = list(np.zeros((2,2)) for i in range(box_total))
+    B_box = list(np.zeros((2,2)) for i in range(box_total))
+    T_box = list(np.zeros((2,2)) for i in range(box_total))
     
     while 1 :
         line = file_arq_data_in.readline()
         if not line :
             vid_veloc_dens.write("pause -1 \n")
             break #EOF
-        if line.replace( '\r', '' ) == '\n' : #identifies blank lines
-            if image > image_0 and image <= image_f:
-                #Blank lines indicate end of an image so we
-                #calculate the average velocity over boxes
+        if not line.replace( '\r', '' ) == '\n' : #identifies not blank lines
+            line_splitted = line.split()
+            if image >= image_0 and image <= image_f:
+                if float(line_splitted[6]) > 0.5 :
+                    fat_boids_counter += 1
+                    x, y = float(line_splitted[0]), float(line_splitted[1])
+                    if x > x0 and x < xf and y > y0 and y < yf:
+                        xx  = int((x-x0) / box_size)
+                        yy  = int((y-y0) / box_size) * box_per_line_x
+                        box = xx + yy
+                        vx_now[box]      += float(line_splitted[2])
+                        vy_now[box]      += float(line_splitted[3])
+                        density_now[box] += 1.0
+                        points.append([x,y])
+                        index_particle.append(fat_boids_counter-1)
+
+        else:
+            image      += 1
+            if image <= image_0 :
+                print "Skippin image:",image 
+            elif image <= image_f :
+                print "Image number",image,". Number of super particles =", fat_boids_counter
+                count_events     += 1
+                # Calculus of textures, B and T
+                number_particles = len(points)
+                if number_particles > 0:
+                    points=np.array(points)
+                    list_neighbors=delaunay(points,max_dist)
+                    map_focus_region_to_part(points,list_neighbors,index_particle)
+                    map(lambda i:i.texture(), part)
+                    if  count_events > 1 :
+                        map(lambda i:i.calc_B_and_T(), part)
+                    for i in index_particle:
+                        xx  = int((part[i].r[0]-x0) / box_size)
+                        yy  = int((part[i].r[1]-y0) / box_size) * box_per_line_x
+                        box = xx+yy
+#                        density_now[box] += 1.0
+                        texture_box[box]+=part[i].M
+                        if count_events > 1 :
+                            B_box[box] += part[i].B
+                            T_box[box] += part[i].T
+
+                    map(lambda i:i.copy_to_old(), part)
+
+
                 for box in range(box_total):
                     if density_now[box] > 0 :
 
@@ -948,69 +992,28 @@ if system_type == "superboids":
 
 
             #Summing each box at different times
-            if image > image_0 and image <= image_f:
+            #if image > image_0 and image <= image_f:
                 for box in range(box_total) :
                     density_tot[box] += density_now[box]
                     vx_tot[box]      += vx_now[box]
                     vy_tot[box]      += vy_now[box]
                     
-            image      += 1
-            vx_now      = list(0. for i in range(box_total))
-            vy_now      = list(0. for i in range(box_total))
-            density_now = list(0  for i in range(box_total))
-            texture_box = list(np.zeros((2,2)) for i in range(box_total))
-            B_box = list(np.zeros((2,2)) for i in range(box_total))
-            T_box = list(np.zeros((2,2)) for i in range(box_total))
-            if image <= image_0 :
-                print "Skippin image:",image 
-            elif image <= image_f :
-                print "Image number",image,". Number of super particles =", fat_boids_counter
-                count_events     += 1
-                # Calculus of textures, B and T
-                number_particles = len(points)
-                if number_particles > 0:
-                    points=np.array(points)
-                    list_neighbors=delaunay(points,max_dist)
-                    map_focus_region_to_part(points,list_neighbors,index_particle)
-                    map(lambda i:i.texture(), part)
-                    if  count_events > 1 :
-                        map(lambda i:i.calc_B_and_T(), part)
-                    for i in index_particle:
-                        xx  = int((part[i].r[0]-x0) / box_size)
-                        yy  = int((part[i].r[1]-y0) / box_size) * box_per_line_x
-                        box = xx+yy
-                        density_now[box] += 1.0
-                        texture_box[box]+=part[i].M
-                        if count_events > 1 :
-                            B_box[box] += part[i].B
-                            T_box[box] += part[i].T
 
-                    map(lambda i:i.copy_to_old(), part)
-
-
+                vx_now      = list(0. for i in range(box_total))
+                vy_now      = list(0. for i in range(box_total))
+                density_now = list(0  for i in range(box_total))
+                texture_box = list(np.zeros((2,2)) for i in range(box_total))
+                B_box = list(np.zeros((2,2)) for i in range(box_total))
+                T_box = list(np.zeros((2,2)) for i in range(box_total))
                 points            = []
                 index_particle    = []
-
 
             else:
                 break
             fat_boids_counter = 0
             while line.replace( '\r' , '' ) == '\n' : # skip blank lines
                 line = file_arq_data_in.readline()
-        else:
-            line_splitted = line.split()
-            if image >= image_0 and image <= image_f:
-                if float(line_splitted[6]) > 0.5 :
-                    fat_boids_counter += 1
-                    x, y = float(line_splitted[0]), float(line_splitted[1])
-                    if x > x0 and x < xf and y > y0 and y < yf:
-                        xx  = int((x-x0) / box_size)
-                        yy  = int((y-y0) / box_size) * box_per_line_x
-                        box = xx + yy
-                        vx_now[box]      += float(line_splitted[2])
-                        vy_now[box]      += float(line_splitted[3])
-                        points.append([x,y])
-                        index_particle.append(fat_boids_counter-1)
+
     image_counter = image_f - image_0
 
 if system_type == "szabo-boids":
