@@ -211,7 +211,12 @@ def read_param_vic_greg(file_par_simu) :
             Y_OBST = float(line_splitted[2])
         if line_splitted[1] == 'R_MAX' :
             box_size = float(line_splitted[2])
-    return Lx, Ly, R_OBST, X_OBST, Y_OBST, box_size
+            max_dist = box_size
+        if line_splitted[1] == 'SNAPSHOT' :
+            Delta_t = int(line_splitted[2])
+        if line_splitted[1] == 'V1' :
+            v0 = float(line_splitted[2])
+    return Lx, Ly, R_OBST, X_OBST, Y_OBST, box_size, Delta_t, v0, max_dist
 
 def read_param(file_input_parameter) :
     while 1 :
@@ -233,9 +238,9 @@ def read_param(file_input_parameter) :
         if line_splitted[0] == 'obstacle' :
             obstacle = line_splitted[1]
         if line_splitted[0] == 'x0' :
-            x0 = float(line_splitted[1])
+            x0 = int(line_splitted[1])
         if line_splitted[0] == 'xf' :
-            xf = float(line_splitted[1])
+            xf = int(line_splitted[1])
         if line_splitted[0] == 'file' :
             filename = line_splitted[1]
     return window_size, time_0, time_f, obstacle, x0, xf, filename
@@ -867,10 +872,6 @@ if system_type == "superboids":
                 Lx            = 240 # corrigindo por enquanto o erro no arquivo de entrada. REVISAR!!!
             if line_splitted[1] == 'Radial' and line_splitted[2]=='R_Eq:':
                 line_splitted = file_arq_header_in.readline().split()
-#                if Lx%box_size != 0 or Ly%box_size != 0 :
-#                    print "Attention! System size not a box_size multiple: Lx=%d, Ly=%d, box_size=%d."%(Lx,Ly,box_size)
-#                    print "Please, restart with the correct parameters"
-#                    exit()
             if line_splitted[0] == "#radius:":
                 R_OBST        = int(line_splitted[1])
                 X_OBST        = float(line_splitted[3])
@@ -974,6 +975,7 @@ if system_type == "superboids":
                             axis_a_win_T[box]     = ax_a
                             axis_b_win_T[box]     = ax_b
                             ang_elipse_win_T[box] = angle
+
                 #Function call to write velocity-density gnu script
                 velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0)
                 #Function call to write texture elipsis gnu script
@@ -1108,31 +1110,43 @@ if system_type == "vicsek-gregoire":
     file_input_parameter.close()
     aux           = "%s/include/%s"% (system_type, filename)
     file_par_simu = open(aux)
-    Lx, Ly, R_OBST, X_OBST, Y_OBST, box_size = read_param_vic_greg(file_par_simu)
+    Lx, Ly, R_OBST, X_OBST, Y_OBST, box_size, Delta_t, v0, max_dist = read_param_vic_greg(file_par_simu)
     file_par_simu.close()
-    y0,yf=0,30
+    delta_x =int((xf+x0)*R_OBST/box_size)*box_size
+    x0 = X_OBST-x0*R_OBST
+    xf = x0+delta_x
+    y0 = 0.
+    yf =  box_size*int(Ly/box_size)
+    box_per_line_x, box_per_column_y = int((delta_x)/box_size), int((yf-y0)/box_size)
+
+    if x0 < 0. or xf > Lx :
+        print "Warning: Reseting limits to 0, Lx"
+        x0 = 0.
+        xf = Lx
+
     #definindo as caixas e as matrizes
-    box_per_line_x, box_per_column_y = int((xf-x0) / box_size), int((yf-y0) / box_size)
+
     box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, density_tot, \
         vx_win, vy_win, density_win, axis_a_tot, axis_b_tot, ang_elipse_tot, \
         axis_a_win_texture, axis_b_win_texture, ang_elipse_win_texture, axis_a_win_B, \
-        axis_a_win_B, ang_elipse_win_B, axis_a_win_T, axis_a_win_T, ang_elipse_win_T = \
+        axis_b_win_B, ang_elipse_win_B, axis_a_win_T, axis_b_win_T, ang_elipse_win_T = \
         box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf)
+
     #arquivo de posicoes e velocidades
+
     name_arq_data_in = "%s/data/posicoes.dat"% (system_type)
-    print "\nYou analise a", system_type, "system, data is read from files:\n", arq_data_in
+    print "\nYou analise a", system_type, "system, data is read from files:\n", name_arq_data_in
     file_arq_data_in       = open(name_arq_data_in)
-    max_number_particles   =imag_count(system_type) #conta o numero de imagens
+    max_number_particles   = imag_count(system_type) #conta o numero de imagens
     file_arq_data_in.close()
     file_arq_data_in       = open(name_arq_data_in)  #reabre o arquivo para leituras das posicoes e vel.
-    line_splitted = sys.stdin.readline().split() #le da linha de comando o intervalo de imagens desejado
-    image_0       = int(line_splitted[0])
-    image_f       = int(line_splitted[1])
+#    line_splitted = sys.stdin.readline().split() #le da linha de comando o intervalo de imagens desejado
+    image_0       = int(time_0/Delta_t)
+    image_f       = int(time_f/Delta_t)
     image_counter = image_f - image_0
     image         = 1
     line_counter  = 0
     count_events  = 0
-    v0            = 0.05
     part=list(particle(i) for i in range(max_number_particles))
     while 1 :
         line   = file_arq_data_in.readline()
@@ -1172,7 +1186,7 @@ if system_type == "vicsek-gregoire":
             number_particles = len(points)
             if number_particles > 0:
                 points=np.array(points)
-                list_neighbors=delaunay(points.max_dist)
+                list_neighbors=delaunay(points,max_dist)
                 map_focus_region_to_part(points,list_neighbors,index_particle)
                 map(lambda i:i.texture(), part)
                 for i in index_particle:
@@ -1181,9 +1195,9 @@ if system_type == "vicsek-gregoire":
                     box = xx+yy
                     texture_box[box]+=part[i].M
                 if  count_events > 1 :
-                        
-                    map(lambda i:i.UT(), part)
-                        
+                    B_box[box] += part[i].B
+                    T_box[box] += part[i].T
+                       
                 map(lambda i:i.copy_to_old(), part)
 
                 #Calculate the average velocity over boxes
@@ -1191,13 +1205,50 @@ if system_type == "vicsek-gregoire":
                 if density_now[box] > 0 :
                     vx_now[box] = vx_now[box] / density_now[box]
 	            vy_now[box] = vy_now[box] / density_now[box]
-                    #Function call to write velocity-density gnu script
+                    texture_box[box]            = texture_box[box] / density_now[box]
+                    ax_a,ax_b,angle             = axis_angle(texture_box[box])
+                    axis_a_win_texture[box]     = ax_a
+                    axis_b_win_texture[box]     = ax_b
+                    ang_elipse_win_texture[box] = angle
+                    if count_events > 1 :
+                        B_box[box]            = B_box[box] / density_now[box]
+                        ax_a,ax_b,angle       = axis_angle(B_box[box])
+                        axis_a_win_B[box]     = ax_a
+                        axis_b_win_B[box]     = ax_b
+                        ang_elipse_win_B[box] = angle
+                        T_box[box]            = T_box[box] / density_now[box]
+                        ax_a,ax_b,angle       = axis_angle(T_box[box])
+                        axis_a_win_T[box]     = ax_a
+                        axis_b_win_T[box]     = ax_b
+                        ang_elipse_win_T[box] = angle
+
+            #Function call to write velocity-density gnu script
             velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0)
-                #Summing each box at different times
+
+
+            #Function call to write texture elipsis gnu script
+            texture_elipsis_script_simu(box_per_line_x, box_total, axis_b_win_texture, axis_a_win_texture,\
+                                    ang_elipse_win_texture, image-image_0,points,x0,y0,box_size)
+            if count_events > 1 :
+                B_elipsis_script_simu(box_per_line_x, box_total, axis_b_win_B, axis_a_win_B,\
+                                      ang_elipse_win_B, image-image_0,points,x0,y0,box_size)
+                T_elipsis_script_simu(box_per_line_x, box_total, axis_b_win_T, axis_a_win_T,\
+                                      ang_elipse_win_T, image-image_0,points,x0,y0,box_size)
+                        
+
+            #Summing each box at different times
             for box in range(box_total) :
                 density_tot[box] += density_now[box]
                 vx_tot[box]      += vx_now[box]
                 vy_tot[box]      += vy_now[box]
+            vx_now      = list(0. for i in range(box_total))
+            vy_now      = list(0. for i in range(box_total))
+            density_now = list(0  for i in range(box_total))
+            texture_box = list(np.zeros((2,2)) for i in range(box_total))
+            B_box = list(np.zeros((2,2)) for i in range(box_total))
+            T_box = list(np.zeros((2,2)) for i in range(box_total))
+            points            = []
+            index_particle    = []
 
         else:
                 break
