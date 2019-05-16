@@ -230,21 +230,15 @@ def read_param(file_input_parameter) :
             time_0 = int(line_splitted[1])
         if line_splitted[0] == 'time_f' :
             time_f = int(line_splitted[1])
-        if line_splitted[0] == 'voronoi' :
-            voronoi = line_splitted[1]
         if line_splitted[0] == 'obstacle' :
             obstacle = line_splitted[1]
         if line_splitted[0] == 'x0' :
             x0 = float(line_splitted[1])
         if line_splitted[0] == 'xf' :
             xf = float(line_splitted[1])
-        if line_splitted[0] == 'y0' :
-            y0 = float(line_splitted[1])
-        if line_splitted[0] == 'yf' :
-            yf = float(line_splitted[1])
         if line_splitted[0] == 'file' :
             filename = line_splitted[1]
-    return window_size, time_0, time_f, obstacle, voronoi, x0, xf, y0, yf, filename
+    return window_size, time_0, time_f, obstacle, x0, xf, filename
 
 
 
@@ -837,14 +831,14 @@ if system_type == "superboids":
     name_arq_header_in = "%s/%s.dat"%(system_type,line_splitted[1])
     name_arq_data_in   = "%s/%s_plainprint.dat"%(system_type,line_splitted[1])
     name_arq_neigh_in  = "%s/%s_neighbors.dat"%(system_type,line_splitted[1])
-    box_size      = int(file_input_parameter.readline().split()[1])
+    box_size      = float(file_input_parameter.readline().split()[1])
     max_dist      = float(file_input_parameter.readline().split()[1])
     
     print "\nYou analise a", system_type, "system, data is read from files:\n", name_arq_header_in," (header)\n", name_arq_data_in," (data)\n", name_arq_neigh_in," (neighbors)"
     file_arq_header_in    = open(name_arq_header_in)
     file_arq_data_in  = open(name_arq_data_in)
     file_arq_neigh_in = open(name_arq_neigh_in)
-    window_size   = box_size
+    window_size   = 1
     line_splitted = file_input_parameter.readline().split()
     x0 = int(line_splitted[1])
     line_splitted = file_input_parameter.readline().split()
@@ -881,10 +875,11 @@ if system_type == "superboids":
                 R_OBST        = int(line_splitted[1])
                 X_OBST        = float(line_splitted[3])
                 Y_OBST        = float(line_splitted[4])
-                
-    x0,xf = int((X_OBST-x0*R_OBST)/window_size)*window_size , int((X_OBST+xf*R_OBST)/window_size)*window_size
-    y0, yf = -Ly/2, Ly/2
-    box_per_line_x, box_per_column_y = (xf-x0)/box_size, (yf-y0)/box_size
+    delta_x =int((xf+x0)*R_OBST/box_size)*box_size
+    x0 = X_OBST-x0*R_OBST
+    xf = x0+delta_x
+    y0, yf = box_size*int(-Ly/(2*box_size)), box_size*int(Ly/(2*box_size))
+    box_per_line_x, box_per_column_y = int((delta_x)/box_size), int((yf-y0)/box_size)
 
     if x0 < -Lx/2 or xf > Lx/2 :
         print "Warning: Reseting limits to -Lx/2, Lx/2"
@@ -1109,13 +1104,13 @@ if system_type == "szabo-boids":
 
 if system_type == "vicsek-gregoire":
 
-    window_size, time_0, time_f, obstacle, voronoi, x0, xf, y0, yf, filename = read_param(file_input_parameter)
+    window_size, time_0, time_f, obstacle, x0, xf, filename = read_param(file_input_parameter)
     file_input_parameter.close()
     aux           = "%s/include/%s"% (system_type, filename)
     file_par_simu = open(aux)
     Lx, Ly, R_OBST, X_OBST, Y_OBST, box_size = read_param_vic_greg(file_par_simu)
     file_par_simu.close()
-
+    y0,yf=0,30
     #definindo as caixas e as matrizes
     box_per_line_x, box_per_column_y = int((xf-x0) / box_size), int((yf-y0) / box_size)
     box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, density_tot, \
