@@ -268,7 +268,7 @@ def box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, 
     axis_b_win_B           = list(0. for i in range(box_total))
     ang_elipse_win_B       = list(0. for i in range(box_total))
     axis_a_win_T           = list(0. for i in range(box_total))
-    axis_b_win_Y           = list(0. for i in range(box_total))
+    axis_b_win_T           = list(0. for i in range(box_total))
     ang_elipse_win_T       = list(0. for i in range(box_total))
     #    ratio=float(box_per_column_y)/box_per_line_x
     ratio = float((yf-y0)) / (xf-x0)
@@ -297,7 +297,7 @@ def box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, 
 
     return box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, density_tot, vx_win, vy_win, \
            density_win, axis_a_tot, axis_b_tot, ang_elipse_tot, axis_a_win_texture, axis_b_win_texture, ang_elipse_win_texture, \
-           axis_a_win_B, axis_a_win_B, ang_elipse_win_B, axis_a_win_T, axis_a_win_T, ang_elipse_win_T
+           axis_a_win_B, axis_b_win_B, ang_elipse_win_B, axis_a_win_T, axis_b_win_T, ang_elipse_win_T
 
 def box_variables_definition_experiment(box_per_column_y, box_per_line_x):
     box_total   = box_per_column_y * box_per_line_x
@@ -346,7 +346,7 @@ def velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_n
     vid_veloc_dens.write("e \n")
     vid_veloc_dens.write("pause .1 \n")
 
-def deformation_elipsis_script(x, y, axis_b, axis_a, ang_elipse, system_type) :
+def deformation_elipsis_script(x, y, axis_a, axis_b, ang_elipse, system_type) :
     #Deformation elipsis gnuplot script
     if system_type == 'experiment' :
         for i in range(box_total) :
@@ -357,74 +357,8 @@ def deformation_elipsis_script(x, y, axis_b, axis_a, ang_elipse, system_type) :
         vid_def.write("e \n")
         vid_def.write("pause .1 \n")
         vid_def.write("unset for [i=1:%i] object i \n" % (box_total+1))
-        
-def B_elipsis_script_simu(box_per_line_x, box_total, axis_b, axis_a, ang_elipse, image, points, x0, y0, box_size) :
-    #B elipsis gnuplot script for simus, with particle center positions in two consecutive images
-    vid_B.write("set output \"B-%d.png\"\n"%image)
-    vid_B.write("set multiplot\n")
-    vid_B.write("plot \'-\' using 1:2:3:4:5 with ellipses\n")
-    for i in range(box_total) :
-        if axis_a[i] != 0 :
-            x = i % box_per_line_x + 0.5
-            y = i / box_per_line_x + 0.5
-            vid_B.write("%f %f 1.0 %f %f \n" % (x,y,axis_b[i]/(axis_a[i]),ang_elipse[i]))
-    vid_B.write("e \n")
-    #Particles position at the present image
-    vid_B.write("set style line 1 lc rgb 'blue' pt 7 ps 1\n")
-    vid_B.write("plot \'-\' w points ls 1 notitle\n")
-    points=(points-np.array([x0,y0]))/box_size
-    for i in range(len(points)) :
-        vid_B.write("%f %f\n"%(points[i][0],points[i][1]))
-    vid_B.write("pause .1 \n")
-    vid_B.write("e \n")
 
-    #Particles position of the previous image
-
-    vid_B.write("set style line 2 lc rgb 'green' pt 7 ps 1\n")
-    vid_B.write("plot \'-\' w points ls 2 notitle\n")
-    points_old=map(lambda i:(i.r_old-np.array([x0,y0]))/box_size, part)
-    for i in range(len(points_old)) :
-        vid_B.write("%f %f\n"%(points_old[i][0],points_old[i][1]))
-    vid_B.write("pause .1 \n")
-    vid_B.write("e \n")
-    vid_B.write("unset multiplot \n")    
-        
-def T_elipsis_script_simu(box_per_line_x, box_total, axis_b, axis_a, ang_elipse, image, points, x0, y0, box_size) :
-    #T elipsis gnuplot script for simus, with particle center positions in two consecutive images
-    vid_T.write("set output \"T-%d.png\"\n"%image)
-    vid_T.write("set multiplot\n")
-    vid_T.write("plot \'-\' using 1:2:3:4:5 with ellipses\n")
-    for i in range(box_total) :
-        if axis_a[i] != 0 :
-            x = i % box_per_line_x + 0.5
-            y = i / box_per_line_x + 0.5
-            vid_T.write("%f %f 1.0 %f %f \n" % (x,y,axis_b[i]/(axis_a[i]),ang_elipse[i]))
-    vid_T.write("e \n")
-    #Particles position at the present image
-    vid_T.write("set style line 1 lc rgb 'blue' pt 7 ps 1\n")
-    vid_T.write("plot \'-\' w points ls 1 notitle\n")
-    points=(points-np.array([x0,y0]))/box_size
-    for i in range(len(points)) :
-        vid_T.write("%f %f\n"%(points[i][0],points[i][1]))
-    vid_T.write("pause .1 \n")
-    vid_T.write("e \n")
-
-    #Particles position of the previous image
-
-    vid_T.write("set style line 2 lc rgb 'green' pt 7 ps 1\n")
-    vid_T.write("plot \'-\' w points ls 2 notitle\n")
-    points_old=map(lambda i:(i.r_old-np.array([x0,y0]))/box_size, part)
-    for i in range(len(points_old)) :
-        vid_T.write("%f %f\n"%(points_old[i][0],points_old[i][1]))
-    vid_T.write("pause .1 \n")
-    vid_T.write("e \n")
-    vid_T.write("unset multiplot \n")    
-    vid_T.write("unset multiplot \n")    
-        
-
-
-
-def texture_elipsis_script_simu(box_per_line_x, box_total, axis_b, axis_a, ang_elipse, image, points, x0, y0, box_size) :
+def texture_elipsis_script_simu(box_per_line_x, box_total, axis_a, axis_b, ang_elipse, image, points, x0, y0, box_size) :
     #Texture elipsis gnuplot script for simus
     vid_def.write("set output \"text-%d.png\"\n"%image)
     vid_def.write("set multiplot\n")
@@ -445,6 +379,116 @@ def texture_elipsis_script_simu(box_per_line_x, box_total, axis_b, axis_a, ang_e
     vid_def.write("e \n")
     #    vid_def.write("unset for [i=1:%i] object i \n" % (box_total+1))
     vid_def.write("unset multiplot \n")    
+
+
+        
+def B_elipsis_script_simu(box_per_line_x, box_total, axis_a, axis_b, ang_elipse, image, points, x0, y0, box_size) :
+    #B elipsis gnuplot script for simus, with particle center positions in two consecutive images
+    vid_B.write("set output \"B-%d.png\"\n"%image)
+    vid_B.write("set multiplot\n")
+    vid_B.write("plot \'-\' using 1:2:3:4:5 with ellipses lt rgb \"red\"\n")
+    for i in range(box_total) :
+        if axis_a[i] != 0 :
+            if axis_a[i] > 0 and axis_b[i]  >0:
+                x = i % box_per_line_x + 0.5
+                y = i / box_per_line_x + 0.5
+                vid_B.write("%f %f 1.0 %f %f \n" % (x,y,axis_b[i]/(axis_a[i]),ang_elipse[i]))
+    vid_B.write("e \n")
+    vid_B.write("plot \'-\' using 1:2:3:4:5 with ellipses lt rgb \"blue\"\n")
+    for i in range(box_total) :
+        if axis_a[i] != 0 :
+            if axis_a[i] < 0 and axis_b[i]  < 0:
+                x = i % box_per_line_x + 0.5
+                y = i / box_per_line_x + 0.5
+                vid_B.write("%f %f 1.0 %f %f \n" % (x,y,axis_a[i]/(axis_b[i]),ang_elipse[i]))
+    vid_B.write("e \n")
+    vid_B.write("plot \'-\' using 1:2:3:4:5 with ellipses lt rgb \"black\"\n")
+    for i in range(box_total) :
+        if axis_a[i] != 0 :
+            if axis_a[i] > 0 and axis_b[i]  < 0:
+                x = i % box_per_line_x + 0.5
+                y = i / box_per_line_x + 0.5
+                if abs(axis_a[i])>abs(axis_b[i]):
+                    vid_B.write("%f %f 1.0 %f %f \n" % (x,y,-axis_b[i]/(axis_a[i]),ang_elipse[i]))
+                else :
+                    vid_B.write("%f %f 1.0 %f %f \n" % (x,y,-axis_a[i]/(axis_b[i]),ang_elipse[i]))
+    vid_B.write("e \n")
+    #Particles position at the present image
+    vid_B.write("set style line 1 lc rgb 'blue' pt 7 ps 1\n")
+    vid_B.write("plot \'-\' w points ls 1 notitle\n")
+    points=(points-np.array([x0,y0]))/box_size
+    for i in range(len(points)) :
+        if points[i][0] < box_per_line_x:
+            vid_B.write("%f %f\n"%(points[i][0],points[i][1]))
+    vid_B.write("e \n")
+
+    #Particles position of the previous image
+
+    # vid_B.write("set style line 2 lc rgb 'green' pt 7 ps 1\n")
+    # vid_B.write("plot \'-\' w points ls 2 notitle\n")
+    # points_old=[]
+    # points_old=map(lambda i:(i.r_old-np.array([x0,y0]))/box_size, part)
+    # for i in range(len(points_old)) :
+    #     if points_old[i][0] < box_per_line_x:
+    #         vid_B.write("%f %f\n"%(points_old[i][0],points_old[i][1]))
+    # #     vid_B.write("pause .1 \n")
+    # vid_B.write("e \n")
+    vid_B.write("unset multiplot \n")    
+        
+def T_elipsis_script_simu(box_per_line_x, box_total, axis_a, axis_b, ang_elipse, image, points, x0, y0, box_size) :
+    #T elipsis gnuplot script for simus, with particle center positions in two consecutive images
+    vid_T.write("set output \"T-%d.png\"\n"%image)
+    vid_T.write("set multiplot\n")
+
+    vid_T.write("plot \'-\' using 1:2:3:4:5 with ellipses lt rgb \"red\"\n")
+    for i in range(box_total) :
+        if axis_a[i] != 0 :
+            if axis_a[i] > 0 and axis_b[i]  >0:
+                x = i % box_per_line_x + 0.5
+                y = i / box_per_line_x + 0.5
+                vid_T.write("%f %f 1.0 %f %f \n" % (x,y,axis_b[i]/(axis_a[i]),ang_elipse[i]))
+    vid_T.write("e \n")
+    vid_T.write("plot \'-\' using 1:2:3:4:5 with ellipses lt rgb \"blue\"\n")
+    for i in range(box_total) :
+        if axis_a[i] != 0 :
+            if axis_a[i] < 0 and axis_b[i]  < 0:
+                x = i % box_per_line_x + 0.5
+                y = i / box_per_line_x + 0.5
+                vid_T.write("%f %f 1.0 %f %f \n" % (x,y,axis_a[i]/(axis_b[i]),ang_elipse[i]))
+    vid_T.write("e \n")
+    vid_T.write("plot \'-\' using 1:2:3:4:5 with ellipses lt rgb \"black\"\n")
+    for i in range(box_total) :
+        if axis_a[i] != 0 :
+            if axis_a[i] > 0 and axis_b[i]  < 0:
+                x = i % box_per_line_x + 0.5
+                y = i / box_per_line_x + 0.5
+                if abs(axis_a[i])>abs(axis_b[i]):
+                    vid_T.write("%f %f 1.0 %f %f \n" % (x,y,-axis_b[i]/(axis_a[i]),ang_elipse[i]))
+                else :
+                    vid_T.write("%f %f 1.0 %f %f \n" % (x,y,-axis_a[i]/(axis_b[i]),ang_elipse[i]))
+    vid_B.write("e \n")
+
+    #Particles position at the present image
+    vid_T.write("set style line 1 lc rgb 'blue' pt 7 ps 1\n")
+    vid_T.write("plot \'-\' w points ls 1 notitle\n")
+    points=(points-np.array([x0,y0]))/box_size
+    for i in range(len(points)) :
+        vid_T.write("%f %f\n"%(points[i][0],points[i][1]))
+    vid_T.write("pause .1 \n")
+    vid_T.write("e \n")
+
+    # #Particles position of the previous image
+
+    # vid_T.write("set style line 2 lc rgb 'green' pt 7 ps 1\n")
+    # vid_T.write("plot \'-\' w points ls 2 notitle\n")
+    # points_old=map(lambda i:(i.r_old-np.array([x0,y0]))/box_size, part)
+    # for i in range(len(points_old)) :
+    #     vid_T.write("%f %f\n"%(points_old[i][0],points_old[i][1]))
+    # vid_T.write("pause .1 \n")
+    # vid_T.write("e \n")
+    # vid_T.write("unset multiplot \n")    
+    vid_T.write("unset multiplot \n")    
+        
 
 def  zero_borders_and_obstacle(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, axis_a_tot, axis_b_tot, ang_elipse_tot, system_type) :
     center_x = box_per_line_x/2
@@ -810,6 +854,7 @@ if system_type == 'experiment':
                 vy_tot[counter]         += vy_now[counter]
                 density_tot[counter]    += density_now[counter]
                 axis_a_tot[counter]     += axis_a[counter]
+                axis_b_tot[counter]     += axis_b[counter]
                 ang_elipse_tot[counter] += ang_elipse[counter]
                 counter                 += 1
             line = file_input_parameter.readline()
@@ -826,7 +871,7 @@ if system_type == 'experiment':
             #Function call to write velocity-density gnu script
             velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0)
             #Function call to write deformation elipse gnu script
-            deformation_elipsis_script(x, y, axis_b, axis_a, ang_elipse, system_type)
+            deformation_elipsis_script(x, y, axis_a, axis_b, ang_elipse, system_type)
         elif image > image_f:
             break
         
@@ -979,12 +1024,12 @@ if system_type == "superboids":
                 #Function call to write velocity-density gnu script
                 velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0)
                 #Function call to write texture elipsis gnu script
-                texture_elipsis_script_simu(box_per_line_x, box_total, axis_b_win_texture, axis_a_win_texture,\
+                texture_elipsis_script_simu(box_per_line_x, box_total, axis_a_win_texture, axis_b_win_texture,\
                                                 ang_elipse_win_texture, image-image_0,points,x0,y0,box_size)
                 if count_events > 1 :
-                    B_elipsis_script_simu(box_per_line_x, box_total, axis_b_win_B, axis_a_win_B,\
+                    B_elipsis_script_simu(box_per_line_x, box_total, axis_a_win_B, axis_b_win_B,\
                                                 ang_elipse_win_B, image-image_0,points,x0,y0,box_size)
-                    T_elipsis_script_simu(box_per_line_x, box_total, axis_b_win_T, axis_a_win_T,\
+                    T_elipsis_script_simu(box_per_line_x, box_total, axis_a_win_T, axis_b_win_T,\
                                                 ang_elipse_win_T, image-image_0,points,x0,y0,box_size)
 
 
@@ -1052,7 +1097,7 @@ if system_type == "szabo-boids":
                 box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, density_tot,\
                     vx_win, vy_win, density_win, axis_a_tot, axis_b_tot, \
                     ang_elipse_tot, axis_a_win_texture, axis_b_win_texture, ang_elipse_win_texture,\
-                    axis_a_win_B, axis_a_win_B, ang_elipse_win_B, axis_a_win_T, axis_a_win_T, ang_elipse_win_T = \
+                    axis_a_win_B, axis_b_win_B, ang_elipse_win_B, axis_a_win_T, axis_b_win_T, ang_elipse_win_T = \
                     box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf)
 
 
@@ -1213,6 +1258,7 @@ if system_type == "vicsek-gregoire":
                     if count_events > 1 :
                         B_box[box]            = B_box[box] / density_now[box]
                         ax_a,ax_b,angle       = axis_angle(B_box[box])
+                        
                         axis_a_win_B[box]     = ax_a
                         axis_b_win_B[box]     = ax_b
                         ang_elipse_win_B[box] = angle
@@ -1227,12 +1273,12 @@ if system_type == "vicsek-gregoire":
 
 
             #Function call to write texture elipsis gnu script
-            texture_elipsis_script_simu(box_per_line_x, box_total, axis_b_win_texture, axis_a_win_texture,\
+            texture_elipsis_script_simu(box_per_line_x, box_total, axis_a_win_texture, axis_b_win_texture,\
                                     ang_elipse_win_texture, image-image_0,points,x0,y0,box_size)
             if count_events > 1 :
-                B_elipsis_script_simu(box_per_line_x, box_total, axis_b_win_B, axis_a_win_B,\
+                B_elipsis_script_simu(box_per_line_x, box_total, axis_a_win_B, axis_b_win_B,\
                                       ang_elipse_win_B, image-image_0,points,x0,y0,box_size)
-                T_elipsis_script_simu(box_per_line_x, box_total, axis_b_win_T, axis_a_win_T,\
+                T_elipsis_script_simu(box_per_line_x, box_total, axis_a_win_T, axis_b_win_T,\
                                       ang_elipse_win_T, image-image_0,points,x0,y0,box_size)
                         
 
