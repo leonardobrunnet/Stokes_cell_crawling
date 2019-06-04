@@ -383,7 +383,7 @@ def texture_elipsis_script_simu(box_per_line_x, box_total, axis_a, axis_b, ang_e
 
         
 def B_elipsis_script_simu(box_per_line_x, box_total, axis_a, axis_b, ang_elipse, image, points, x0, y0, box_size) :
-    #B elipsis gnuplot script for simus, with particle center positions in two consecutive images
+    #B elipsis gnuplot script for simus
     vid_B.write("set output \"B-%d.png\"\n"%image)
     vid_B.write("set multiplot\n")
     vid_B.write("plot \'-\' using 1:2:3:4:5 with ellipses lt rgb \"red\"\n")
@@ -466,7 +466,7 @@ def T_elipsis_script_simu(box_per_line_x, box_total, axis_a, axis_b, ang_elipse,
                     vid_T.write("%f %f 1.0 %f %f \n" % (x,y,-axis_b[i]/(axis_a[i]),ang_elipse[i]))
                 else :
                     vid_T.write("%f %f 1.0 %f %f \n" % (x,y,-axis_a[i]/(axis_b[i]),ang_elipse[i]))
-    vid_B.write("e \n")
+    vid_T.write("e \n")
 
     #Particles position at the present image
     vid_T.write("set style line 1 lc rgb 'blue' pt 7 ps 1\n")
