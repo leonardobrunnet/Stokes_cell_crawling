@@ -517,12 +517,13 @@ def  zero_borders_and_obstacle_experiment(box_per_line_x, box_per_column_y, r_ob
             ang_elipse_tot[i] = 0.
     return box_per_line_x, box_per_column_y, density_tot, vx_tot, vy_tot, axis_a_tot, axis_b_tot, ang_elipse_tot
                               
-def  zero_borders_and_obstacle(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, B_tot, T_tot, system_type) :
+def  zero_borders_and_obstacle_simu(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, B_tot, T_tot, system_type) :
     center_x = box_per_line_x/2
     center_y = box_per_column_y/2
     for i in range(box_total):
         bx = i%box_per_line_x
-        by = int(i/box_per_line_x)        
+        by = int(i/box_per_line_x)
+        caixas_quarto_altura = box_per_column_y/4
         if bx == 0 or bx == box_per_line_x-1 or by == 0 or by == box_per_column_y-1 :
             density_tot[i]    = -10
             vx_tot[i]         = 0.
@@ -531,7 +532,7 @@ def  zero_borders_and_obstacle(box_per_line_x, box_per_column_y, r_obst, x_obst,
             B_tot[i]          = np.zeros((2,2))
             T_tot[i]          = np.zeros((2,2))
         if system_type == 'superboids' :
-            if math.sqrt((bx-center_x)**2 + (by-center_y)**2) < r_obst :
+            if math.sqrt((bx-center_x)**2 + (by-center_y)**2) < int(r_obst) :
                 density_tot[i]    = -10
                 vx_tot[i]         = 0.
                 vy_tot[i]         = 0.
@@ -539,7 +540,7 @@ def  zero_borders_and_obstacle(box_per_line_x, box_per_column_y, r_obst, x_obst,
                 B_tot[i]          = np.zeros((2,2))
                 T_tot[i]          = np.zeros((2,2))
         if system_type == 'vicsek-gregoire' :
-            if math.sqrt((bx-x_obst)**2 + (by-y_obst)**2) <= r_obst:
+            if math.sqrt((bx-x_obst)**2 + (by-y_obst)**2) <= int(r_obst):
                 density_tot[i]    = -10
                 vx_tot[i]         = 0.
                 vy_tot[i]         = 0.
@@ -662,18 +663,18 @@ def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_tot, vy
             ang_elipse_axis1.append(ang_elipse_win[i])
 
         if by == caixas_quarto_altura :
-            vx_axis2.append(vx_win[i]/2.)
-            vy_axis2.append(vy_win[i]/2.)
-            axis_a_axis2.append(axis_a_win[i]/2.)
-            axis_b_axis2.append(axis_b_win[i]/2.)
-            ang_elipse_axis2.append(ang_elipse_win[i]/2.)
+            vx_axis2.append(vx_win[i])
+            vy_axis2.append(vy_win[i])
+            axis_a_axis2.append(axis_a_win[i])
+            axis_b_axis2.append(axis_b_win[i])
+            ang_elipse_axis2.append(ang_elipse_win[i])
 
         if by == 3*caixas_quarto_altura :
-            vx_axis6.append(vx_win[i]/2.)
-            vy_axis6.append(vy_win[i]/2.)
-            axis_a_axis6.append(axis_a_win[i]/2.)
-            axis_b_axis6.append(axis_b_win[i]/2.)
-            ang_elipse_axis6.append(ang_elipse_win[i]/2.)
+            vx_axis6.append(vx_win[i])
+            vy_axis6.append(vy_win[i])
+            axis_a_axis6.append(axis_a_win[i])
+            axis_b_axis6.append(axis_b_win[i])
+            ang_elipse_axis6.append(ang_elipse_win[i])
 
         if bx == caixas_meia_largura :
             vx_axis3.append(vx_win[i])
@@ -697,16 +698,17 @@ def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_tot, vy
             ang_elipse_axis5.append(ang_elipse_win[i])
 
 
-    for i in range(len(vx_axis2)):
-            vx_axis2[i] += vx_axis6[i]
-            vy_axis2[i] += vy_axis6[i]
-            axis_a_axis2[i] += axis_a_axis6[i]
-            axis_b_axis2[i] += axis_b_axis6[i]
-            ang_elipse_axis2[i] += ang_elipse_axis6[i]
+#    for i in range(len(vx_axis2)):
+#            vx_axis2[i] += vx_axis6[i]
+#            vy_axis2[i] += vy_axis6[i]
+#            axis_a_axis2[i] += axis_a_axis6[i]
+#            axis_b_axis2[i] += axis_b_axis6[i]
+#            ang_elipse_axis2[i] += ang_elipse_axis6[i]
 
     for i in range(box_per_line_x):
         file_axis1.write("%d %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis1[i], vy_axis1[i], axis_a_axis1[i], axis_b_axis1[i], ang_elipse_axis1[i]))
         file_axis2.write("%d %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis2[i], vy_axis2[i], axis_a_axis2[i], axis_b_axis2[i], ang_elipse_axis2[i]))
+        file_axis6.write("%d %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis6[i], vy_axis6[i], axis_a_axis6[i], axis_b_axis6[i], ang_elipse_axis6[i]))
 
 
     for i in range(box_per_column_y):
@@ -738,67 +740,81 @@ def five_axis_simu(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, 
     for i in range(box_total):
         bx = i%box_per_line_x
         by = int(i/box_per_line_x)
-            
+           
         if by == caixas_meia_altura :
             vx_axis1.append(vx_win[i])
             vy_axis1.append(vy_win[i])
             axis_a,axis_b,ang_elipse=axis_angle(texture_win[i])
+            if ang_elipse < 0 : ang_elipse+=180
             texture_axis_a_axis1.append(axis_a)
             texture_axis_b_axis1.append(axis_b)
             texture_ang_elipse_axis1.append(ang_elipse)
             axis_a,axis_b,ang_elipse=axis_angle(B_win[i])
+            if ang_elipse < 0 : ang_elipse+=180
             B_axis_a_axis1.append(axis_a)
             B_axis_b_axis1.append(axis_b)
             B_ang_elipse_axis1.append(ang_elipse)
             axis_a,axis_b,ang_elipse=axis_angle(T_win[i])
+            if ang_elipse < 0 : ang_elipse+=180
             T_axis_a_axis1.append(axis_a)
             T_axis_b_axis1.append(axis_b)
             T_ang_elipse_axis1.append(ang_elipse)
 
         if by == caixas_quarto_altura :
-            vx_axis2.append(vx_win[i]/2.)
-            vy_axis2.append(vy_win[i]/2.)
+            vx_axis2.append(vx_win[i])
+            vy_axis2.append(vy_win[i])
             axis_a,axis_b,ang_elipse=axis_angle(texture_win[i])
-            texture_axis_a_axis2.append(axis_a/2.)
-            texture_axis_b_axis2.append(axis_b/2.)
-            texture_ang_elipse_axis2.append(ang_elipse/2)
+            if ang_elipse < 0 : ang_elipse+=180
+            texture_axis_a_axis2.append(axis_a)
+            texture_axis_b_axis2.append(axis_b)
+            texture_ang_elipse_axis2.append(ang_elipse)
             axis_a,axis_b,ang_elipse=axis_angle(B_win[i])
-            B_axis_a_axis2.append(axis_a/2)
-            B_axis_b_axis2.append(axis_b/2)
-            B_ang_elipse_axis2.append(ang_elipse/2)
+            if ang_elipse < 0 : ang_elipse+=180
+            B_axis_a_axis2.append(axis_a)
+            B_axis_b_axis2.append(axis_b)
+            B_ang_elipse_axis2.append(ang_elipse)
             axis_a,axis_b,ang_elipse=axis_angle(T_win[i])
-            T_axis_a_axis2.append(axis_a/2)
-            T_axis_b_axis2.append(axis_b/2)
-            T_ang_elipse_axis2.append(ang_elipse/2)
+            if ang_elipse < 0 : ang_elipse+=180
+            T_axis_a_axis2.append(axis_a)
+            T_axis_b_axis2.append(axis_b)
+            T_ang_elipse_axis2.append(ang_elipse)
 
         if by == 3*caixas_quarto_altura :
-            vx_axis6.append(vx_win[i]/2.)
-            vy_axis6.append(vy_win[i]/2.)
+#            print box_per_line_x,box_per_column_y,bx,by,vx_win[i],vy_win[i]
+            vx_axis6.append(vx_win[i])
+            vy_axis6.append(vy_win[i])
             axis_a,axis_b,ang_elipse=axis_angle(texture_win[i])
-            texture_axis_a_axis6.append(axis_a/2.)
-            texture_axis_b_axis6.append(axis_b/2.)
-            texture_ang_elipse_axis6.append(ang_elipse/2)
+            if ang_elipse < 0 : ang_elipse+=180
+            texture_axis_a_axis6.append(axis_a)
+            texture_axis_b_axis6.append(axis_b)
+            texture_ang_elipse_axis6.append(ang_elipse)
             axis_a,axis_b,ang_elipse=axis_angle(B_win[i])
-            B_axis_a_axis6.append(axis_a/2)
-            B_axis_b_axis6.append(axis_b/2)
-            B_ang_elipse_axis6.append(ang_elipse/2)
+            if ang_elipse < 0 : ang_elipse+=180
+            B_axis_a_axis6.append(axis_a)
+            B_axis_b_axis6.append(axis_b)
+            B_ang_elipse_axis6.append(ang_elipse)
             axis_a,axis_b,ang_elipse=axis_angle(T_win[i])
-            T_axis_a_axis6.append(axis_a/2)
-            T_axis_b_axis6.append(axis_b/2)
-            T_ang_elipse_axis6.append(ang_elipse/2)
+            if ang_elipse < 0 : ang_elipse+=180
+            T_axis_a_axis6.append(axis_a)
+            T_axis_b_axis6.append(axis_b)
+            T_ang_elipse_axis6.append(ang_elipse)
+
 
         if bx == caixas_meia_largura :
             vx_axis3.append(vx_win[i])
             vy_axis3.append(vy_win[i])
             axis_a,axis_b,ang_elipse=axis_angle(texture_win[i])
+            if ang_elipse < 0 : ang_elipse+=180
             texture_axis_a_axis3.append(axis_a)
             texture_axis_b_axis3.append(axis_b)
             texture_ang_elipse_axis3.append(ang_elipse)
             axis_a,axis_b,ang_elipse=axis_angle(B_win[i])
+            if ang_elipse < 0 : ang_elipse+=180
             B_axis_a_axis3.append(axis_a)
             B_axis_b_axis3.append(axis_b)
             B_ang_elipse_axis3.append(ang_elipse)
             axis_a,axis_b,ang_elipse=axis_angle(T_win[i])
+            if ang_elipse < 0 : ang_elipse+=180
             T_axis_a_axis3.append(axis_a)
             T_axis_b_axis3.append(axis_b)
             T_ang_elipse_axis3.append(ang_elipse)
@@ -807,14 +823,17 @@ def five_axis_simu(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, 
             vx_axis4.append(vx_win[i])
             vy_axis4.append(vy_win[i])
             axis_a,axis_b,ang_elipse=axis_angle(texture_win[i])
+            if ang_elipse < 0 : ang_elipse+=180
             texture_axis_a_axis4.append(axis_a)
             texture_axis_b_axis4.append(axis_b)
             texture_ang_elipse_axis4.append(ang_elipse)
             axis_a,axis_b,ang_elipse=axis_angle(B_win[i])
+            if ang_elipse < 0 : ang_elipse+=180
             B_axis_a_axis4.append(axis_a)
             B_axis_b_axis4.append(axis_b)
             B_ang_elipse_axis4.append(ang_elipse)
             axis_a,axis_b,ang_elipse=axis_angle(T_win[i])
+            if ang_elipse < 0 : ang_elipse+=180
             T_axis_a_axis4.append(axis_a)
             T_axis_b_axis4.append(axis_b)
             T_ang_elipse_axis4.append(ang_elipse)
@@ -823,41 +842,37 @@ def five_axis_simu(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, 
             vx_axis5.append(vx_win[i])
             vy_axis5.append(vy_win[i])
             axis_a,axis_b,ang_elipse=axis_angle(texture_win[i])
+            if ang_elipse < 0 : ang_elipse+=180
             texture_axis_a_axis5.append(axis_a)
             texture_axis_b_axis5.append(axis_b)
             texture_ang_elipse_axis5.append(ang_elipse)
             axis_a,axis_b,ang_elipse=axis_angle(B_win[i])
+            if ang_elipse < 0 : ang_elipse+=180
             B_axis_a_axis5.append(axis_a)
             B_axis_b_axis5.append(axis_b)
             B_ang_elipse_axis5.append(ang_elipse)
             axis_a,axis_b,ang_elipse=axis_angle(T_win[i])
+            if ang_elipse < 0 : ang_elipse+=180
             T_axis_a_axis5.append(axis_a)
             T_axis_b_axis5.append(axis_b)
             T_ang_elipse_axis5.append(ang_elipse)
 
-    for i in range(len(vx_axis2)):
-            vx_axis2[i] += vx_axis6[i]
-            vy_axis2[i] += vy_axis6[i]
-            texture_axis_a_axis2[i] += axis_a_axis6[i]
-            texture_axis_b_axis2[i] += axis_b_axis6[i]
-            texture_ang_elipse_axis2[i] += ang_elipse_axis6[i]
-            B_axis_a_axis2[i] += axis_a_axis6[i]
-            B_axis_b_axis2[i] += axis_b_axis6[i]
-            B_ang_elipse_axis2[i] += ang_elipse_axis6[i]
-            T_axis_a_axis2[i] += axis_a_axis6[i]
-            T_axis_b_axis2[i] += axis_b_axis6[i]
-            T_ang_elipse_axis2[i] += ang_elipse_axis6[i]
 
     for i in range(box_per_line_x):
+
         file_axis1.write("%d %f %f %f %f %f %f %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis1[i], vy_axis1[i], texture_axis_a_axis1[i], texture_axis_b_axis1[i], texture_ang_elipse_axis1[i], B_axis_a_axis1[i], B_axis_b_axis1[i], B_ang_elipse_axis1[i], T_axis_a_axis1[i], T_axis_b_axis1[i], T_ang_elipse_axis1[i]))
+
         file_axis2.write("%d %f %f %f %f %f %f %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis2[i], vy_axis2[i], texture_axis_a_axis2[i], texture_axis_b_axis2[i], texture_ang_elipse_axis2[i], B_axis_a_axis2[i], B_axis_b_axis2[i], B_ang_elipse_axis2[i], T_axis_a_axis2[i], T_axis_b_axis2[i], T_ang_elipse_axis2[i]))
+
+        file_axis6.write("%d %f %f %f %f %f %f %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis6[i], vy_axis6[i], texture_axis_a_axis6[i], texture_axis_b_axis6[i], texture_ang_elipse_axis6[i], B_axis_a_axis6[i], B_axis_b_axis6[i], B_ang_elipse_axis6[i], T_axis_a_axis6[i], T_axis_b_axis6[i], T_ang_elipse_axis6[i]))
 
 
     for i in range(box_per_column_y):
         file_axis3.write("%d %f %f %f %f %f %f %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis3[i], vy_axis3[i], texture_axis_a_axis3[i], texture_axis_b_axis3[i], texture_ang_elipse_axis3[i], B_axis_a_axis3[i], B_axis_b_axis3[i], B_ang_elipse_axis3[i], T_axis_a_axis3[i], T_axis_b_axis3[i], T_ang_elipse_axis3[i]))
+
         file_axis4.write("%d %f %f %f %f %f %f %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis4[i], vy_axis4[i], texture_axis_a_axis4[i], texture_axis_b_axis4[i], texture_ang_elipse_axis4[i], B_axis_a_axis4[i], B_axis_b_axis4[i], B_ang_elipse_axis4[i], T_axis_a_axis4[i], T_axis_b_axis4[i], T_ang_elipse_axis4[i]))
         
-        file_axis5.write("%d %f %f  %f %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis5[i], vy_axis5[i], texture_axis_a_axis5[i], texture_axis_b_axis5[i], texture_ang_elipse_axis5[i], B_axis_a_axis5[i], B_axis_b_axis5[i], B_ang_elipse_axis5[i], T_axis_a_axis5[i], T_axis_b_axis5[i], T_ang_elipse_axis5[i]))
+        file_axis5.write("%d %f %f  %f %f %f %f %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis5[i], vy_axis5[i], texture_axis_a_axis5[i], texture_axis_b_axis5[i], texture_ang_elipse_axis5[i], B_axis_a_axis5[i], B_axis_b_axis5[i], B_ang_elipse_axis5[i], T_axis_a_axis5[i], T_axis_b_axis5[i], T_ang_elipse_axis5[i]))
 
 
 def imag_count(system_type) :
@@ -961,6 +976,7 @@ file_axis2 = open("%s/axis2.dat"%path,"w")
 file_axis4 = open("%s/axis4.dat"%path,"w")
 file_axis3 = open("%s/axis3.dat"%path,"w")
 file_axis5 = open("%s/axis5.dat"%path,"w")
+file_axis6 = open("%s/axis6.dat"%path,"w")
 
 if system_type == 'experiment':
     arq_in      = "%s/%s"%(line_splitted[0], line_splitted[1])
@@ -1527,7 +1543,7 @@ if system_type == 'experiment':
     
 else:
 
-    zero_borders_and_obstacle(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, B_tot, T_tot, system_type)
+    zero_borders_and_obstacle_simu(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, B_tot, T_tot, system_type)
     
     # Here we write the time averages of density, velocity and deformation elipse for simus
     vx_win, vy_win,  density_win, texture_win, B_win, T_win = average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_tot, vy_tot,  \
