@@ -9,6 +9,12 @@ import matplotlib.pyplot as plt
 #************************************************************
 # diagonalization of matrices. Input: Matrix (numpy 2x2)
 # output: axis_a, axis_b and angle in degrees
+def matrix_three_component(M):
+    xxpyy=M.trace()/2.
+    xxmyy=(M[0][0]-M[1][1])/2.
+    xy = M[0][1]
+    return xxpyy,xxmyy,xy
+
 def axis_angle(M):
     w,v        = np.linalg.eig(M)
     index_max  = np.argmax(w)
@@ -769,7 +775,7 @@ def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_win, vy
         
 
 
-def five_axis_simu(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, texture_win, B_win, T_win, system_type, image_counter) :
+def five_axis_simu(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, texture_win, B_win, T_win, system_type, image_counter,path) :
 
     caixas_meia_altura    = box_per_column_y/2
     caixas_quarto_altura  = box_per_column_y/4
@@ -786,7 +792,13 @@ def five_axis_simu(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, 
     T_axis_a_axis1, T_axis_a_axis2, T_axis_a_axis3, T_axis_a_axis4, T_axis_a_axis5, T_axis_a_axis6                         = [], [], [], [], [], []
     T_axis_b_axis1, T_axis_b_axis2, T_axis_b_axis3, T_axis_b_axis4, T_axis_b_axis5, T_axis_b_axis6                         = [], [], [], [], [], []
     T_ang_elipse_axis1, T_ang_elipse_axis2, T_ang_elipse_axis3, T_ang_elipse_axis4, T_ang_elipse_axis5, T_ang_elipse_axis6 = [], [], [], [], [], []
-    
+
+#To avoid rewriting the whole function axis_a is xxpyy=(xx+yy)/2,
+#axis_b is xxmyy=(xx-yy)/2 and ang = xy. These are components of a
+# symmetric matrix        xx xy 
+#                    M = [     ]
+#                         xy yy  
+
     for i in range(box_total):
         bx = i%box_per_line_x
         by = int(i/box_per_line_x)
@@ -794,137 +806,95 @@ def five_axis_simu(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, 
         if by == caixas_meia_altura :
             vx_axis1.append(vx_win[i])
             vy_axis1.append(vy_win[i])
-            axis_a,axis_b,ang_elipse=axis_angle(texture_win[i])
-            if ang_elipse < -90 : ang_elipse+=180
-            if ang_elipse > 90 : ang_elipse-=180
-            texture_axis_a_axis1.append(axis_a)
-            texture_axis_b_axis1.append(axis_b)
-            texture_ang_elipse_axis1.append(ang_elipse)
-            axis_a,axis_b,ang_elipse=axis_angle(B_win[i])
-            if ang_elipse < -90 : ang_elipse+=180
-            if ang_elipse > 90 : ang_elipse-=180
-            B_axis_a_axis1.append(axis_a)
-            B_axis_b_axis1.append(axis_b)
-            B_ang_elipse_axis1.append(ang_elipse)
-            axis_a,axis_b,ang_elipse=axis_angle(T_win[i])
-            if ang_elipse < -90 : ang_elipse+=180
-            if ang_elipse > 90 : ang_elipse-=180
-            T_axis_a_axis1.append(axis_a)
-            T_axis_b_axis1.append(axis_b)
-            T_ang_elipse_axis1.append(ang_elipse)
+            xxpyy,xxmyy,xy=matrix_three_component(texture_win[i])
+            texture_axis_a_axis1.append(xxpyy)
+            texture_axis_b_axis1.append(xxmyy)
+            texture_ang_elipse_axis1.append(xy)
+            xxpyy,xxmyy,xy=matrix_three_component(B_win[i])
+            B_axis_a_axis1.append(xxpyy)
+            B_axis_b_axis1.append(xxmyy)
+            B_ang_elipse_axis1.append(xy)
+            xxpyy,xxmyy,xy=matrix_three_component(T_win[i])
+            T_axis_a_axis1.append(xxpyy)
+            T_axis_b_axis1.append(xxmyy)
+            T_ang_elipse_axis1.append(xy)
 
         if by == caixas_quarto_altura :
             vx_axis2.append(vx_win[i])
             vy_axis2.append(vy_win[i])
-            axis_a,axis_b,ang_elipse=axis_angle(texture_win[i])
-            if ang_elipse < -90 : ang_elipse+=180
-            if ang_elipse > 90 : ang_elipse-=180
-            texture_axis_a_axis2.append(axis_a)
-            texture_axis_b_axis2.append(axis_b)
-            texture_ang_elipse_axis2.append(ang_elipse)
-            axis_a,axis_b,ang_elipse=axis_angle(B_win[i])
-            if ang_elipse < -90 : ang_elipse+=180
-            if ang_elipse > 90 : ang_elipse-=180
-            B_axis_a_axis2.append(axis_a)
-            B_axis_b_axis2.append(axis_b)
-            B_ang_elipse_axis2.append(ang_elipse)
-            axis_a,axis_b,ang_elipse=axis_angle(T_win[i])
-            if ang_elipse < -90 : ang_elipse+=180
-            if ang_elipse > 90 : ang_elipse-=180
-            T_axis_a_axis2.append(axis_a)
-            T_axis_b_axis2.append(axis_b)
-            T_ang_elipse_axis2.append(ang_elipse)
-
+            xxpyy,xxmyy,xy=matrix_three_component(texture_win[i])
+            texture_axis_a_axis2.append(xxpyy)
+            texture_axis_b_axis2.append(xxmyy)
+            texture_ang_elipse_axis2.append(xy)
+            xxpyy,xxmyy,xy=matrix_three_component(B_win[i])
+            B_axis_a_axis2.append(xxpyy)
+            B_axis_b_axis2.append(xxmyy)
+            B_ang_elipse_axis2.append(xy)
+            xxpyy,xxmyy,xy=matrix_three_component(T_win[i])
+            T_axis_a_axis2.append(xxpyy)
+            T_axis_b_axis2.append(xxmyy)
+            T_ang_elipse_axis2.append(xy)
         if by == 3*caixas_quarto_altura :
-#            print box_per_line_x,box_per_column_y,bx,by,vx_win[i],vy_win[i]
             vx_axis6.append(vx_win[i])
             vy_axis6.append(vy_win[i])
-            axis_a,axis_b,ang_elipse=axis_angle(texture_win[i])
-            if ang_elipse < -90 : ang_elipse+=180
-            if ang_elipse > 90 : ang_elipse-=180
-            texture_axis_a_axis6.append(axis_a)
-            texture_axis_b_axis6.append(axis_b)
-            texture_ang_elipse_axis6.append(ang_elipse)
-            axis_a,axis_b,ang_elipse=axis_angle(B_win[i])
-            if ang_elipse < -90 : ang_elipse+=180
-            if ang_elipse > 90 : ang_elipse-=180
-            B_axis_a_axis6.append(axis_a)
-            B_axis_b_axis6.append(axis_b)
-            B_ang_elipse_axis6.append(ang_elipse)
-            axis_a,axis_b,ang_elipse=axis_angle(T_win[i])
-            if ang_elipse < -90 : ang_elipse+=180
-            if ang_elipse > 90 : ang_elipse-=180
-            T_axis_a_axis6.append(axis_a)
-            T_axis_b_axis6.append(axis_b)
-            T_ang_elipse_axis6.append(ang_elipse)
-
-
+            xxpyy,xxmyy,xy=matrix_three_component(texture_win[i])
+            texture_axis_a_axis6.append(xxpyy)
+            texture_axis_b_axis6.append(xxmyy)
+            texture_ang_elipse_axis6.append(xy)
+            xxpyy,xxmyy,xy=matrix_three_component(B_win[i])
+            B_axis_a_axis6.append(xxpyy)
+            B_axis_b_axis6.append(xxmyy)
+            B_ang_elipse_axis6.append(xy)
+            xxpyy,xxmyy,xy=matrix_three_component(T_win[i])
+            T_axis_a_axis6.append(xxpyy)
+            T_axis_b_axis6.append(xxmyy)
+            T_ang_elipse_axis6.append(xy)
         if bx == caixas_meia_largura :
             vx_axis3.append(vx_win[i])
             vy_axis3.append(vy_win[i])
-            axis_a,axis_b,ang_elipse=axis_angle(texture_win[i])
-            if ang_elipse < -90 : ang_elipse+=180
-            if ang_elipse > 90 : ang_elipse-=180
-            texture_axis_a_axis3.append(axis_a)
-            texture_axis_b_axis3.append(axis_b)
-            texture_ang_elipse_axis3.append(ang_elipse)
-            axis_a,axis_b,ang_elipse=axis_angle(B_win[i])
-            if ang_elipse < -90 : ang_elipse+=180
-            if ang_elipse > 90 : ang_elipse-=180
-            B_axis_a_axis3.append(axis_a)
-            B_axis_b_axis3.append(axis_b)
-            B_ang_elipse_axis3.append(ang_elipse)
-            axis_a,axis_b,ang_elipse=axis_angle(T_win[i])
-            if ang_elipse < -90 : ang_elipse+=180
-            if ang_elipse > 90 : ang_elipse-=180
-            T_axis_a_axis3.append(axis_a)
-            T_axis_b_axis3.append(axis_b)
-            T_ang_elipse_axis3.append(ang_elipse)
+            xxpyy,xxmyy,xy=matrix_three_component(texture_win[i])
+            texture_axis_a_axis3.append(xxpyy)
+            texture_axis_b_axis3.append(xxmyy)
+            texture_ang_elipse_axis3.append(xy)
+            xxpyy,xxmyy,xy=matrix_three_component(B_win[i])
+            B_axis_a_axis3.append(xxpyy)
+            B_axis_b_axis3.append(xxmyy)
+            B_ang_elipse_axis3.append(xy)
+            xxpyy,xxmyy,xy=matrix_three_component(T_win[i])
+            T_axis_a_axis3.append(xxpyy)
+            T_axis_b_axis3.append(xxmyy)
+            T_ang_elipse_axis3.append(xy)
 
         if bx == caixas_meia_largura-caixas_quarto_largura :
             vx_axis4.append(vx_win[i])
             vy_axis4.append(vy_win[i])
-            axis_a,axis_b,ang_elipse=axis_angle(texture_win[i])
-            if ang_elipse < -90 : ang_elipse+=180
-            if ang_elipse > 90 : ang_elipse-=180
-            texture_axis_a_axis4.append(axis_a)
-            texture_axis_b_axis4.append(axis_b)
-            texture_ang_elipse_axis4.append(ang_elipse)
-            axis_a,axis_b,ang_elipse=axis_angle(B_win[i])
-            if ang_elipse < -90 : ang_elipse+=180
-            if ang_elipse > 90 : ang_elipse-=180
-            B_axis_a_axis4.append(axis_a)
-            B_axis_b_axis4.append(axis_b)
-            B_ang_elipse_axis4.append(ang_elipse)
-            axis_a,axis_b,ang_elipse=axis_angle(T_win[i])
-            if ang_elipse < -90 : ang_elipse+=180
-            if ang_elipse > 90 : ang_elipse-=180
-            T_axis_a_axis4.append(axis_a)
-            T_axis_b_axis4.append(axis_b)
-            T_ang_elipse_axis4.append(ang_elipse)
-
+            xxpyy,xxmyy,xy=matrix_three_component(texture_win[i])
+            texture_axis_a_axis4.append(xxpyy)
+            texture_axis_b_axis4.append(xxmyy)
+            texture_ang_elipse_axis4.append(xy)
+            xxpyy,xxmyy,xy=matrix_three_component(B_win[i])
+            B_axis_a_axis4.append(xxpyy)
+            B_axis_b_axis4.append(xxmyy)
+            B_ang_elipse_axis4.append(xy)
+            xxpyy,xxmyy,xy=matrix_three_component(T_win[i])
+            T_axis_a_axis4.append(xxpyy)
+            T_axis_b_axis4.append(xxmyy)
+            T_ang_elipse_axis4.append(xy)
         if bx == caixas_meia_largura+caixas_quarto_largura :
             vx_axis5.append(vx_win[i])
             vy_axis5.append(vy_win[i])
-            axis_a,axis_b,ang_elipse=axis_angle(texture_win[i])
-            if ang_elipse < -90 : ang_elipse+=180
-            if ang_elipse > 90 : ang_elipse-=180
-            texture_axis_a_axis5.append(axis_a)
-            texture_axis_b_axis5.append(axis_b)
-            texture_ang_elipse_axis5.append(ang_elipse)
-            axis_a,axis_b,ang_elipse=axis_angle(B_win[i])
-            if ang_elipse < -90 : ang_elipse+=180
-            if ang_elipse > 90 : ang_elipse-=180
-            B_axis_a_axis5.append(axis_a)
-            B_axis_b_axis5.append(axis_b)
-            B_ang_elipse_axis5.append(ang_elipse)
-            axis_a,axis_b,ang_elipse=axis_angle(T_win[i])
-            if ang_elipse < -90 : ang_elipse+=180
-            if ang_elipse > 90 : ang_elipse-=180
-            T_axis_a_axis5.append(axis_a)
-            T_axis_b_axis5.append(axis_b)
-            T_ang_elipse_axis5.append(ang_elipse)
-
+            xxpyy,xxmyy,xy=matrix_three_component(texture_win[i])
+            texture_axis_a_axis5.append(xxpyy)
+            texture_axis_b_axis5.append(xxmyy)
+            texture_ang_elipse_axis5.append(xy)
+            xxpyy,xxmyy,xy=matrix_three_component(B_win[i])
+            B_axis_a_axis5.append(xxpyy)
+            B_axis_b_axis5.append(xxmyy)
+            B_ang_elipse_axis5.append(xy)
+            xxpyy,xxmyy,xy=matrix_three_component(T_win[i])
+            T_axis_a_axis5.append(xxpyy)
+            T_axis_b_axis5.append(xxmyy)
+            T_ang_elipse_axis5.append(xy)
 
     for i in range(box_per_line_x):
 
@@ -942,6 +912,30 @@ def five_axis_simu(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, 
         
         file_axis5.write("%d %f %f  %f %f %f %f %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis5[i], vy_axis5[i], texture_axis_a_axis5[i], texture_axis_b_axis5[i], texture_ang_elipse_axis5[i], B_axis_a_axis5[i], B_axis_b_axis5[i], B_ang_elipse_axis5[i], T_axis_a_axis5[i], T_axis_b_axis5[i], T_ang_elipse_axis5[i]))
 
+    plt.subplot(211)
+    plt.title('(XX+YY)/2')
+    plt.plot(texture_axis_a_axis1,'k',texture_axis_a_axis2,'r',texture_axis_a_axis6,'g')
+    plt.subplot(212)
+    plt.plot(texture_axis_a_axis3,'k',texture_axis_a_axis4,'r',texture_axis_a_axis5,'g')
+    plt.savefig(path+"/six-axis-texture-xxpyy.png",bbox_inches="tight")
+    plt.close()
+
+    plt.subplot(211)
+    plt.title('(XX-YY)/2')
+    plt.plot(texture_axis_b_axis1,'k',texture_axis_b_axis2,'r',texture_axis_b_axis6,'g')
+    plt.subplot(212)
+    plt.plot(texture_axis_b_axis3,'k',texture_axis_b_axis4,'r',texture_axis_b_axis5,'g')
+    plt.savefig(path+"/six-axis-texture-xxmyy.png",bbox_inches="tight")
+    plt.close()
+
+    plt.subplot(211)
+    plt.title('XY')
+    plt.plot(texture_ang_elipse_axis1,'k',texture_ang_elipse_axis2,'r',texture_ang_elipse_axis6,'g')
+    plt.subplot(212)
+    plt.plot(texture_ang_elipse_axis3,'k',texture_ang_elipse_axis4,'r',texture_ang_elipse_axis5,'g')
+    plt.savefig(path+"/six-axis-texture-xy.png",bbox_inches="tight")
+    plt.close()
+    #    plt.show()
 
 def imag_count(system_type) :
     counter = 0
@@ -1624,7 +1618,7 @@ else:
     T_win, count_events, v0, vel_win_file_name, vel_fluct_win_file_name, dens_win_file_name, path, image_counter, window_size)
 
     # Five axis analysis for simulations
-    five_axis_simu(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, texture_win, B_win, T_win, system_type, image_counter)
+    five_axis_simu(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, texture_win, B_win, T_win, system_type, image_counter,path)
 
 
 file_input_parameter.close()
