@@ -4,6 +4,8 @@ import os
 import sys
 from scipy.spatial import Delaunay
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 
@@ -164,7 +166,7 @@ def delaunay(points,max_dist):
 def create_gnu_script_fluct_vel(arrow_size, box_per_line_x, box_per_column_y, vel_fluct_win_file_name, dens_win_file_name, path):
     proportion_x, proportion_y             = 1.0, 0.7
     grid_x, grid_y, levels                 = 200, 200, 4
-    image_resolution_x, image_resolution_y = 1300, 1300
+    image_resolution_x, image_resolution_y = 650, 650
     name_output_map            = "density-velocity-fluct.png"
     file_script_den_vel_fluct  = open(path+"/scriptdenvel_fluct.gnu","w")
    
@@ -189,15 +191,15 @@ def create_gnu_script_fluct_vel(arrow_size, box_per_line_x, box_per_column_y, ve
     file_script_den_vel_fluct.write("set pm3d map \n")
     file_script_den_vel_fluct.write("splot [%d:%d][%d:%d] \"toto.dat\" \n"% (0, box_per_line_x, 0, box_per_column_y))
     file_script_den_vel_fluct.write("replot \"%s\" u($1):($2):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors head size 1.5,5,60 lt rgb \"black\" \n"% vel_fluct_win_file_name)
-    file_script_den_vel_fluct.write("pause -1 \n")
-    file_script_den_vel_fluct.write("set terminal png large size %d,%d \n"% (image_resolution_x, image_resolution_y)) 
+#    file_script_den_vel_fluct.write("pause -1 \n")
+    file_script_den_vel_fluct.write("set terminal pngcairo  size %d,%d enhanced font 'Verdana, 14'\n"% (image_resolution_x, image_resolution_y)) 
     file_script_den_vel_fluct.write("set output \"%s\" \n"% name_output_map)
     file_script_den_vel_fluct.write("replot \n")  
     
 def create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path):
     proportion_x, proportion_y             = 1.0, 0.7
     grid_x, grid_y, levels                 = 200, 200, 4
-    image_resolution_x, image_resolution_y = 1300, 1300
+    image_resolution_x, image_resolution_y = 650,650
     name_output_map            = "density-velocity.png"
     file_script_den_vel        = open(path+"/scriptdenvel.gnu","w")
    
@@ -222,8 +224,8 @@ def create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file
     file_script_den_vel.write("set pm3d map \n")
     file_script_den_vel.write("splot [%d:%d][%d:%d] \"toto1.dat\" \n"% (0, box_per_line_x, 0, box_per_column_y))
     file_script_den_vel.write("replot \"%s\" u($1):($2):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors head size 1.5,5,60 lt rgb \"black\" \n"% vel_win_file_name)
-    file_script_den_vel.write("pause -1 \n")
-    file_script_den_vel.write("set terminal png large size %d,%d \n"% (image_resolution_x, image_resolution_y)) 
+#    file_script_den_vel.write("pause -1 \n")
+    file_script_den_vel.write("set terminal pngcairo  size %d,%d enhanced font 'Verdana, 14'\n"% (image_resolution_x, image_resolution_y))
     file_script_den_vel.write("set output \"%s\" \n"% name_output_map)
     file_script_den_vel.write("replot \n")  
 
@@ -259,6 +261,7 @@ def read_param_vic_greg(file_par_simu) :
     return Lx, Ly, R_OBST, X_OBST, Y_OBST, box_size, Delta_t, v0, max_dist
 
 def read_param(file_input_parameter) :
+    box_mag = 1.0
     while 1 :
         line = file_input_parameter.readline()
         if not line:
@@ -283,7 +286,9 @@ def read_param(file_input_parameter) :
             xf = int(line_splitted[1])
         if line_splitted[0] == 'file' :
             filename = line_splitted[1]
-    return window_size, time_0, time_f, obstacle, x0, xf, filename
+        if line_splitted[0] == 'box_magnification' :
+            box_mag = float(line_splitted[1])
+    return window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag
 
 
 def read_param_potts(file_par_simu) :
@@ -317,7 +322,8 @@ def read_param_potts(file_par_simu) :
         if line_splitted[0] == 'center_y' :
             Y_OBST = float(line_splitted[4]) * multiplier
         if line_splitted[0] == 'target_v' :
-            box_size = math.sqrt(float(line_splitted[6]))
+            box_size = math.sqrt(float(line_splitted[6]))*multiplier
+            box_size = 2*box_size #This seems to be the best box_size for potts
             max_dist = box_size
         if line_splitted[0] == 'CompuCell3DElmnt' :
             break
@@ -325,6 +331,68 @@ def read_param_potts(file_par_simu) :
     v0 = 1.0 # There is no v0 in Potts model
     return Lx, Ly, R_OBST, X_OBST, Y_OBST, box_size, max_dist, Delta_t, v0
 
+def read_param_voronoi(filename):
+    X_OBST = 0.0 
+    Y_OBST = 0.0
+    v0 = 1.0
+    # first file to be read make_initial.py
+    aux           = system_type+"/"+filename
+    file_par_simu = open(aux)
+    while 1 :
+        line = file_par_simu.readline()
+        # the voronoi has the config file 
+        if not line:
+            break #EOF
+        if line.replace( '\r', '' ) == '\n' : #identifies blank lines
+            while line.replace( '\r' , '' ) == '\n' : # skip blank lines
+                line = file_par_simu.readline()
+        if not line:
+            break #EOF
+        line_splitted = line.split()
+        if line_splitted[0] == 'size_mul':
+            size_mul = float(line_splitted[2])
+        if line_splitted[0] == 'wall':
+            # make sure there are spaces between names and information
+            line = line.replace( '*' , ' * ')
+            line = line.replace( ',' , ' , ')
+            line_splitted = line.split()
+            Lx = float(line_splitted[4]) * size_mul
+            Ly = float(line_splitted[8]) * size_mul
+        if line_splitted[0] == 'circle' :
+            line = line.replace( '*' , ' * ')
+            line = line.replace( ',' , ' , ')
+            line = line.replace( ')' , ' ) ')
+            line_splitted = line.split()
+            R_OBST = float(line_splitted[17]) * size_mul
+    # the rest of the information comes from another file
+    file_par_simu.close()
+    filename = "config.conf"
+    aux           = system_type+"/"+filename
+    file_par_simu = open(aux)
+    while 1 :
+        line = file_par_simu.readline()
+        if not line:
+            break #EOF                                                                                                                                                                                     
+        if line.replace( '\r', '' ) == '\n' : #identifies blank lines
+            while line.replace( '\r' , '' ) == '\n' : # skip blank lines 
+                line = file_par_simu.readline()
+        if not line:
+            break #EOF                                                                                                                                                                                     
+        line_splitted = line.split()
+        if len(line_splitted) > 1:
+            if line_splitted[0] == 'dump' and line_splitted[1] == 'cell' :
+                line = line.replace( ';' , ' ; ')
+                line = line.replace( '=' , ' = ')
+                line_splitted = line.split()
+                Delta_t = int(line_splitted[13])
+
+            if line_splitted[0] == 'pair_potential' and line_splitted[1] == 'soft':
+                line = line.replace( ';' , ' ; ')
+                line = line.replace( '}' , ' } ')
+                line_splitted = line.split()
+                box_size = float(line_splitted[8])
+                max_dist = box_size
+    return Lx, Ly, R_OBST, X_OBST, Y_OBST, box_size, Delta_t, v0, max_dist
 
 
 def box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf) :
@@ -659,6 +727,7 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
     density_tot, texture_tot, B_tot, T_tot, vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, B_win, \
     T_win, count_events, v0, vel_win_file_name, vel_fluct_win_file_name, dens_win_file_name, path, image_counter, window_size) :
 
+
     box_total         = box_per_column_y*box_per_line_x
     window_size_h     = window_size/2
 
@@ -678,12 +747,6 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
                         B_win[box] += B_tot[(bx+k)+((by+l)*box_per_line_x)]
                         T_win[box] += T_tot[(bx+k)+((by+l)*box_per_line_x)]
 		        count_box_win[box] += 1
-                            #                        else:
-                            #                            box                 = bx + (by*box_per_line_x)
-                            #                            count_box_win[box] += 1
-                            #        for i in range(8):
-                            #            a =  math.sqrt(vx_win[800+i]**2+vy_win[800+i]**2)/count_box_win[800+i]/image_counter
-                            #            print "%f " % a
 
     #Average win calculus and data print (gnuplot script for velocity)
     module_mean         = 0
@@ -717,6 +780,7 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
                 T_win[box]/=normalization
 	        vel_win.write("%d %d %f %f %f %f %f \n"% (bx, by, vx_win[box], vy_win[box], module, density_tot[box]/float(count_events), density_win[box]))
 	        vel_fluct_win.write("%d %d %f %f %f %f %f \n"% (bx, by, vx2_win[box], vy2_win[box], module, density_tot[box]/float(count_events), density_win[box]))
+#                print box, texture_win[box]
                 axis_a,axis_b, ang_elipse = axis_angle(texture_win[box])
                 ells.append(Ellipse(np.array([bx,by]),1.,axis_b/axis_a,ang_elipse))
 	        texture_win_file.write("%d %d %f %f %f \n"% (bx, by, axis_a, axis_b, ang_elipse))
@@ -1015,10 +1079,9 @@ def five_axis_simu(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, 
 def imag_count(system_type) :
     counter = 0
     max_number_particles = 0
+    part_counter=0
     print "Counting images... wait... it may take 5s to count 1000 images on an I7 \n"
     if system_type == 'superboids' :
-        max_number_particles=0
-        part_counter=0
         while 1 :
             line          = file_arq_neigh_in.readline()
             if not line :
@@ -1063,9 +1126,27 @@ def imag_count(system_type) :
             max_number_particles=max(max_number_particles,n)
             for i in range(n):
                 file_arq_data_in.readline()
-            
-    print "Counted", counter-1, "images.\n"
-    print "Type initial and final image number you want to analyse (min=1, max=",counter-1,") - Use spaces to separate the two numbers"
+
+    if system_type == 'voronoi' :
+        max_number_particles=0
+        os.system("ls voronoi/cell_*.dat > files.dat")
+        file_names = open("files.dat",'r')
+        for line in file_names:
+            counter+=1
+            part_counter =0 
+            for word in line.split():
+                name_arq_data_in = word
+                file_arq_data_in       = open(name_arq_data_in)
+                while 1:
+                    line = file_arq_data_in.readline()           
+                    if not line:
+                        break #EOF
+                    line_splitted = line.split()
+                    if line_splitted[1] == '1' :
+                        part_counter += 1
+                max_number_particles=max(max_number_particles,part_counter)
+                file_arq_data_in.close()
+
     if system_type == 'potts' :
         max_number_particles=0
         while 1:
@@ -1080,7 +1161,8 @@ def imag_count(system_type) :
                 file_arq_data_in.readline()
             
     print "Counted", counter-1, "images.\n"
-    print "Type initial and final image number you want to analyse (min=1, max=",counter-1,") - Use spaces to separate the two numbers"
+#    print "Type initial and final image number you want to analyse (min=1, max=",counter-1,") - Use spaces to separate the two numbers"
+    print "Counted", max_number_particles, "as max number of particles."
     return max_number_particles
 
 ################## Here starts the main program ###############
@@ -1094,8 +1176,8 @@ path    = 'output/'+system_type
 
 #Creating the directory structure for output
 os.system('mkdir -p %s' % path)
-os.system('cp axis12.par %s' % path)
-os.system('cp axis345.par %s' % path)
+#os.system('cp axis12.par %s' % path)
+#os.system('cp axis345.par %s' % path)
 
 #velocity_density gnuplot file
 vid_veloc_dens = open("%s/video_velocity_density.gnu"%path,"w")
@@ -1150,7 +1232,6 @@ if system_type == 'experiment':
     # Reading file head (I have taken some lines of the header, you may want others)
     while(line_splitted[0] != 'X') : #'X' marks the line just before data in experiment data file, that is, the end of the header
         line_splitted = file_input_parameter.readline().split()
-        print line_splitted
         if(line_splitted[0] == 'Box_end:') :
             box_per_column_y, box_per_line_x = int(line_splitted[1]), int(line_splitted[2])
         if(line_splitted[0] == 'Box_size:') :
@@ -1518,7 +1599,7 @@ if system_type == "szabo-boids":
 
 if system_type == "vicsek-gregoire":
 
-    window_size, time_0, time_f, obstacle, x0, xf, filename = read_param(file_input_parameter)
+    window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag = read_param(file_input_parameter)
     file_input_parameter.close()
     aux           = "%s/include/%s"% (system_type, filename)
     file_par_simu = open(aux)
@@ -1680,7 +1761,7 @@ if system_type == "vicsek-gregoire":
 
 if system_type == "potts":
 
-    window_size, time_0, time_f, obstacle, x0, xf, filename = read_param(file_input_parameter)
+    window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag = read_param(file_input_parameter)
     file_input_parameter.close()
     aux           = "%s/Simulation/%s"% (system_type, filename)
     file_par_simu = open(aux)
@@ -1755,7 +1836,6 @@ T_box, texture_tot, B_tot, T_tot, texture_win, B_win, T_win= \
             for i in range(nlines) :
                 line_splitted    = file_arq_data_in.readline().split()
                 x, y = float(line_splitted[0]), float(line_splitted[1])
-#                print x,y
                 if x > x0 and x < xf and y > y0 and y < yf : 
                     xx  = int((x-x0) / box_size)
                     yy  = int((y-y0) / box_size) * box_per_line_x
@@ -1851,11 +1931,164 @@ T_box, texture_tot, B_tot, T_tot, texture_win, B_win, T_win= \
         else:
                 break
 
-# Before starting time averages we exclude box at the borders. 
-r_obst = R_OBST / box_size
-x_obst = (X_OBST-x0) / box_size
-y_obst = (Y_OBST-y0) / box_size
+if system_type == "voronoi":
+    # voronoi model works with obstacle at 0.0 , 0.0 and system goes from - Lx/2.0 to Lx/2.0 but the articles can go even further
+    window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag = read_param(file_input_parameter)
+    file_input_parameter.close()
+    Lx, Ly, R_OBST, X_OBST, Y_OBST, box_size, Delta_t, v0, max_dist = read_param_voronoi(filename)
+    box_size = box_size*box_mag
+    max_dist = max_dist*box_mag
+    delta_x =int((xf+x0)*R_OBST/box_size)*box_size
+    x0 = X_OBST-x0*R_OBST
+    xf = x0+delta_x
+    y0 = -box_size*int(Ly/box_size)/2
+    yf =  box_size*int(Ly/box_size)/2
+    box_per_line_x, box_per_column_y = int((delta_x)/box_size), int((yf-y0)/box_size)
 
+    if x0 < -Lx/2.0 or xf > Lx/2.0 :
+        print "Warning: Reseting limits to 0, Lx"
+        x0 = -Lx/2.0
+        xf =  Lx/2.0
+
+    #definindo as caixas e as matrizes
+
+    box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, vx2_tot, vy2_tot,\
+        density_tot, vx_win, vy_win,vx2_win, vy2_win, density_win, texture_box, B_box, \
+T_box, texture_tot, B_tot, T_tot, texture_win, B_win, T_win= \
+        box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf)
+    image_0       = int(time_0/Delta_t)
+    image_f       = int(time_f/Delta_t)
+    image_counter = image_f - image_0
+    image         = 1
+    line_counter  = 0
+    count_events  = 0
+    
+    axis_a_texture     = list(0. for i in range(box_total))
+    axis_b_texture     = list(0. for i in range(box_total))
+    ang_elipse_texture = list(0. for i in range(box_total))
+    axis_a_B           = list(0. for i in range(box_total))
+    axis_b_B           = list(0. for i in range(box_total))
+    ang_elipse_B       = list(0. for i in range(box_total))
+    axis_a_T           = list(0. for i in range(box_total))
+    axis_b_T           = list(0. for i in range(box_total))
+    ang_elipse_T       = list(0. for i in range(box_total))
+
+    print "\nYou analise a", system_type, "system \n"
+    max_number_particles = imag_count(system_type) #conta o numero de imagens e o numero maximo de particulas
+    nlines        = max_number_particles
+    #arquivo de posicoes e velocidades
+    os.system("ls voronoi/cell_*.dat > files.dat")
+    file_names = open("files.dat",'r')
+    # each word in this files.dat is a simulation snapshot datafile, so we need to open file by file and read the information
+    for datafile in file_names:
+        name_arq_data_in = datafile.split()[0]
+        file_arq_data_in = open(name_arq_data_in)  #reabre o arquivo para leituras das posicoes e vel.
+        if image <= image_0 :
+            print "Skipping image:",image
+            image += 1
+        elif image <= image_f :
+            print "Reading image:",image
+            part=list(particle(i) for i in range(max_number_particles))
+            vx_now = list(0. for i in range(box_total))
+            vy_now = list(0. for i in range(box_total))
+            density_now = list(0. for i in range(box_total))
+            texture_box = list(np.zeros((2,2)) for i in range(box_total))
+            points = []
+            index_particle = []
+            count_particle = 0
+            line   = file_arq_data_in.readline() # first line is not useful for us
+            while 1 :  #This scans arq_data_in line by line up to the end
+                line   = file_arq_data_in.readline()
+                if not line:
+                    image        += 1
+                    count_events += 1
+                    break #EOF
+                line_splitted = line.split()
+                particle_type, x, y = int(line_splitted[1]), float(line_splitted[2]), float(line_splitted[3])
+                if x > x0 and x < xf and y > y0 and y < yf and particle_type == 1: 
+                    xx  = int((x-x0) / box_size)
+                    yy  = int((y-y0) / box_size) * box_per_line_x
+                    box = xx+yy
+                    vx_now[box]      += float(line_splitted[5])
+                    vy_now[box]      += float(line_splitted[6])
+                    density_now[box] += 1.0
+                    points.append([x,y])
+                    count_particle = count_particle + 1
+                    index_particle.append(count_particle)
+
+            # Calculus of textures, B and T##################
+            number_particles = len(points)
+            if number_particles > 0:
+                points         = np.array(points)
+                list_neighbors = delaunay(points,max_dist)
+                map_focus_region_to_part(points, list_neighbors, index_particle)
+                map(lambda i:i.texture(), part)
+                for i in index_particle:
+                    xx  = int((part[i].r[0]-x0) / box_size)
+                    yy  = int((part[i].r[1]-y0) / box_size) * box_per_line_x
+                    box = xx + yy
+                    texture_box[box]+=part[i].M
+                    if  count_events > 1 :
+                        B_box[box] += part[i].B
+                        T_box[box] += part[i].T
+                       
+                map(lambda i:i.copy_to_old(), part)
+
+            #Calculate the average velocity over boxes
+            for box in range(box_total):
+                if density_now[box] > 0 :
+                    vx_now[box] = vx_now[box] / density_now[box]
+	            vy_now[box] = vy_now[box] / density_now[box]
+                    texture_box[box]            = texture_box[box] / density_now[box]
+                    ax_a,ax_b,angle             = axis_angle(texture_box[box])
+                    axis_a_texture[box]     = ax_a
+                    axis_b_texture[box]     = ax_b
+                    ang_elipse_texture[box] = angle
+                    if count_events > 1 :
+                        B_box[box]            = B_box[box] / density_now[box]
+                        ax_a,ax_b,angle       = axis_angle(B_box[box])
+                        axis_a_B[box]     = ax_a
+                        axis_b_B[box]     = ax_b
+                        ang_elipse_B[box] = angle
+                        T_box[box]            = T_box[box] / density_now[box]
+                        ax_a,ax_b,angle       = axis_angle(T_box[box])
+                        axis_a_T[box]     = ax_a
+                        axis_b_T[box]     = ax_b
+                        ang_elipse_T[box] = angle
+
+            #Function call to write velocity-density gnu script
+            velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0)
+
+
+            #Function call to write texture elipsis gnu script
+            texture_elipsis_script_simu(box_per_line_x, box_total, axis_a_texture, axis_b_texture,\
+                ang_elipse_texture, image-image_0,points,x0,y0,box_size)
+            if count_events > 1 :
+                B_elipsis_script_simu(box_per_line_x, box_total, axis_a_B, axis_b_B,\
+                                      ang_elipse_B, image-image_0,points,x0,y0,box_size)
+                T_elipsis_script_simu(box_per_line_x, box_total, axis_a_T, axis_b_T,\
+                                      ang_elipse_T, image-image_0,points,x0,y0,box_size)
+                        
+
+        #Summing each box at different times
+            for box in range(box_total) :
+                density_tot[box] += density_now[box]
+                vx_tot[box]      += vx_now[box]
+                vy_tot[box]      += vy_now[box]
+                texture_tot[box] += texture_box[box]
+                B_tot[box] += B_box[box]
+                T_tot[box] += T_box[box]
+            #reseting matrices of instaneous measures
+            vx_now      = list(0. for i in range(box_total))
+            vy_now      = list(0. for i in range(box_total))
+            density_now = list(0  for i in range(box_total))
+            texture_box = list(np.zeros((2,2)) for i in range(box_total))
+            B_box = list(np.zeros((2,2)) for i in range(box_total))
+            T_box = list(np.zeros((2,2)) for i in range(box_total))
+            points            = []
+            index_particle    = []
+        
+    os.system("rm files.dat");                        
 
 
 # Before starting time averages we exclude box at the borders. 
