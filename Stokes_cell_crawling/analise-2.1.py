@@ -166,7 +166,7 @@ def delaunay(points,max_dist):
 def create_gnu_script_fluct_vel(arrow_size, box_per_line_x, box_per_column_y, vel_fluct_win_file_name, dens_win_file_name, path):
     proportion_x, proportion_y             = 1.0, 0.7
     grid_x, grid_y, levels                 = 200, 200, 4
-    image_resolution_x, image_resolution_y = 650, 650
+    image_resolution_x, image_resolution_y = 1024, 1024
     name_output_map            = "density-velocity-fluct.png"
     file_script_den_vel_fluct  = open(path+"/scriptdenvel_fluct.gnu","w")
    
@@ -192,14 +192,14 @@ def create_gnu_script_fluct_vel(arrow_size, box_per_line_x, box_per_column_y, ve
     file_script_den_vel_fluct.write("splot [%d:%d][%d:%d] \"toto.dat\" \n"% (0, box_per_line_x, 0, box_per_column_y))
     file_script_den_vel_fluct.write("replot \"%s\" u($1):($2):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors head size 1.5,5,60 lt rgb \"black\" \n"% vel_fluct_win_file_name)
 #    file_script_den_vel_fluct.write("pause -1 \n")
-    file_script_den_vel_fluct.write("set terminal pngcairo  size %d,%d enhanced font 'Verdana, 14'\n"% (image_resolution_x, image_resolution_y)) 
+    file_script_den_vel_fluct.write("set terminal pngcairo  size %d,%d enhanced font 'Verdana, 14' crop\n"% (image_resolution_x, image_resolution_y)) 
     file_script_den_vel_fluct.write("set output \"%s\" \n"% name_output_map)
     file_script_den_vel_fluct.write("replot \n")  
     
 def create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path):
     proportion_x, proportion_y             = 1.0, 0.7
     grid_x, grid_y, levels                 = 200, 200, 4
-    image_resolution_x, image_resolution_y = 650,650
+    image_resolution_x, image_resolution_y = 1024, 1024
     name_output_map            = "density-velocity.png"
     file_script_den_vel        = open(path+"/scriptdenvel.gnu","w")
    
@@ -225,7 +225,7 @@ def create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file
     file_script_den_vel.write("splot [%d:%d][%d:%d] \"toto1.dat\" \n"% (0, box_per_line_x, 0, box_per_column_y))
     file_script_den_vel.write("replot \"%s\" u($1):($2):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors head size 1.5,5,60 lt rgb \"black\" \n"% vel_win_file_name)
 #    file_script_den_vel.write("pause -1 \n")
-    file_script_den_vel.write("set terminal pngcairo  size %d,%d enhanced font 'Verdana, 14'\n"% (image_resolution_x, image_resolution_y))
+    file_script_den_vel.write("set terminal pngcairo  size %d,%d enhanced font 'Verdana, 14' crop\n"% (image_resolution_x, image_resolution_y))
     file_script_den_vel.write("set output \"%s\" \n"% name_output_map)
     file_script_den_vel.write("replot \n")  
 
@@ -1115,6 +1115,9 @@ def imag_count(system_type) :
                 counter += 1
 
     if system_type == 'vicsek-gregoire' :
+        name_arq_data_in = "%s/data/posicoes.dat"% (system_type)
+        file_arq_data_in       = open(name_arq_data_in)
+
         max_number_particles=0
         while 1:
             line = file_arq_data_in.readline()           
@@ -1126,7 +1129,7 @@ def imag_count(system_type) :
             max_number_particles=max(max_number_particles,n)
             for i in range(n):
                 file_arq_data_in.readline()
-
+        file_arq_data_in.close()
     if system_type == 'voronoi' :
         max_number_particles=0
         os.system("ls voronoi/cell_*.dat > files.dat")
@@ -1611,7 +1614,7 @@ if system_type == "vicsek-gregoire":
     y0 = 0.
     yf =  box_size*int(Ly/box_size)
     box_per_line_x, box_per_column_y = int((delta_x)/box_size), int((yf-y0)/box_size)
-
+    
     if x0 < 0. or xf > Lx :
         print "Warning: Reseting limits to 0, Lx"
         x0 = 0.
@@ -1629,9 +1632,7 @@ if system_type == "vicsek-gregoire":
 
     name_arq_data_in = "%s/data/posicoes.dat"% (system_type)
     print "\nYou analise a", system_type, "system, data is read from files:\n", name_arq_data_in
-    file_arq_data_in       = open(name_arq_data_in)
     max_number_particles   = imag_count(system_type) #conta o numero de imagens
-    file_arq_data_in.close()
     file_arq_data_in       = open(name_arq_data_in)  #reabre o arquivo para leituras das posicoes e vel.
 #    line_splitted = sys.stdin.readline().split() #le da linha de comando o intervalo de imagens desejado
     image_0       = int(time_0/Delta_t)
@@ -1699,9 +1700,9 @@ if system_type == "vicsek-gregoire":
                     yy  = int((part[i].r[1]-y0) / box_size) * box_per_line_x
                     box = xx+yy
                     texture_box[box]+=part[i].M
-                if  count_events > 1 :
-                    B_box[box] += part[i].B
-                    T_box[box] += part[i].T
+                    if  count_events > 1 :
+                        B_box[box] += part[i].B
+                        T_box[box] += part[i].T
                        
                 map(lambda i:i.copy_to_old(), part)
 
@@ -1718,7 +1719,6 @@ if system_type == "vicsek-gregoire":
                     if count_events > 1 :
                         B_box[box]            = B_box[box] / density_now[box]
                         ax_a,ax_b,angle       = axis_angle(B_box[box])
-                        
                         axis_a_B[box]     = ax_a
                         axis_b_B[box]     = ax_b
                         ang_elipse_B[box] = angle
@@ -1747,6 +1747,10 @@ if system_type == "vicsek-gregoire":
                 density_tot[box] += density_now[box]
                 vx_tot[box]      += vx_now[box]
                 vy_tot[box]      += vy_now[box]
+                texture_tot[box] += texture_box[box]
+                B_tot[box] += B_box[box]
+                T_tot[box] += T_box[box]
+            #reseting matrices of instaneous measures                
             vx_now      = list(0. for i in range(box_total))
             vy_now      = list(0. for i in range(box_total))
             density_now = list(0  for i in range(box_total))
@@ -1997,6 +2001,8 @@ T_box, texture_tot, B_tot, T_tot, texture_win, B_win, T_win= \
             index_particle = []
             count_particle = 0
             line   = file_arq_data_in.readline() # first line is not useful for us
+
+
             while 1 :  #This scans arq_data_in line by line up to the end
                 line   = file_arq_data_in.readline()
                 if not line:
