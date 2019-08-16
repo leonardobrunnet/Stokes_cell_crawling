@@ -196,7 +196,7 @@ def create_gnu_script_fluct_vel(arrow_size, box_per_line_x, box_per_column_y, ve
     file_script_den_vel_fluct.write("set pm3d map \n")
     file_script_den_vel_fluct.write("splot [%d:%d][%d:%d] \"toto.dat\" \n"% (0, box_per_line_x, 0, box_per_column_y))
     file_script_den_vel_fluct.write("replot \"%s\" u($1):($2):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors head size 1.5,5,60 lt rgb \"black\" \n"% vel_fluct_win_file_name)
-#    file_script_den_vel_fluct.write("pause -1 \n")
+    #    file_script_den_vel_fluct.write("pause -1 \n")
     file_script_den_vel_fluct.write("set terminal pngcairo  size %d,%d enhanced font 'Verdana, 14' crop\n"% (image_resolution_x, image_resolution_y)) 
     file_script_den_vel_fluct.write("set output \"%s\" \n"% name_output_map)
     file_script_den_vel_fluct.write("replot \n")  
@@ -438,13 +438,13 @@ def box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, 
     ratio = float((yf-y0)) / (xf-x0)
 #    vid_def.write("set size 1,%f\n"% (ratio))
     image_resolution_x, image_resolution_y=1300,1300*ratio
-    vid_def.write("set terminal png large size %d,%d \n"% (image_resolution_x, image_resolution_y)) 
+    vid_def.write("set terminal pngcairo  size %d,%d enhanced font 'Verdana, 18' crop\n"% (image_resolution_x, image_resolution_y)) 
     vid_def.write("set xrange [0:%f]  \n" % box_per_line_x)
     vid_def.write("set yrange [0:%f]  \n" % box_per_column_y)    
     vid_B.write("set terminal png large size %d,%d \n"% (image_resolution_x, image_resolution_y)) 
     vid_B.write("set xrange [0:%f]  \n" % box_per_line_x)
     vid_B.write("set yrange [0:%f]  \n" % box_per_column_y)    
-    vid_T.write("set terminal png large size %d,%d \n"% (image_resolution_x, image_resolution_y)) 
+    vid_T.write("set terminal pngcairo  size %d,%d enhanced font 'Verdana, 18' crop\n"% (image_resolution_x, image_resolution_y)) 
     vid_T.write("set xrange [0:%f]  \n" % box_per_line_x)
     vid_T.write("set yrange [0:%f]  \n" % box_per_column_y)    
     vel_win.write("set size ratio -1 \n")
@@ -713,26 +713,42 @@ def  zero_borders_and_obstacle_simu(box_per_line_x, box_per_column_y, r_obst, x_
 
     return box_per_line_x, box_per_column_y, density_tot, vx_tot, vy_tot, texture_tot, B_tot, T_tot
 
-def average_density_velocity_deformation_experiment(box_per_line_x, box_per_column_y, x, y, vx_tot, vy_tot, texture_tot, image_counter):
-    arrow = 1.5
+def average_density_velocity_deformation_experiment(box_per_line_x, box_per_column_y, x, y, vx_tot, vy_tot, texture_tot, image_counter,path):
+    arrow = 0.7
+    image_resolution_x, image_resolution_y=3000,3000
     box_total = box_per_line_x*box_per_column_y
     for i in range(box_total):
         vx_tot[i] /= image_counter
         vy_tot[i] /= image_counter
 
     vel_win.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(%f*$3):(%f*$4):($5)  with vectors notitle head size  0.3,20,60  filled palette \n" % (0, box_per_line_x, 0, box_per_column_y, arrow, arrow))
-
+    ells = []
     for i in range(box_total):
         dens_win.write("%d %d %f \n" % (x[i],y[i],density_tot[i]))
         module=math.sqrt(vx_tot[i]**2 + vy_tot[i]**2)
         texture_tot[i] /= image_counter
         axis_a, axis_b, ang = axis_angle(texture_tot[i])
+        #print x[i], y[i]
+        if axis_b != 0. :
+            ells.append(Ellipse(np.array([x[i],y[i]]),axis_b/axis_a,1.,ang))
         if module >0 :
             vel_win.write("%d %d %f %f %f \n" % (x[i], y[i], vx_tot[i]/module, vy_tot[i]/module, module))
             def_win.write("%d %d %f %f %f \n" % (x[i], y[i], axis_a, axis_b, ang))
 
     vel_win.write("e \n")
-    vel_win.write("pause -1 \n")
+    vel_win.write("pause 2 \n")
+    vel_win.write("set terminal pngcairo  size %d,%d enhanced font 'Verdana, 18' crop\n"% (image_resolution_x, image_resolution_y))
+    vel_win.write("set output 'velocity-win.png'\n")
+    vel_win.write("replot \n") 
+    #Windowed elipsis for texture
+    fig, ax = plt.subplots(subplot_kw={'aspect': 'equal'})
+    for e in ells:
+        ax.add_artist(e)
+        e.set_clip_box(ax.bbox)
+    ax.set_xlim(0,box_per_line_x)
+    ax.set_ylim(0,box_per_column_y)
+    plt.savefig(path+"/texture_win.png", dpi=300,bbox_inches="tight")
+
 
 def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_tot, vy_tot,  \
     density_tot, texture_tot, B_tot, T_tot, vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, B_win, \
@@ -818,7 +834,7 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
 #        e.set_facecolor(np.random.rand(3))
     ax.set_xlim(0,box_per_line_x)
     ax.set_ylim(0,box_per_column_y)
-    plt.savefig(path+"/texture_win.png",bbox_inches="tight")
+    plt.savefig(path+"/texture_win.png", dpi=300, bbox_inches="tight")
     return vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, B_win, T_win
 
 def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, texture_tot, system_type, image_counter):
@@ -2302,7 +2318,7 @@ if system_type == 'experiment':
 
     
     # Here we write the time averages of density, velocity and deformation elipse for experiment
-    average_density_velocity_deformation_experiment(box_per_line_x, box_per_column_y, x, y, vx_tot, vy_tot, texture_tot, image_counter)
+    average_density_velocity_deformation_experiment(box_per_line_x, box_per_column_y, x, y, vx_tot, vy_tot, texture_tot, image_counter,path)
 
     
     # Five axis analysis for experiment
