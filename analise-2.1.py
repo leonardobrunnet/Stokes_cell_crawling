@@ -659,17 +659,19 @@ def T_elipsis_script_simu(box_per_line_x, box_total, axis_a, axis_b, ang_elipse,
 def  zero_borders_and_obstacle_experiment(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, system_type) :
     center_x = box_per_line_x/2
     center_y = box_per_column_y/2
+    x_obst -= 1.
+    y_obst -= 1.
     for i in range(box_total):
         bx = int(i/box_per_column_y)
         by = i%box_per_column_y
-        if bx == 0 or bx == box_per_line_x-1 or by == 0 or by == box_per_column_y-1 :
-            density_tot[i]    = -10
-            vx_tot[i]         = 0.
-            vy_tot[i]         = 0.
-            texture_tot[i]  = np.zeros((2,2))
-            # axis_a_tot[i]     = 0.
-            # axis_b_tot[i]     = 0.
-            # ang_elipse_tot[i] = 0.
+        # if bx == 0 or bx == box_per_line_x-1 or by == 0 or by == box_per_column_y-1 :
+        #     density_tot[i]    = -10
+        #     vx_tot[i]         = 0.
+        #     vy_tot[i]         = 0.
+        #     texture_tot[i]  = np.zeros((2,2))
+        #     # axis_a_tot[i]     = 0.
+        #     # axis_b_tot[i]     = 0.
+        #     # ang_elipse_tot[i] = 0.
         if math.sqrt((bx-x_obst)**2 + (by-y_obst)**2) <= r_obst :
             density_tot[i]    = -10
             vx_tot[i]         = 0.
@@ -734,7 +736,7 @@ def average_density_velocity_deformation_experiment(box_per_line_x, box_per_colu
         if module >0 :
             vel_win.write("%d %d %f %f %f \n" % (x[i], y[i], vx_tot[i]/module, vy_tot[i]/module, module))
             def_win.write("%d %d %f %f %f \n" % (x[i], y[i], axis_a, axis_b, ang))
-
+    
     vel_win.write("e \n")
     vel_win.write("pause 2 \n")
     vel_win.write("set terminal pngcairo  size %d,%d enhanced font 'Verdana, 18' crop\n"% (image_resolution_x, image_resolution_y))
@@ -1361,8 +1363,10 @@ if system_type == 'experiment':
     # Reading file head (I have taken some lines of the header, you may want others)
     while(line_splitted[0] != 'X') : #'X' marks the line just before data in experiment data file, that is, the end of the header
         line_splitted = file_input_parameter.readline().split()
+        if(line_splitted[0] == 'Box_start:') :
+            box_per_column_start_y, box_per_line_start_x = int(line_splitted[1]), int(line_splitted[2])
         if(line_splitted[0] == 'Box_end:') :
-            box_per_column_y, box_per_line_x = int(line_splitted[1]), int(line_splitted[2])
+            box_per_column_end_y, box_per_line_end_x = int(line_splitted[1]), int(line_splitted[2])
         if(line_splitted[0] == 'Box_size:') :
             box_size = int(line_splitted[1])/4
         if(line_splitted[0] == 'Obstacle_diameter:') :
@@ -1374,8 +1378,11 @@ if system_type == 'experiment':
             X_OBST   = int(line_splitted[1])
             Y_OBST   = int(line_splitted[2])
 
-    x0, xf, y0, yf=0., float(box_per_line_x), 0., float(box_per_column_y)
-            
+    x0, xf, y0, yf=float(box_per_line_start_x), float(box_per_line_end_x), float(box_per_column_start_y), float(box_per_column_end_y)
+    box_per_column_y=box_per_column_end_y#-box_per_column_start_y
+    box_per_line_x=box_per_line_end_x#-box_per_line_start_x
+#    print box_per_line_x,box_per_column_y
+#    exit()
     box_total, ratio, vx_tot, vy_tot, density_tot, texture_tot = \
     box_variables_definition_experiment(box_per_column_y, box_per_line_x)
 
@@ -1428,6 +1435,10 @@ if system_type == 'experiment':
         if image < image_0 : print "Skipping image ",image
         if image > image_0 and image <= image_f :
             print "Analising image ",image, "..."
+            # print x
+            # print y
+            # exit()
+
 
             #Function call to write velocity-density gnu script
             velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0)
@@ -2313,6 +2324,8 @@ T_box, texture_tot, B_tot, T_tot, texture_win, B_win, T_win= \
 r_obst = R_OBST / box_size
 x_obst = (X_OBST-x0) / box_size
 y_obst = (Y_OBST-y0) / box_size
+print x_obst,y_obst
+#exit()
 
 
 if system_type == 'experiment':
