@@ -659,8 +659,8 @@ def T_elipsis_script_simu(box_per_line_x, box_total, axis_a, axis_b, ang_elipse,
 def  zero_borders_and_obstacle_experiment(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, system_type) :
     center_x = box_per_line_x/2
     center_y = box_per_column_y/2
-    x_obst -= 1.
-    y_obst -= 1.
+    x_obst -= 2.
+    y_obst -= 2.
     for i in range(box_total):
         bx = int(i/box_per_column_y)
         by = i%box_per_column_y
