@@ -1,0 +1,13 @@
+model    voronoi
+window   4
+time_0   60000
+time_f   100000
+obstacle yes
+x0       6  \\regiao analisada medida em R0
+xf       6  \\regiao analisada medida em R0
+file     make_initial.py
+box_magnification 2    \\factor to increase box size
+
+
+
+

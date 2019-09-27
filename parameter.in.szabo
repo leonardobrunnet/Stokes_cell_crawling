@@ -1,0 +1,13 @@
+szabo-boids szabo-boids
+window   4
+box_size 16
+time_0   92
+time_f   390
+obstacle yes
+x0       5  \\regiao analisada em raios de obst
+xf       5  \\regiao analisada
+file     output_simu_szabo.dat
+
+
+
+

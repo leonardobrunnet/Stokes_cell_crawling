@@ -1,0 +1,9 @@
+system superboids 
+file 2018_08_16_20h08min_38sec 
+box  2
+window 2
+max_dist 4
+x0  6 #numero de raios antes do centro 
+xf  6 #numero de raios depois do centro 
+
+
