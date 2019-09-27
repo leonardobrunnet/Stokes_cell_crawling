@@ -1,0 +1,12 @@
+model    potts
+window   4
+time_0   150000
+time_f   870000
+obstacle yes
+x0       6  \\regiao analisada medida em R0
+xf       6  \\regiao analisada medida em R0
+file     Stokes_potts_4.py
+
+
+
+
