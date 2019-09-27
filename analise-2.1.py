@@ -1855,7 +1855,7 @@ if system_type == "vicsek-gregoire":
 
     name_arq_data_in = "%s/data/posicoes.dat"% (system_type)
     print "\nYou analise a", system_type, "system, data is read from files:\n", name_arq_data_in
-    max_number_particles   = imag_count(system_type) #conta o numero de imagens
+    max_number_particles   = imag_count(system_type,name_arq_data_in) #conta o numero de imagens
     file_arq_data_in       = open(name_arq_data_in)  #reabre o arquivo para leituras das posicoes e vel.
 #    line_splitted = sys.stdin.readline().split() #le da linha de comando o intervalo de imagens desejado
     image_0       = int(time_0/Delta_t)
@@ -2017,7 +2017,7 @@ T_box, texture_tot, B_tot, T_tot, texture_win, B_win, T_win= \
     name_arq_data_in = "%s/posicoes.dat"% (system_type)
     print "\nYou analise a", system_type, "system, data is read from files:\n", name_arq_data_in
     file_arq_data_in       = open(name_arq_data_in)
-    max_number_particles   = imag_count(system_type) #conta o numero de imagens
+    max_number_particles   = imag_count(system_type,name_arq_data_in) #conta o numero de imagens
     print max_number_particles
     file_arq_data_in.close()
     file_arq_data_in       = open(name_arq_data_in)  #reabre o arquivo para leituras das posicoes e vel.
@@ -2201,7 +2201,7 @@ T_box, texture_tot, B_tot, T_tot, texture_win, B_win, T_win= \
     ang_elipse_T       = list(0. for i in range(box_total))
 
     print "\nYou analise a", system_type, "system \n"
-    max_number_particles = imag_count(system_type) #conta o numero de imagens e o numero maximo de particulas
+    max_number_particles = imag_count(system_type," ") #conta o numero de imagens e o numero maximo de particulas
     nlines        = max_number_particles
     #arquivo de posicoes e velocidades
     os.system("ls voronoi/cell_*.dat > files.dat")
