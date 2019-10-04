@@ -844,7 +844,7 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
     plt.savefig(path+"/texture_win.png", dpi=300, bbox_inches="tight")
     return vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, B_win, T_win
 
-def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, texture_tot, system_type, image_counter):
+def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, texture_tot, system_type, image_counter,r_obst):
 
     #Attention in experiment no windowing average is done! That's why this function is called using _tot but _win is used.
     
@@ -964,50 +964,51 @@ def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_win, vy
         # file_axis4.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis4[i], vy_axis4[i], axis_a_axis4[i], axis_b_axis4[i], ang_elipse_axis4[i]))
         # file_axis5.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis5[i], vy_axis5[i], axis_a_axis5[i], axis_b_axis5[i], ang_elipse_axis5[i]))
 
+    axis_horiz = (np.arange(box_per_line_x)-caixas_meia_largura)/r_obst
+    axis_vert = (np.arange(box_per_column_y)-caixas_meia_altura)/r_obst
+    
+
     plt.subplot(211)
     plt.ylabel('Vx')
-    plt.plot(vx_axis1,'k',vx_axis2,'r',vx_axis6,'g')
+    plt.plot(axis_horiz,vx_axis1,'k',axis_horiz,vx_axis2,'r',axis_horiz,vx_axis6,'g')
     plt.subplot(212)
     plt.ylabel('Vy')
     plt.xlabel('X')
-    plt.plot(vy_axis1,'k',vy_axis2,'r',vy_axis6,'g')
+    plt.plot(axis_horiz,vy_axis1,'k',axis_horiz,vy_axis2,'r',axis_horiz,vy_axis6,'g')
     plt.savefig(path+"/six-axis-velocity-field-X-direction.png",bbox_inches="tight")
     plt.close()
 
     plt.subplot(211)
     plt.ylabel('Vx')
-    plt.plot(vx_axis3,'k',vx_axis4,'r',vx_axis5,'g')
+    plt.plot(axis_vert,vx_axis3,'k',axis_vert,vx_axis4,'r',axis_vert,vx_axis5,'g')
     plt.subplot(212)
     plt.ylabel('Vy')
     plt.xlabel('Y')
-    plt.plot(vy_axis3,'k',vy_axis4,'r',vy_axis5,'g')
+    plt.plot(axis_vert,vy_axis3,'k',axis_vert,vy_axis4,'r',axis_vert,vy_axis5,'g')
     plt.savefig(path+"/six-axis-velocity-field-Y-direction.png",bbox_inches="tight")
     plt.close()
-
-    
-
     
     plt.subplot(211)
     plt.title('(XX+YY)/2')
-    plt.plot(texture_axis_a_axis1,'k',texture_axis_a_axis2,'r',texture_axis_a_axis6,'g')
+    plt.plot(axis_horiz,texture_axis_a_axis1,'k',axis_horiz,texture_axis_a_axis2,'r',axis_horiz,texture_axis_a_axis6,'g')
     plt.subplot(212)
-    plt.plot(texture_axis_a_axis3,'k',texture_axis_a_axis4,'r',texture_axis_a_axis5,'g')
+    plt.plot(axis_vert,texture_axis_a_axis3,'k',axis_vert,texture_axis_a_axis4,'r',axis_vert,texture_axis_a_axis5,'g')
     plt.savefig(path+"/six-axis-texture-xxpyy.png",bbox_inches="tight")
     plt.close()
 
     plt.subplot(211)
     plt.title('(XX-YY)/2')
-    plt.plot(texture_axis_b_axis1,'k',texture_axis_b_axis2,'r',texture_axis_b_axis6,'g')
+    plt.plot(axis_horiz,texture_axis_b_axis1,'k',axis_horiz,texture_axis_b_axis2,'r',axis_horiz,texture_axis_b_axis6,'g')
     plt.subplot(212)
-    plt.plot(texture_axis_b_axis3,'k',texture_axis_b_axis4,'r',texture_axis_b_axis5,'g')
+    plt.plot(axis_vert,texture_axis_b_axis3,'k',axis_vert,texture_axis_b_axis4,'r',axis_vert,texture_axis_b_axis5,'g')
     plt.savefig(path+"/six-axis-texture-xxmyy.png",bbox_inches="tight")
     plt.close()
 
     plt.subplot(211)
     plt.title('XY')
-    plt.plot(texture_ang_elipse_axis1,'k',texture_ang_elipse_axis2,'r',texture_ang_elipse_axis6,'g')
+    plt.plot(axis_horiz,texture_ang_elipse_axis1,'k',axis_horiz,texture_ang_elipse_axis2,'r',axis_horiz,texture_ang_elipse_axis6,'g')
     plt.subplot(212)
-    plt.plot(texture_ang_elipse_axis3,'k',texture_ang_elipse_axis4,'r',texture_ang_elipse_axis5,'g')
+    plt.plot(axis_vert,texture_ang_elipse_axis3,'k',axis_vert,texture_ang_elipse_axis4,'r',axis_vert,texture_ang_elipse_axis5,'g')
     plt.savefig(path+"/six-axis-texture-xy.png",bbox_inches="tight")
     plt.close()
 
@@ -1153,53 +1154,53 @@ def five_axis_simu(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, 
         
         file_axis5.write("%f %f %f  %f %f %f %f %f %f %f %f %f\n" % (cby, vx_axis5[i], vy_axis5[i], texture_axis_a_axis5[i], texture_axis_b_axis5[i], texture_ang_elipse_axis5[i], B_axis_a_axis5[i], B_axis_b_axis5[i], B_ang_elipse_axis5[i], T_axis_a_axis5[i], T_axis_b_axis5[i], T_ang_elipse_axis5[i]))
 
+    axis_horiz = (np.arange(box_per_line_x)-caixas_meia_largura)/r_obst
+    axis_vert = (np.arange(box_per_column_y)-caixas_meia_altura)/r_obst
+    
     plt.subplot(211)
     plt.ylabel('Vx')
-    plt.plot(vx_axis1,'k',vx_axis2,'r',vx_axis6,'g')
+    plt.plot(axis_horiz,vx_axis1,'k',axis_horiz,vx_axis2,'r',axis_horiz,vx_axis6,'g')
     plt.subplot(212)
     plt.ylabel('Vy')
     plt.xlabel('X')
-    plt.plot(vy_axis1,'k',vy_axis2,'r',vy_axis6,'g')
+    plt.plot(axis_horiz,vy_axis1,'k',axis_horiz,vy_axis2,'r',axis_horiz,vy_axis6,'g')
     plt.savefig(path+"/six-axis-velocity-field-X-direction.png",bbox_inches="tight")
     plt.close()
 
     plt.subplot(211)
     plt.ylabel('Vx')
-    plt.plot(vx_axis3,'k',vx_axis4,'r',vx_axis5,'g')
+    plt.plot(axis_vert,vx_axis3,'k',axis_vert,vx_axis4,'r',axis_vert,vx_axis5,'g')
     plt.subplot(212)
     plt.ylabel('Vy')
     plt.xlabel('Y')
-    plt.plot(vy_axis3,'k',vy_axis4,'r',vy_axis5,'g')
+    plt.plot(axis_vert,vy_axis3,'k',axis_vert,vy_axis4,'r',axis_vert,vy_axis5,'g')
     plt.savefig(path+"/six-axis-velocity-field-Y-direction.png",bbox_inches="tight")
     plt.close()
-
-    
-
     
     plt.subplot(211)
     plt.title('(XX+YY)/2')
-    plt.plot(texture_axis_a_axis1,'k',texture_axis_a_axis2,'r',texture_axis_a_axis6,'g')
+    plt.plot(axis_horiz,texture_axis_a_axis1,'k',axis_horiz,texture_axis_a_axis2,'r',axis_horiz,texture_axis_a_axis6,'g')
     plt.subplot(212)
-    plt.plot(texture_axis_a_axis3,'k',texture_axis_a_axis4,'r',texture_axis_a_axis5,'g')
+    plt.plot(axis_vert,texture_axis_a_axis3,'k',axis_vert,texture_axis_a_axis4,'r',axis_vert,texture_axis_a_axis5,'g')
     plt.savefig(path+"/six-axis-texture-xxpyy.png",bbox_inches="tight")
     plt.close()
 
     plt.subplot(211)
     plt.title('(XX-YY)/2')
-    plt.plot(texture_axis_b_axis1,'k',texture_axis_b_axis2,'r',texture_axis_b_axis6,'g')
+    plt.plot(axis_horiz,texture_axis_b_axis1,'k',axis_horiz,texture_axis_b_axis2,'r',axis_horiz,texture_axis_b_axis6,'g')
     plt.subplot(212)
-    plt.plot(texture_axis_b_axis3,'k',texture_axis_b_axis4,'r',texture_axis_b_axis5,'g')
+    plt.plot(axis_vert,texture_axis_b_axis3,'k',axis_vert,texture_axis_b_axis4,'r',axis_vert,texture_axis_b_axis5,'g')
     plt.savefig(path+"/six-axis-texture-xxmyy.png",bbox_inches="tight")
     plt.close()
 
     plt.subplot(211)
     plt.title('XY')
-    plt.plot(texture_ang_elipse_axis1,'k',texture_ang_elipse_axis2,'r',texture_ang_elipse_axis6,'g')
+    plt.plot(axis_horiz,texture_ang_elipse_axis1,'k',axis_horiz,texture_ang_elipse_axis2,'r',axis_horiz,texture_ang_elipse_axis6,'g')
     plt.subplot(212)
-    plt.plot(texture_ang_elipse_axis3,'k',texture_ang_elipse_axis4,'r',texture_ang_elipse_axis5,'g')
+    plt.plot(axis_vert,texture_ang_elipse_axis3,'k',axis_vert,texture_ang_elipse_axis4,'r',axis_vert,texture_ang_elipse_axis5,'g')
     plt.savefig(path+"/six-axis-texture-xy.png",bbox_inches="tight")
     plt.close()
-    #    plt.show()
+
 
 def imag_count(system_type,name_arq_data_in) :
     counter = 0
@@ -2344,7 +2345,7 @@ if system_type == 'experiment':
 
     
     # Five axis analysis for experiment
-    five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, texture_tot, system_type, image_counter)
+    five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, texture_tot, system_type, image_counter,r_obst)
     
 else:
 
