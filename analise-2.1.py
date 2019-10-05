@@ -816,12 +816,12 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
 	        vel_fluct_win.write("%d %d %f %f %f %f %f \n"% (bx, by, vx2_win[box], vy2_win[box], module, density_tot[box]/float(count_events), density_win[box]))
 #                print box, texture_win[box]
                 axis_a,axis_b, ang_elipse = axis_angle(texture_win[box])
-                ells.append(Ellipse(np.array([bx,by]),1.,axis_b/axis_a,ang_elipse))
-	        texture_win_file.write("%d %d %f %f %f \n"% (bx, by, axis_a, axis_b, ang_elipse))
+                ells.append(Ellipse(np.array([(bx-box_per_line_x/2.)/r_obst,(by-box_per_column_y/2.)/r_obst]),1/r_obst,axis_b/axis_a/r_obst,ang_elipse))
+	        texture_win_file.write("%f %f %f %f %f \n"% ((bx-box_per_line_x/2.)/r_obst,(by-box_per_column_y/2.)/r_obst, axis_a/r_obst, axis_b/r_obst, ang_elipse))
                 axis_a,axis_b, ang_elipse = axis_angle(B_win[box])
-	        B_win_file.write("%d %d %f %f %f \n"% (bx, by, axis_a, axis_b, ang_elipse))
+	        B_win_file.write("%f %f %f %f %f \n"% ((bx-box_per_line_x/2.)/r_obst,(by-box_per_column_y/2.)/r_obst, axis_a/r_obst, axis_b/r_obst, ang_elipse))
                 axis_a,axis_b, ang_elipse = axis_angle(T_win[box])
-	        T_win_file.write("%d %d %f %f %f \n"% (bx, by, axis_a, axis_b, ang_elipse))
+	        T_win_file.write("%d %d %f %f %f \n"% ((bx-box_per_line_x/2.)/r_obst,(by-box_per_column_y/2.)/r_obst, axis_a/r_obst, axis_b/r_obst, ang_elipse))
 
 	    else :
 	        vx_win[box] = 0.0
@@ -839,8 +839,8 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
         e.set_clip_box(ax.bbox)
 #        e.set_alpha(np.random.rand())
 #        e.set_facecolor(np.random.rand(3))
-    ax.set_xlim(0,box_per_line_x)
-    ax.set_ylim(0,box_per_column_y)
+    ax.set_xlim(-box_per_line_x/2/r_obst,box_per_line_x/2/r_obst)
+    ax.set_ylim(-box_per_column_y/2./r_obst,box_per_column_y/2./r_obst)
     plt.savefig(path+"/texture_win.png", dpi=300, bbox_inches="tight")
     return vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, B_win, T_win
 
@@ -1654,7 +1654,10 @@ if system_type == "szabo-boids":
     print "\nYou analise a", line_splitted[0], "system, data is read from file:\n", name_arq_data_in
     max_number_particles = imag_count(system_type,name_arq_data_in)
     file_arq_data_in           = open(name_arq_data_in)
-#    line_splitted = sys.stdin.readline().split()
+    line_splitted = sys.stdin.readline().split()
+    image_0=int(line_splitted[0])
+    image_f=int(line_splitted[1])
+    image_counter = image_f-image_0
     image         = 0
     line_counter  = 0
     count_events  = 0
@@ -1714,9 +1717,9 @@ if system_type == "szabo-boids":
                 max_dist = float(line_splitted[1])
             if line_splitted[0] == "dt:" :
                 dt = float(line_splitted[1])
-                image_0       = int(time_0/dt/delta_images)
-                image_f       = int(time_f/dt/delta_images)
-                image_counter = image_f-image_0
+                #image_0       = int(time_0/dt/delta_images)
+                #image_f       = int(time_f/dt/delta_images)
+                #image_counter = image_f-image_0
         if line_counter > 9 :
             if image <= image_0 :
                 print "Skipping image:",image 
