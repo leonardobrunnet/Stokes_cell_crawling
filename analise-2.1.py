@@ -235,6 +235,7 @@ def create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file
     file_script_den_vel.write("set pm3d map \n")
     file_script_den_vel.write("splot [%f:%f][%f:%f] \"toto1.dat\" \n"% (-center_x/r_obst, center_x/r_obst, -center_y/r_obst, center_y/r_obst))
     file_script_den_vel.write("replot \"%s\" u (($1-center_x)/r_obst):(($2-center_y)/r_obst):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors head size 1.5,5,60 lt rgb \"black\" \n"% vel_win_file_name)
+    file_script_den_vel.write("replot \"../../circle.dat\" w l lw 6 lt rgb \"purple\" \n")
     #file_script_den_vel.write("replot \"%s\" u $1:$2:(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors head size 1.5,5,60 lt rgb \"black\" \n"% vel_win_file_name)
 #    file_script_den_vel.write("pause -1 \n")
     file_script_den_vel.write("set terminal pngcairo  size %d,%d enhanced font 'Verdana, 14' crop\n"% (image_resolution_x, image_resolution_y))
