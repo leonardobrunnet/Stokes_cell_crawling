@@ -264,7 +264,7 @@ def read_param_vic_greg(file_par_simu) :
             X_OBST = float(line_splitted[2])
         if line_splitted[1] == 'L_CENTRO_Y' :
             Y_OBST = float(line_splitted[2])
-        if line_splitted[1] == 'R_MAX' :
+        if line_splitted[1] == 'R_EQ' :
             box_size = float(line_splitted[2])
             max_dist = box_size
         if line_splitted[1] == 'SNAPSHOT' :
@@ -691,35 +691,57 @@ def  zero_borders_and_obstacle_experiment(box_per_line_x, box_per_column_y, r_ob
     return box_per_line_x, box_per_column_y, density_tot, vx_tot, vy_tot, texture_tot
                               
 def  zero_borders_and_obstacle_simu(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, B_tot, T_tot, system_type) :
-    center_x = box_per_line_x/2
-    center_y = box_per_column_y/2
-    for i in range(box_total):
-        bx = i%box_per_line_x
-        by = int(i/box_per_line_x)
+    center_x = box_per_line_x/2 + 0.5 
+    center_y = box_per_column_y/2 + 0.5
+    for box in range(box_total):
+        bx = box%box_per_line_x
+        by = int(box/box_per_line_x)
         caixas_quarto_altura = box_per_column_y/4
-        if bx == 0 or bx == box_per_line_x-1 or by == 0 or by == box_per_column_y-1 :
-            density_tot[i]    = -10
-            vx_tot[i]         = 0.
-            vy_tot[i]         = 0.
-            texture_tot[i]    = np.zeros((2,2))
-            B_tot[i]          = np.zeros((2,2))
-            T_tot[i]          = np.zeros((2,2))
-        if system_type == 'superboids' :
-            if math.sqrt((bx-center_x)**2 + (by-center_y)**2) < int(r_obst) :
-                density_tot[i]    = -10
-                vx_tot[i]         = 0.
-                vy_tot[i]         = 0.
-                texture_tot[i]    = np.zeros((2,2))
-                B_tot[i]          = np.zeros((2,2))
-                T_tot[i]          = np.zeros((2,2))
-        if system_type == 'vicsek-gregoire' :
-            if math.sqrt((bx-x_obst)**2 + (by-y_obst)**2) <= int(r_obst):
-                density_tot[i]    = -10
-                vx_tot[i]         = 0.
-                vy_tot[i]         = 0.
-                texture_tot[i]    = np.zeros((2,2))
-                B_tot[i]          = np.zeros((2,2))
-                T_tot[i]          = np.zeros((2,2))
+        # Exclude the data from the borders
+        if by == 0 or by == box_per_column_y-1 :
+            density_tot[box]    = -10
+            vx_tot[box]         = 0.
+            vy_tot[box]         = 0.
+            texture_tot[box]    = np.zeros((2,2))
+            B_tot[box]          = np.zeros((2,2))
+            T_tot[box]          = np.zeros((2,2))
+        # Exclude data from the obstacle        
+        corner_x = bx
+	corner_y = by
+        if math.sqrt((corner_x-center_x)*(corner_x-center_x)+(corner_y-center_y)*(corner_y-center_y)) <= r_obst:
+            density_tot[box]    = -10
+            vx_tot[box]         = 0.
+            vy_tot[box]         = 0.
+            texture_tot[box]    = np.zeros((2,2))
+            B_tot[box]          = np.zeros((2,2))
+            T_tot[box]          = np.zeros((2,2))
+        corner_x = bx+1
+	corner_y = by
+        if math.sqrt((corner_x-center_x)*(corner_x-center_x)+(corner_y-center_y)*(corner_y-center_y)) <= r_obst:
+	    density_tot[box]    = -10
+	    vx_tot[box]         = 0.
+            vy_tot[box]         = 0.
+            texture_tot[box]    = np.zeros((2,2))
+            B_tot[box]          = np.zeros((2,2))
+            T_tot[box]          = np.zeros((2,2))
+        corner_x = bx
+	corner_y = by+1
+        if math.sqrt((corner_x-center_x)*(corner_x-center_x)+(corner_y-center_y)*(corner_y-center_y)) <= r_obst:
+	    density_tot[box]    = -10
+            vx_tot[box]         = 0.
+            vy_tot[box]         = 0.
+            texture_tot[box]    = np.zeros((2,2))
+            B_tot[box]          = np.zeros((2,2))
+            T_tot[box]          = np.zeros((2,2))
+        corner_x = bx+1
+	corner_y = by+1
+        if math.sqrt((corner_x-center_x)*(corner_x-center_x)+(corner_y-center_y)*(corner_y-center_y)) <= r_obst:
+	    density_tot[box]    = -10
+            vx_tot[box]         = 0.
+            vy_tot[box]         = 0.
+            texture_tot[box]    = np.zeros((2,2))
+            B_tot[box]          = np.zeros((2,2))
+            T_tot[box]          = np.zeros((2,2))
 
     return box_per_line_x, box_per_column_y, density_tot, vx_tot, vy_tot, texture_tot, B_tot, T_tot
 
@@ -766,9 +788,11 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
     box_total         = box_per_column_y*box_per_line_x
     window_size_h     = window_size/2
 
+    
     count_box_win = list(0 for i in range(box_total))
     for bx in range(window_size_h+1, box_per_line_x-window_size_h):
         for by in range(window_size_h+1, box_per_column_y-window_size_h):
+            box = bx + (by*box_per_line_x)
             for k in range(-window_size_h, window_size_h):
                 for l in range(-window_size_h, window_size_h):
                     if density_tot[(bx+k)+(by+l)*box_per_line_x] > 0 :
@@ -782,6 +806,13 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
                         B_win[box] += B_tot[(bx+k)+((by+l)*box_per_line_x)]
                         T_win[box] += T_tot[(bx+k)+((by+l)*box_per_line_x)]
 		        count_box_win[box] += 1
+            if density_tot[box]<0:
+                density_win[box]    = 0.0
+                vx_win[box]         = 0.0
+                vy_win[box]         = 0.0
+                texture_win[box]    = np.zeros((2,2))
+                B_win[box]          = np.zeros((2,2))
+                T_win[box]          = np.zeros((2,2))
 
     #Average win calculus and data print (gnuplot script for velocity)
     module_mean         = 0
@@ -2332,10 +2363,10 @@ T_box, texture_tot, B_tot, T_tot, texture_win, B_win, T_win= \
 
 
 # Before starting time averages we exclude box at the borders. 
-r_obst = R_OBST / box_size
+r_obst = float(R_OBST) / float(box_size)
 x_obst = (X_OBST-x0) / box_size
 y_obst = (Y_OBST-y0) / box_size
-print x_obst,y_obst
+print x_obst,y_obst,r_obst
 #exit()
 
 
@@ -2353,7 +2384,7 @@ if system_type == 'experiment':
     
 else:
 
-#    zero_borders_and_obstacle_simu(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, B_tot, T_tot, system_type)
+    zero_borders_and_obstacle_simu(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, B_tot, T_tot, system_type)
     
     # Here we write the time averages of density, velocity and deformation elipse for simus
     vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, B_win, T_win = average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_tot, vy_tot,  \
