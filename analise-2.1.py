@@ -165,12 +165,16 @@ def delaunay(points,max_dist):
 
 def create_gnu_script_fluct_vel(arrow_size, box_per_line_x, box_per_column_y, vel_fluct_win_file_name, dens_win_file_name, path,r_obst):
 #    proportion_x, proportion_y             = 1.0, 0.7
+    center_x, center_y                     = box_per_line_x / 2, box_per_column_y / 2
     grid_x, grid_y, levels                 = 200, 200, 4
     image_resolution_x, image_resolution_y = 1024, 1024
     name_output_map                        = "density-velocity-fluct.png"
     file_script_den_vel_fluct              = open(path+"/scriptdenvel_fluct.gnu","w")
    
     file_script_den_vel_fluct.write("set size ratio -1 \n") #%1.2f,%1.2f \n"% (proportion_x, proportion_y))
+    file_script_den_vel_fluct.write("center_x = %d \n"% center_x)
+    file_script_den_vel_fluct.write("center_y = %d \n"% center_y)
+    file_script_den_vel_fluct.write("r_obst = %f \n"% r_obst)
     file_script_den_vel_fluct.write("set palette defined ( 0 '#000000',\\\n")
     file_script_den_vel_fluct.write("                      1 '#0000ff',\\\n")
     file_script_den_vel_fluct.write("                      2 '#00ffff',\\\n")
@@ -190,7 +194,8 @@ def create_gnu_script_fluct_vel(arrow_size, box_per_line_x, box_per_column_y, ve
     file_script_den_vel_fluct.write(" \n")
     file_script_den_vel_fluct.write("set pm3d map \n")
     file_script_den_vel_fluct.write("splot [%d:%d][%d:%d] \"toto.dat\" \n"% (0, box_per_line_x, 0, box_per_column_y))
-    file_script_den_vel_fluct.write("replot \"%s\" u($1):($2):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors head size 1.5,5,60 lt rgb \"black\" \n"% vel_fluct_win_file_name)
+    #file_script_den_vel_fluct.write("replot \"%s\" u($1):($2):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors head size 1.5,5,60 lt rgb \"black\" \n"% vel_fluct_win_file_name)
+    file_script_den_vel_fluct.write("replot \"%s\" u($1):($2):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors lt rgb \"black\" \n"% vel_fluct_win_file_name)
     #    file_script_den_vel_fluct.write("pause -1 \n")
     file_script_den_vel_fluct.write("set terminal pngcairo  size %d,%d enhanced font 'Verdana, 14' crop\n"% (image_resolution_x, image_resolution_y)) 
     file_script_den_vel_fluct.write("set output \"%s\" \n"% name_output_map)
@@ -227,7 +232,8 @@ def create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file
     file_script_den_vel.write(" \n")
     file_script_den_vel.write("set pm3d map \n")
     file_script_den_vel.write("splot [%f:%f][%f:%f] \"toto1.dat\" \n"% (-center_x/r_obst, center_x/r_obst, -center_y/r_obst, center_y/r_obst))
-    file_script_den_vel.write("replot \"%s\" u (($1-center_x)/r_obst):(($2-center_y)/r_obst):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors head size 1.5,5,60 lt rgb \"black\" \n"% vel_win_file_name)
+    #file_script_den_vel.write("replot \"%s\" u (($1-center_x)/r_obst):(($2-center_y)/r_obst):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors head size 1.5,5,60 lt rgb \"black\" \n"% vel_win_file_name)
+    file_script_den_vel.write("replot \"%s\" u (($1-center_x)/r_obst):(($2-center_y)/r_obst):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors  lt rgb \"black\" \n"% vel_win_file_name)
     file_script_den_vel.write("replot \"../../circle.dat\" w l lw 6 lt rgb \"purple\" \n")
     #file_script_den_vel.write("replot \"%s\" u $1:$2:(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors head size 1.5,5,60 lt rgb \"black\" \n"% vel_win_file_name)
 #    file_script_den_vel.write("pause -1 \n")
@@ -268,6 +274,7 @@ def read_param_vic_greg(file_par_simu) :
 
 def read_param(file_input_parameter) :
     box_mag = 1.0
+    box_size = 1
     while 1 :
         line = file_input_parameter.readline()
         if not line:
@@ -294,7 +301,9 @@ def read_param(file_input_parameter) :
             filename = line_splitted[1]
         if line_splitted[0] == 'box_magnification' :
             box_mag = float(line_splitted[1])
-    return window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag
+        if line_splitted[0] == 'box_size' :
+            box_size = int(line_splitted[1])
+    return window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag, box_size
 
 
 def read_param_potts(file_par_simu) :
@@ -495,7 +504,9 @@ def box_variables_definition_experiment(box_per_column_y, box_per_line_x):
 
 def velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0):
     #Here we write each image to the gnuplot velocity-density movie script
-    vid_veloc_dens.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(arrow*$3):(arrow*$4):($5) with vectors head size  0.6,20,60  filled palette title \"%d\"\n" % \
+    # vid_veloc_dens.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(arrow*$3):(arrow*$4):($5) with vectors head size  0.6,20,60  filled palette title \"%d\"\n" % \
+    # (0, box_per_line_x, 0, box_per_column_y, image))
+    vid_veloc_dens.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(arrow*$3):(arrow*$4):($5) with vectors   filled palette title \"%d\"\n" % \
     (0, box_per_line_x, 0, box_per_column_y, image))
     if system_type == "experiment":
         v0      = 1 #this should be the real velocity, if we can measure...
@@ -743,7 +754,9 @@ def average_density_velocity_deformation_experiment(box_per_line_x, box_per_colu
     for i in range(box_total):
         vx_tot[i] /= image_counter
         vy_tot[i] /= image_counter
-    vel_win.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(%f*$3):(%f*$4):($5)  with vectors notitle head size  0.3,20,60  filled palette \n" % (0, box_per_line_x, 0, box_per_column_y, arrow, arrow))
+    # vel_win.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(%f*$3):(%f*$4):($5)  with vectors notitle head size  0.3,20,60  filled palette \n" % (0, box_per_line_x, 0, box_per_column_y, arrow, arrow))
+    vel_win.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(%f*$3):(%f*$4):($5)  with vectors notitle   filled palette \n" % (0, box_per_line_x, 0, box_per_column_y, arrow, arrow))
+
     ells = []
     for i in range(box_total):
         dens_win.write("%d %d %f \n" % (x[i], y[i], density_tot[i]))
@@ -809,10 +822,10 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
 	    module_mean       += math.sqrt(vx_win[box]*vx_win[box] + vy_win[box]*vy_win[box])
 	    count_busy_box    += density_win[box]
    
-    arrow_size = count_busy_box / module_mean
+    arrow_size = count_busy_box / module_mean/40
     #create script gnu to plot velocity-density
     create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst)
-    create_gnu_script_fluct_vel(arrow_size, box_per_line_x, box_per_column_y, vel_fluct_win_file_name, dens_win_file_name,path,r_obst)
+    create_gnu_script_fluct_vel(arrow_size/2, box_per_line_x, box_per_column_y, vel_fluct_win_file_name, dens_win_file_name,path,r_obst)
     ells = []
     for bx in range(window_size_h + 1, box_per_line_x - window_size_h):
         for by in range(window_size_h + 1, box_per_column_y - window_size_h):
@@ -1164,7 +1177,7 @@ def five_axis_simu(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, 
         cby = (i - caixas_meia_altura) / r_obst
         file_axis3.write("%f %f %f %f %f %f %f %f %f %f %f %f\n" % (cby, vx_axis3[i], vy_axis3[i], texture_axis_a_axis3[i], texture_axis_b_axis3[i], \
             texture_ang_elipse_axis3[i], B_axis_a_axis3[i], B_axis_b_axis3[i], B_ang_elipse_axis3[i], T_axis_a_axis3[i], T_axis_b_axis3[i], T_ang_elipse_axis3[i]))
-        file_axis4.write("%f %f %f %f %f %f %f %f %f %f %f %f\n" % (cby, vx_axis4[i], vy_axis4[i], texture_axis_a_axis4[i], texture_axis_b_axis4[i], \ 
+        file_axis4.write("%f %f %f %f %f %f %f %f %f %f %f %f\n" % (cby, vx_axis4[i], vy_axis4[i], texture_axis_a_axis4[i], texture_axis_b_axis4[i], \
             texture_ang_elipse_axis4[i], B_axis_a_axis4[i], B_axis_b_axis4[i], B_ang_elipse_axis4[i], T_axis_a_axis4[i], T_axis_b_axis4[i], T_ang_elipse_axis4[i]))
         file_axis5.write("%f %f %f  %f %f %f %f %f %f %f %f %f\n" % (cby, vx_axis5[i], vy_axis5[i], texture_axis_a_axis5[i], texture_axis_b_axis5[i], \
             texture_ang_elipse_axis5[i], B_axis_a_axis5[i], B_axis_b_axis5[i], B_ang_elipse_axis5[i], T_axis_a_axis5[i], T_axis_b_axis5[i], T_ang_elipse_axis5[i]))
@@ -1659,7 +1672,7 @@ if system_type == "superboids":
     
 if system_type == "szabo-boids":
     
-    window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag = read_param(file_input_parameter)
+    window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag, box_size = read_param(file_input_parameter)
     name_arq_data_in = "%s/%s"% (line_splitted[0], filename)
     print "\nYou analise a", line_splitted[0], "system, data is read from file:\n", name_arq_data_in
     max_number_particles = imag_count(system_type,name_arq_data_in)
@@ -1686,7 +1699,7 @@ if system_type == "szabo-boids":
         #print line_splitted
         if line_counter < 10 :
             if line_splitted[0] == "Number_of_particles:" :             N = int(line_splitted[1])
-            if line_splitted[0] == "Box_size:" :                 box_size = int(line_splitted[1])
+            #if line_splitted[0] == "Box_size:" :                 box_size = int(line_splitted[1])
             if line_splitted[0] == "Steps_between_images:" : delta_images = int(line_splitted[1])
             if line_splitted[0] == "Radius:" : R_OBST = float(line_splitted[1])
             if line_splitted[0] == "Obst_position:" :
@@ -1704,8 +1717,8 @@ if system_type == "szabo-boids":
                 
                 # y0 = -box_size*int(Ly/box_size)
                 # yf =  box_size*int(Ly/box_size)
+                #box_size = box_size*2
                 box_per_line_x, box_per_column_y = int((delta_x) / box_size), int((yf - y0) / box_size)
-                              
                 box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, vx2_tot, vy2_tot,\
                     density_tot, vx_win, vy_win,vx2_win, vy2_win, density_win, texture_box, B_box, \
                     T_box, texture_tot, B_tot, T_tot, texture_win, B_win, T_win=\
@@ -1838,7 +1851,7 @@ if system_type == "szabo-boids":
 
 if system_type == "vicsek-gregoire":
 
-    window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag = read_param(file_input_parameter)
+    window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag, box_size = read_param(file_input_parameter)
     file_input_parameter.close()
     aux           = "%s/include/%s"% (system_type, filename)
     file_par_simu = open(aux)
@@ -1993,7 +2006,7 @@ if system_type == "vicsek-gregoire":
                 break
 
 if system_type == "potts":
-    window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag = read_param(file_input_parameter)
+    window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag, box_size = read_param(file_input_parameter)
     file_input_parameter.close()
     aux           = "%s/Simulation/%s"% (system_type, filename)
     file_par_simu = open(aux)
@@ -2164,7 +2177,7 @@ if system_type == "potts":
 
 if system_type == "voronoi":
     # voronoi model works with obstacle at 0.0 , 0.0 and system goes from - Lx/2.0 to Lx/2.0 but the articles can go even further
-    window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag = read_param(file_input_parameter)
+    window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag, box_size = read_param(file_input_parameter)
     file_input_parameter.close()
     Lx, Ly, R_OBST, X_OBST, Y_OBST, box_size, Delta_t, v0, max_dist = read_param_voronoi(filename)
     box_size =  box_size * box_mag
@@ -2318,6 +2331,7 @@ r_obst = float(R_OBST) / float(box_size)
 x_obst = (X_OBST - x0) / box_size
 y_obst = (Y_OBST - y0) / box_size
 print x_obst, y_obst, r_obst, image_counter
+print box_per_line_x, box_per_column_y
 #exit()
 
 
