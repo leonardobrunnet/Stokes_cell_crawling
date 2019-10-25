@@ -167,7 +167,7 @@ def create_gnu_script_fluct_vel(arrow_size, box_per_line_x, box_per_column_y, ve
 #    proportion_x, proportion_y             = 1.0, 0.7
     center_x, center_y                     = box_per_line_x / 2, box_per_column_y / 2
     grid_x, grid_y, levels                 = 200, 200, 4
-    image_resolution_x, image_resolution_y = 1024, 1024
+    image_resolution_x, image_resolution_y = 2048, 2048
     name_output_map                        = "density-velocity-fluct.png"
     file_script_den_vel_fluct              = open(path+"/scriptdenvel_fluct.gnu","w")
    
@@ -205,7 +205,7 @@ def create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file
     center_x, center_y                     = box_per_line_x / 2, box_per_column_y / 2
     proportion_x, proportion_y             = 1.0, 0.7
     grid_x, grid_y, levels                 = 200, 200, 4
-    image_resolution_x, image_resolution_y = 1024, 1024
+    image_resolution_x, image_resolution_y = 2048, 2048
     name_output_map                        = "density-velocity.png"
     file_script_den_vel                    = open(path+"/scriptdenvel.gnu","w")
    
@@ -337,7 +337,7 @@ def read_param_potts(file_par_simu) :
         if line_splitted[0] == 'center_y' :
             Y_OBST = float(line_splitted[4]) * multiplier
         if line_splitted[0] == 'target_v' :
-            box_size = math.sqrt(float(line_splitted[6])) * multiplier
+            box_size = math.sqrt(float(line_splitted[6])) * multiplier / 1.772453851
             box_size = 2 * box_size #This seems to be the best box_size for potts
             max_dist = box_size
         if line_splitted[0] == 'CompuCell3DElmnt' :
@@ -405,8 +405,8 @@ def read_param_voronoi(filename):
                 line          = line.replace( ';' , ' ; ')
                 line          = line.replace( '}' , ' } ')
                 line_splitted = line.split()
-                box_size      = float(line_splitted[8])
-                max_dist      = box_size
+                max_dist      = float(line_splitted[8])
+                box_size      = max_dist 
     return Lx, Ly, R_OBST, X_OBST, Y_OBST, box_size, Delta_t, v0, max_dist
 
 
