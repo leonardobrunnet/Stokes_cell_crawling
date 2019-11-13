@@ -196,6 +196,7 @@ def create_gnu_script_fluct_vel(arrow_size, box_per_line_x, box_per_column_y, ve
     file_script_den_vel_fluct.write("splot [%d:%d][%d:%d] \"toto.dat\" \n"% (0, box_per_line_x, 0, box_per_column_y))
     #file_script_den_vel_fluct.write("replot \"%s\" u($1):($2):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors head size 1.5,5,60 lt rgb \"black\" \n"% vel_fluct_win_file_name)
     file_script_den_vel_fluct.write("replot \"%s\" u($1):($2):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors lt rgb \"black\" \n"% vel_fluct_win_file_name)
+    file_script_den_vel_fluct.write("replot \"../../circle.dat\" w l lw 6 lt rgb \"purple\" \n")
     #    file_script_den_vel_fluct.write("pause -1 \n")
     file_script_den_vel_fluct.write("set terminal pngcairo  size %d,%d enhanced font 'Verdana, 14' crop\n"% (image_resolution_x, image_resolution_y)) 
     file_script_den_vel_fluct.write("set output \"%s\" \n"% name_output_map)
@@ -338,6 +339,7 @@ def read_param_potts(file_par_simu) :
             Y_OBST = float(line_splitted[4]) * multiplier
         if line_splitted[0] == 'target_v' :
             box_size = math.sqrt(float(line_splitted[6])) * multiplier / 1.772453851
+	    #box_size = math.sqrt(float(line_splitted[6])) * multiplier
             box_size = 2 * box_size #This seems to be the best box_size for potts
             max_dist = box_size
         if line_splitted[0] == 'CompuCell3DElmnt' :
@@ -1787,6 +1789,8 @@ if system_type == "szabo-boids":
                     # for i in range(len(points)) :
                     #     print part[i].ident, part[i].list_neigh
                     map(lambda i:i.texture(), part)
+                    if  count_events > 1 :
+                        map(lambda i:i.calc_B_and_T(), part)
                     for i in index_particle:
                         xx                = int((part[i].r[0]-x0) / box_size)
                         yy                = int((part[i].r[1]-y0) / box_size) * box_per_line_x
@@ -1798,7 +1802,7 @@ if system_type == "szabo-boids":
                        
                     map(lambda i:i.copy_to_old(), part)
                 
-                #Calculate the average velocity over boxes
+                #Calculate the averages over boxes
                 for box in range(box_total):
                     if density_now[box] > 0 :
                         vx_now[box]             = vx_now[box] / density_now[box]
@@ -1941,6 +1945,8 @@ if system_type == "vicsek-gregoire":
                 list_neighbors = delaunay(points,max_dist)
                 map_focus_region_to_part(points,list_neighbors,index_particle)
                 map(lambda i:i.texture(), part)
+                if  count_events > 1 :
+                    map(lambda i:i.calc_B_and_T(), part)
                 for i in index_particle:
                     xx                = int((part[i].r[0] - x0) / box_size)
                     yy                = int((part[i].r[1] - y0) / box_size) * box_per_line_x
