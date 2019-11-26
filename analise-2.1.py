@@ -59,6 +59,10 @@ class particle:
         self.CT             = np.zeros((2,2))
         self.B              = np.zeros((2,2))
         self.T              = np.zeros((2,2))
+        self.V              = np.zeros((2,2))
+        self.P              = np.zeros((2,2))
+        self.iM             = np.zeros((2,2))
+
 
     def texture(self):
         self.M   = np.zeros((2,2))
@@ -67,6 +71,7 @@ class particle:
             for i in self.list_neigh:
                 self.M += self.calc_m(i)
             self.M /= n
+            self.iM=np.linalg.inv(self.M)
             
     def calc_m(self, i):
         l = self.r - part[i].r
@@ -86,7 +91,7 @@ class particle:
         dl    = l - l_old
         return lav, dl
         
-    def calc_B_and_T(self):
+    def calc_B_and_T_and_V_and_P(self):
         list_c   = list(set(self.list_neigh).intersection(self.list_neigh_old))
         list_a   = list(set(self.list_neigh).difference(self.list_neigh_old))
         list_d   = list(set(self.list_neigh_old).difference(self.list_neigh))
@@ -113,7 +118,9 @@ class particle:
                 md = self.calc_m(i)
                 self.T -= md
                 self.T /= Ntot
-              
+            self.V=(self.iM.dot(self.C)+self.CT.dot(self.iM))/2.
+            self.P=-0.5*(self.iM.dot(self.T)+self.T.dot(self.iM))/2.
+            
     def zeros(self):
         self.average_m = np.zeros((2,2))
         self.m_list    = []
