@@ -67,7 +67,7 @@ class particle:
     def texture(self):
         self.M   = np.zeros((2,2))
         n        = len(self.list_neigh)
-        if n > 0:
+        if n > 1:
             for i in self.list_neigh:
                 self.M += self.calc_m(i)
             self.M /= n
@@ -77,7 +77,7 @@ class particle:
                 if 'Singular matrix'in str(err):
                     print "singular matrix!"
                     print self.M
-                    
+                    print self.list_neigh
                 else:
                     raise
     def calc_m(self, i):
