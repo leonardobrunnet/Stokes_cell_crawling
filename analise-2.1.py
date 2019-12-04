@@ -2388,6 +2388,7 @@ if system_type == "vicsek-gregoire":
     aux           = "%s/include/%s"% (system_type, filename)
     file_par_simu = open(aux)
     Lx, Ly, R_OBST, X_OBST, Y_OBST, box_size, Delta_t, v0, max_dist = read_param_vic_greg(file_par_simu)
+    box_size =  box_size * box_mag
     file_par_simu.close()
     delta_x =int((xf+x0)*R_OBST/box_size)*box_size
     x0      = X_OBST-x0*R_OBST
@@ -2573,6 +2574,7 @@ if system_type == "potts":
     aux           = "%s/Simulation/%s"% (system_type, filename)
     file_par_simu = open(aux)
     Lx, Ly, R_OBST, X_OBST, Y_OBST, box_size, max_dist, Delta_t, v0 = read_param_potts(file_par_simu)
+    box_size =  box_size * box_mag
     file_par_simu.close()
     delta_x       = int((xf + x0) * R_OBST / box_size) * box_size
     x0            = X_OBST - x0 * R_OBST
@@ -2587,9 +2589,9 @@ if system_type == "potts":
         xf = Lx
 
     #definindo as caixas e as matrizes
-    box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, vx2_tot, vy2_tot,\
-        density_tot, vx_win, vy_win,vx2_win, vy2_win, density_win, texture_box, B_box, \
-        T_box, texture_tot, B_tot, T_tot, texture_win, B_win, T_win
+#    box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, vx2_tot, vy2_tot,\
+#        density_tot, vx_win, vy_win,vx2_win, vy2_win, density_win, texture_box, B_box, \
+#        T_box, texture_tot, B_tot, T_tot, texture_win, B_win, T_win
 
     box_total, ratio, vx_now, vy_now, density_now, vx_tot, vy_tot, vx2_tot, vy2_tot,\
         density_tot, vx_win, vy_win,vx2_win, vy2_win, density_win, texture_box, B_box, \
