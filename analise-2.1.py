@@ -84,6 +84,12 @@ class particle:
         l = self.r - part[i].r
         m = np.outer(l, l)
         return m
+
+    def calc_md(self, i):
+        l = self.r_old - part[i].r_old
+        m = np.outer(l, l)
+        return m
+
     
     def copy_to_old(self):
         # if len(self.list_neigh) > 0:
@@ -114,22 +120,35 @@ class particle:
             for i in list_c:
                 lav, dl  = self.l_av_dl(i)
                 c        = np.outer(lav,dl)  
-                ct       = np.outer(dl,lav)
+#                ct       = np.outer(dl,lav)
                 self.C  += c
-                self.CT += ct
+            self.CT=self.C.transpose()
             if Nc > 0 :
                 self.C  /= Ntot
                 self.CT /= Ntot
                 self.B   = self.C + self.CT
+            ma_av=np.zeros((2,2))
             for i in list_a:
                 ma = self.calc_m(i)
-                self.T += ma
+                ma_av += ma
+            if Na > 0 : ma_av /= Na
+            md_av=np.zeros((2,2))
             for i in list_d:
-                md = self.calc_m(i)
-                self.T -= md
-                self.T /= Ntot
+                md = self.calc_md(i)
+                md_av -= md
+            if Nd > 0 : md_av /= Nd
+            self.T = (Na*ma_av+Nd*md_av)/Ntot
             self.V=(self.iM.dot(self.C)+self.CT.dot(self.iM))/2.
             self.P=-0.5*(self.iM.dot(self.T)+self.T.dot(self.iM))/2.
+            # for i in self.T:
+            #     for j in i:
+            #         if j>10:
+            #             print self.ident, self.list_neigh
+            #             print self.ident, self.list_neigh_old
+            #             break
+                            
+#                        print ma_av,md_av,Na*1./Ntot,Nd*1./Ntot
+                    
         # if Ntot > 0 :
         #     print self.list_neigh_old, self.list_neigh
 
@@ -288,7 +307,7 @@ def read_param_vic_greg(file_par_simu) :
             Y_OBST = float(line_splitted[2])
         if line_splitted[1] == 'R_EQ' :
             box_size = float(line_splitted[2])
-            max_dist = box_size
+            max_dist = box_size/2
         if line_splitted[1] == 'SNAPSHOT' :
             Delta_t = int(line_splitted[2])
         if line_splitted[1] == 'V1' :
@@ -2182,7 +2201,7 @@ if system_type == "szabo-boids":
 
 #    print x0, xf
 
-    #Reading szabo-boids  data file
+   #Reading szabo-boids  data file
     while 1 :
         line = file_arq_data_in.readline()
         if not line : break
@@ -2238,6 +2257,7 @@ if system_type == "szabo-boids":
 
             if line_splitted[0] == "Max-dist:" :
                 max_dist = float(line_splitted[1])
+                max_dist = 2.
             if line_splitted[0] == "dt:" :
                 dt = float(line_splitted[1])
                 #image_0       = int(time_0/dt/delta_images)
@@ -2271,8 +2291,9 @@ if system_type == "szabo-boids":
                         density_now[box] += 1.0
                         density_now[box] += 1.0
                         points.append([x,y])
-                        count_particle   += 1
                         index_particle.append(count_particle)
+#                        print index_particle[0],points[0],part[0].r
+                    count_particle   += 1
                     line = file_arq_data_in.readline()
                     if not line : break
                     line_splitted = line.split()
@@ -2288,8 +2309,9 @@ if system_type == "szabo-boids":
                     # if count_events >1 :
                     #     for i in part:
                     #         if len(i.list_neigh) > 0:
-                    #             print i.list_neigh_old, i.list_neigh
-
+                    #             print i.ident,i.list_neigh,list(set(i.list_neigh).difference(i.list_neigh_old))
+                    #             print i.list_neigh_old,list(set(i.list_neigh_old).difference(i.list_neigh))
+    
                     # for i in range(len(points)) :
                     #     print part[i].ident, part[i].list_neigh
                     map(lambda i:i.texture(), part)
@@ -2305,7 +2327,9 @@ if system_type == "szabo-boids":
                             T_box[box] += part[i].T
                             V_box[box] += part[i].V
                             P_box[box] += part[i].P
+#                    print part[index_particle[1]].r,part[index_particle[1]].r_old
                     map(lambda i:i.copy_to_old(), part)
+                    
 #                    for i in range(box_total):
 
                 
@@ -2665,6 +2689,7 @@ if system_type == "potts":
                     points.append([x,y])
                     index_particle.append(i)
             image        += 1
+            index_particle += 1
             count_events += 1
             if points == [] :
                 print " "
@@ -2851,8 +2876,8 @@ if system_type == "voronoi":
                     vy_now[box]      += float(line_splitted[6])
                     density_now[box] += 1.0
                     points.append([x,y])
-                    count_particle    = count_particle + 1
                     index_particle.append(count_particle)
+                count_particle    = count_particle + 1
             # Calculus of textures, B and T##################
             number_particles = len(points)
             if number_particles > 0:
@@ -2962,7 +2987,8 @@ if system_type == 'experiment':
     # Five axis analysis for experiment
     five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, texture_tot, system_type, image_counter,r_obst)
 else:
-    box_per_line_x, box_per_column_y, density_tot, vx_tot, vy_tot, texture_tot, B_tot, T_tot, V_tot, P_tot= zero_borders_and_obstacle_simu(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, B_tot, T_tot, V_tot, P_tot, system_type)
+    box_per_line_x, box_per_column_y, density_tot, vx_tot, vy_tot, texture_tot, B_tot, T_tot, V_tot, P_tot= \
+        zero_borders_and_obstacle_simu(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, B_tot, T_tot, V_tot, P_tot, system_type)
     # Here we write the time averages of density, velocity and deformation elipse for simus
 
     vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, B_win, T_win, V_win, P_win = average_density_velocity_deformation(box_per_line_x, \
