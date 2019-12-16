@@ -40,6 +40,7 @@ def map_focus_region_to_part(points, list_neighbors, index_particle):
         part[aux].list_neigh = []
         for j in list_neighbors[i]:
             part[aux].list_neigh.append(index_particle[j])
+#        print aux, part[aux].list_neigh
 
 ############Particle class definition##############
 class particle:
@@ -111,7 +112,13 @@ class particle:
         list_c   = list(set(self.list_neigh).intersection(self.list_neigh_old))
         list_a   = list(set(self.list_neigh).difference(self.list_neigh_old))
         list_d   = list(set(self.list_neigh_old).difference(self.list_neigh))
-        self.zeros()
+        # print " "
+        # self.zeros()
+        # print self.list_neigh
+        # print self.list_neigh_old
+        # print self.r
+        # print self.r_old
+        # print " "
         Nc       = len(list_c) #numero de links conservados
         Na       = len(list_a) #numero de links adquiridos
         Nd       = len(list_d) #numero de links desaparecidos
@@ -307,7 +314,8 @@ def read_param_vic_greg(file_par_simu) :
             Y_OBST = float(line_splitted[2])
         if line_splitted[1] == 'R_EQ' :
             box_size = float(line_splitted[2])
-            max_dist = box_size/2
+            #max_dist = box_size/2
+            max_dist = box_size
         if line_splitted[1] == 'SNAPSHOT' :
             Delta_t = int(line_splitted[2])
         if line_splitted[1] == 'V1' :
@@ -2089,12 +2097,14 @@ if system_type == "superboids":
                     if  count_events > 1 :
                         map(lambda i:i.calc_B_and_T_and_V_and_P(), part)
                     for i in index_particle:
-                        xx  = int((part[i].r[0]-x0) / box_size)
-                        yy  = int((part[i].r[1]-y0) / box_size) * box_per_line_x
-                        box = xx+yy
-#                        density_now[box] += 1.0
-                        texture_box[box]+=part[i].M
-                        if count_events > 1 :
+                        dx = part[i].r[0]-x0
+                        dy = part[i].r[1]-y0
+                        Dx = xf - part[i].r[0]
+                        xx                = int(dx / box_size)
+                        yy                = int(dy / box_size) * box_per_line_x
+                        box               = xx+yy
+                        texture_box[box] += part[i].M
+                        if  count_events > 1 and dx > box_size and Dx > box_size :
                             B_box[box] += part[i].B
                             T_box[box] += part[i].T
                             V_box[box] += part[i].V
@@ -2311,11 +2321,14 @@ if system_type == "szabo-boids":
                     if  count_events > 1 :
                         map(lambda i:i.calc_B_and_T_and_V_and_P(), part)
                     for i in index_particle:
-                        xx                = int((part[i].r[0]-x0) / box_size)
-                        yy                = int((part[i].r[1]-y0) / box_size) * box_per_line_x
-                        box               = xx + yy
+                        dx = part[i].r[0]-x0
+                        dy = part[i].r[1]-y0
+                        Dx = xf - part[i].r[0]
+                        xx                = int(dx / box_size)
+                        yy                = int(dy / box_size) * box_per_line_x
+                        box               = xx+yy
                         texture_box[box] += part[i].M
-                        if  count_events > 1 :
+                        if  count_events > 1 and dx > box_size and Dx > box_size :
                             B_box[box] += part[i].B
                             T_box[box] += part[i].T
                             V_box[box] += part[i].V
@@ -2501,15 +2514,19 @@ if system_type == "vicsek-gregoire":
                 if  count_events > 1 :
                     map(lambda i:i.calc_B_and_T_and_V_and_P(), part)
                 for i in index_particle:
-                    xx                = int((part[i].r[0] - x0) / box_size)
-                    yy                = int((part[i].r[1] - y0) / box_size) * box_per_line_x
+                    dx = part[i].r[0]-x0
+                    dy = part[i].r[1]-y0
+                    Dx = xf - part[i].r[0]
+                    xx                = int(dx / box_size)
+                    yy                = int(dy / box_size) * box_per_line_x
                     box               = xx+yy
                     texture_box[box] += part[i].M
-                    if  count_events > 1 :
+                    if  count_events > 1 and dx > box_size and Dx > box_size :
                         B_box[box]   += part[i].B
                         T_box[box]   += part[i].T
                         V_box[box] += part[i].V
                         P_box[box] += part[i].P
+                        #print B_box[box]
 
                 map(lambda i:i.copy_to_old(), part)
 
@@ -2615,6 +2632,7 @@ if system_type == "potts":
         T_box, V_box, P_box, texture_tot, B_tot, T_tot, V_tot, P_tot, texture_win, B_win, \
         T_win, V_win, P_win= \
         box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf)
+    print x0,xf
 
     #arquivo de posicoes e velocidades
     name_arq_data_in = "%s/posicoes.dat"% (system_type)
@@ -2648,7 +2666,7 @@ if system_type == "potts":
     axis_a_P           = list(0. for i in range(box_total))
     axis_b_P           = list(0. for i in range(box_total))
     ang_elipse_P       = list(0. for i in range(box_total))
-
+    
     
     while 1 :
         line   = file_arq_data_in.readline()
@@ -2701,19 +2719,23 @@ if system_type == "potts":
                     map(lambda i:i.calc_B_and_T_and_V_and_P(), part)
 
                 for i in index_particle:
-                    xx                = int((part[i].r[0]-x0) / box_size)
-                    yy                = int((part[i].r[1]-y0) / box_size) * box_per_line_x
+                    dx = part[i].r[0]-x0
+                    dy = part[i].r[1]-y0
+                    Dx = xf - part[i].r[0]
+                    xx                = int(dx / box_size)
+                    yy                = int(dy / box_size) * box_per_line_x
                     box               = xx+yy
                     texture_box[box] += part[i].M
-                if  count_events > 1 :
-                    B_box[box]       += part[i].B
-                    T_box[box]       += part[i].T
-                    V_box[box] += part[i].V
-                    P_box[box] += part[i].P
+                    if  count_events > 1 and dx > box_size and Dx > box_size :
+                        B_box[box]       += part[i].B
+                        T_box[box]       += part[i].T
+                        V_box[box] += part[i].V
+                        P_box[box] += part[i].P
 
                 map(lambda i:i.copy_to_old(), part)
-                
-                #Calculate the averages over boxes
+            #Calculate the averages over boxes
+            # for i in range(box_total):
+            #     print B_box
             for box in range(box_total):
                 if density_now[box] > 0 :
                     vx_now[box] = vx_now[box] / density_now[box]
@@ -2891,11 +2913,14 @@ if system_type == "voronoi":
                 if  count_events > 1 :
                     map(lambda i:i.calc_B_and_T_and_V_and_P(), part)
                 for i in index_particle:
-                    xx                = int((part[i].r[0]-x0) / box_size)
-                    yy                = int((part[i].r[1]-y0) / box_size) * box_per_line_x
-                    box               = xx + yy
+                    dx = part[i].r[0]-x0
+                    dy = part[i].r[1]-y0
+                    Dx = xf - part[i].r[0]
+                    xx                = int(dx / box_size)
+                    yy                = int(dy / box_size) * box_per_line_x
+                    box               = xx+yy
                     texture_box[box] += part[i].M
-                    if  count_events > 1 :
+                    if  count_events > 1 and dx > box_size and Dx > box_size :
                         B_box[box]   += part[i].B
                         T_box[box]   += part[i].T
                         V_box[box] += part[i].V
