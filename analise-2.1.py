@@ -1783,6 +1783,7 @@ def imag_count(system_type, name_arq_data_in) :
                     if line_splitted[1] == '1' :
                         part_counter += 1
                 max_number_particles  = max(max_number_particles,part_counter)
+                #print part_counter
                 file_arq_data_in.close()
 
     if system_type == 'potts' :
@@ -2306,14 +2307,6 @@ if system_type == "szabo-boids":
                     points         = np.array(points)
                     list_neighbors = delaunay(points,max_dist)
                     map_focus_region_to_part(points, list_neighbors, index_particle)
-                    # if count_events >1 :
-                    #     for i in part:
-                    #         if len(i.list_neigh) > 0:
-                    #             print i.ident,i.list_neigh,list(set(i.list_neigh).difference(i.list_neigh_old))
-                    #             print i.list_neigh_old,list(set(i.list_neigh_old).difference(i.list_neigh))
-    
-                    # for i in range(len(points)) :
-                    #     print part[i].ident, part[i].list_neigh
                     map(lambda i:i.texture(), part)
                     if  count_events > 1 :
                         map(lambda i:i.calc_B_and_T_and_V_and_P(), part)
@@ -2689,7 +2682,6 @@ if system_type == "potts":
                     points.append([x,y])
                     index_particle.append(i)
             image        += 1
-            index_particle += 1
             count_events += 1
             if points == [] :
                 print " "
@@ -2835,18 +2827,28 @@ if system_type == "voronoi":
     axis_a_T           = list(0. for i in range(box_total))
     axis_b_T           = list(0. for i in range(box_total))
     ang_elipse_T       = list(0. for i in range(box_total))
+    axis_a_V           = list(0. for i in range(box_total))
+    axis_b_V           = list(0. for i in range(box_total))
+    ang_elipse_V       = list(0. for i in range(box_total))
+    axis_a_P           = list(0. for i in range(box_total))
+    axis_b_P           = list(0. for i in range(box_total))
+    ang_elipse_P       = list(0. for i in range(box_total))
+
 
     print "\nYou analise a", system_type, "system \n"
-    max_number_particles = imag_count(system_type," ") #conta o numero de imagens e o numero maximo de particulas
+    #conta o numero de imagens e o numero maximo de particulas
+    max_number_particles = imag_count(system_type," ") 
     nlines        = max_number_particles
     part           = list(particle(i) for i in range(max_number_particles))
     #arquivo de posicoes e velocidades
     os.system("ls voronoi/cell_*.dat > files.dat")
     file_names = open("files.dat",'r')
-    # each word in this files.dat is a simulation snapshot datafile, so we need to open file by file and read the information
+    # each word in this files.dat is a simulation snapshot datafile, 
+    #so we need to open file by file and read the information
     for datafile in file_names:
         name_arq_data_in = datafile.split()[0]
-        file_arq_data_in = open(name_arq_data_in)  #reabre o arquivo para leituras das posicoes e vel.
+        #reabre o arquivo para leituras das posicoes e vel.
+        file_arq_data_in = open(name_arq_data_in)  
         if image <= image_0 :
             print "Skipping image:",image
             image += 1
@@ -2859,7 +2861,7 @@ if system_type == "voronoi":
             points         = []
             index_particle = []
             count_particle = 0
-            line           = file_arq_data_in.readline() # first line is not useful for us
+            line           = file_arq_data_in.readline() # first line is not useful
             while 1 :  #This scans arq_data_in line by line up to the end
                 line   = file_arq_data_in.readline()
                 if not line:
@@ -2877,7 +2879,8 @@ if system_type == "voronoi":
                     density_now[box] += 1.0
                     points.append([x,y])
                     index_particle.append(count_particle)
-                count_particle    = count_particle + 1
+                if particle_type == 1: count_particle    += 1
+                #print count_particle
             # Calculus of textures, B and T##################
             number_particles = len(points)
             if number_particles > 0:
@@ -2885,6 +2888,8 @@ if system_type == "voronoi":
                 list_neighbors = delaunay(points,max_dist)
                 map_focus_region_to_part(points, list_neighbors, index_particle)
                 map(lambda i:i.texture(), part)
+                if  count_events > 1 :
+                    map(lambda i:i.calc_B_and_T_and_V_and_P(), part)
                 for i in index_particle:
                     xx                = int((part[i].r[0]-x0) / box_size)
                     yy                = int((part[i].r[1]-y0) / box_size) * box_per_line_x
@@ -2925,9 +2930,9 @@ if system_type == "voronoi":
                         ang_elipse_V[box]       = angle
                         P_box[box]              = P_box[box] / density_now[box]
                         ax_a,ax_b,angle         = axis_angle(P_box[box])
-                        axis_a_P[box]           = ax_a
-                        axis_b_P[box]           = ax_b
-                        ang_elipse_P[box]       = angle
+                        axis_a_P[box]           = ax_a.real
+                        axis_b_P[box]           = ax_b.real
+                        ang_elipse_P[box]       = angle.real
                         
             
             #Function call to write velocity-density gnu script
@@ -2955,7 +2960,6 @@ if system_type == "voronoi":
                 T_tot[box]       += T_box[box]
                 V_tot[box]       += V_box[box]
                 P_tot[box]       += P_box[box]
-
             #reseting matrices of instaneous measures
             vx_now          = list(0. for i in range(box_total))
             vy_now          = list(0. for i in range(box_total))
@@ -2975,9 +2979,6 @@ image_counter  = image - image_0 - 1
 r_obst = float(R_OBST) / float(box_size)
 x_obst = (X_OBST - x0) / box_size
 y_obst = (Y_OBST - y0) / box_size
-#print x_obst, y_obst, r_obst, image_counter
-#print box_per_line_x, box_per_column_y
-#exit()
 
 
 if system_type == 'experiment':
