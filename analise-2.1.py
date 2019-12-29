@@ -108,56 +108,57 @@ class particle:
         dl    = l - l_old
         return lav, dl
         
-    def calc_B_and_T_and_V_and_P(self):
-        list_c   = list(set(self.list_neigh).intersection(self.list_neigh_old))
-        list_a   = list(set(self.list_neigh).difference(self.list_neigh_old))
-        list_d   = list(set(self.list_neigh_old).difference(self.list_neigh))
-        # print " "
-        # self.zeros()
-        # print self.list_neigh
-        # print self.list_neigh_old
-        # print self.r
-        # print self.r_old
-        # print " "
-        Nc       = len(list_c) #numero de links conservados
-        Na       = len(list_a) #numero de links adquiridos
-        Nd       = len(list_d) #numero de links desaparecidos
-        Ntot     = Nc + Na + Nd
-        if Ntot > 0 :
-            for i in list_c:
-                lav, dl  = self.l_av_dl(i)
-                c        = np.outer(lav,dl)  
-#                ct       = np.outer(dl,lav)
-                self.C  += c
-            self.CT=self.C.transpose()
-            if Nc > 0 :
-                self.C  /= Ntot
-                self.CT /= Ntot
-                self.B   = self.C + self.CT
-            ma_av=np.zeros((2,2))
-            for i in list_a:
-                ma = self.calc_m(i)
-                ma_av += ma
-            if Na > 0 : ma_av /= Na
-            md_av=np.zeros((2,2))
-            for i in list_d:
-                md = self.calc_md(i)
-                md_av -= md
-            if Nd > 0 : md_av /= Nd
-            self.T = (Na*ma_av+Nd*md_av)/Ntot
-            self.V=(self.iM.dot(self.C)+self.CT.dot(self.iM))/2.
-            self.P=-0.5*(self.iM.dot(self.T)+self.T.dot(self.iM))/2.
-            # for i in self.T:
-            #     for j in i:
-            #         if j>10:
-            #             print self.ident, self.list_neigh
-            #             print self.ident, self.list_neigh_old
-            #             break
+    def calc_B_and_T_and_V_and_P(self,x0,xf,max_dist):
+        if self.r[0]-x0 > 2*max_dist and xf-self.r[0] > 2*max_dist:
+            list_c   = list(set(self.list_neigh).intersection(self.list_neigh_old))
+            list_a   = list(set(self.list_neigh).difference(self.list_neigh_old))
+            list_d   = list(set(self.list_neigh_old).difference(self.list_neigh))
+            # print " "
+            # self.zeros()
+            # print self.list_neigh
+            # print self.list_neigh_old
+            # print self.r
+            # print self.r_old
+            # print " "
+            Nc       = len(list_c) #numero de links conservados
+            Na       = len(list_a) #numero de links adquiridos
+            Nd       = len(list_d) #numero de links desaparecidos
+            Ntot     = Nc + Na + Nd
+            if Ntot > 0 :
+                for i in list_c:
+                    lav, dl  = self.l_av_dl(i)
+                    c        = np.outer(lav,dl)  
+                    #                ct       = np.outer(dl,lav)
+                    self.C  += c
+                self.CT=self.C.transpose()
+                if Nc > 0 :
+                    self.C  /= Ntot
+                    self.CT /= Ntot
+                    self.B   = self.C + self.CT
+                ma_av=np.zeros((2,2))
+                for i in list_a:
+                    ma = self.calc_m(i)
+                    ma_av += ma
+                if Na > 0 : ma_av /= Na
+                md_av=np.zeros((2,2))
+                for i in list_d:
+                    md = self.calc_md(i)
+                    md_av -= md
+                if Nd > 0 : md_av /= Nd
+                self.T = (Na*ma_av+Nd*md_av)/Ntot
+                self.V=(self.iM.dot(self.C)+self.CT.dot(self.iM))/2.
+                self.P=-(self.iM.dot(self.T)+self.T.dot(self.iM))*0.25
+                # for i in self.T:
+                #     for j in i:
+                #         if j>10:
+                #             print self.ident, self.list_neigh
+                #             print self.ident, self.list_neigh_old
+                #             break
                             
-#                        print ma_av,md_av,Na*1./Ntot,Nd*1./Ntot
+                        #print ma_av,md_av,Na*1./Ntot,Nd*1./Ntot
                     
-        # if Ntot > 0 :
-        #     print self.list_neigh_old, self.list_neigh
+                # if Ntot > 0 :
+                #     print self.list_neigh_old, self.list_neigh
 
             
     def zeros(self):
@@ -2095,7 +2096,7 @@ if system_type == "superboids":
                     map_focus_region_to_part(points,list_neighbors,index_particle)
                     map(lambda i:i.texture(), part)
                     if  count_events > 1 :
-                        map(lambda i:i.calc_B_and_T_and_V_and_P(), part)
+                        map(lambda i:i.calc_B_and_T_and_V_and_P(x0,xf,max_dist), part)
                     for i in index_particle:
                         dx = part[i].r[0]-x0
                         dy = part[i].r[1]-y0
@@ -2319,7 +2320,7 @@ if system_type == "szabo-boids":
                     map_focus_region_to_part(points, list_neighbors, index_particle)
                     map(lambda i:i.texture(), part)
                     if  count_events > 1 :
-                        map(lambda i:i.calc_B_and_T_and_V_and_P(), part)
+                        map(lambda i:i.calc_B_and_T_and_V_and_P(x0,xf,max_dist), part)
                     for i in index_particle:
                         dx = part[i].r[0]-x0
                         dy = part[i].r[1]-y0
@@ -2512,7 +2513,7 @@ if system_type == "vicsek-gregoire":
                 map_focus_region_to_part(points,list_neighbors,index_particle)
                 map(lambda i:i.texture(), part)
                 if  count_events > 1 :
-                    map(lambda i:i.calc_B_and_T_and_V_and_P(), part)
+                    map(lambda i:i.calc_B_and_T_and_V_and_P(x0,xf,max_dist), part)
                 for i in index_particle:
                     dx = part[i].r[0]-x0
                     dy = part[i].r[1]-y0
@@ -2716,7 +2717,7 @@ if system_type == "potts":
                 #calculate textures, B and T
                 map(lambda i:i.texture(), part)
                 if  count_events > 1 :
-                    map(lambda i:i.calc_B_and_T_and_V_and_P(), part)
+                    map(lambda i:i.calc_B_and_T_and_V_and_P(x0,xf,max_dist), part)
 
                 for i in index_particle:
                     dx = part[i].r[0]-x0
@@ -2911,7 +2912,7 @@ if system_type == "voronoi":
                 map_focus_region_to_part(points, list_neighbors, index_particle)
                 map(lambda i:i.texture(), part)
                 if  count_events > 1 :
-                    map(lambda i:i.calc_B_and_T_and_V_and_P(), part)
+                    map(lambda i:i.calc_B_and_T_and_V_and_P(x0,xf,max_dist), part)
                 for i in index_particle:
                     dx = part[i].r[0]-x0
                     dy = part[i].r[1]-y0
