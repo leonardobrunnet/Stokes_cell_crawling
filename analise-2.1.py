@@ -109,7 +109,8 @@ class particle:
         return lav, dl
         
     def calc_B_and_T_and_V_and_P(self,x0,xf,max_dist):
-        if self.r[0]-x0 > 2*max_dist and xf-self.r[0] > 2*max_dist:
+        #condition to exclude border problems with B,T,V,P
+        if self.r[0]-x0 > max_dist and xf-self.r[0] > max_dist:
             list_c   = list(set(self.list_neigh).intersection(self.list_neigh_old))
             list_a   = list(set(self.list_neigh).difference(self.list_neigh_old))
             list_d   = list(set(self.list_neigh_old).difference(self.list_neigh))
@@ -492,19 +493,7 @@ def box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, 
     P_box        = list(np.zeros((2,2)) for i in range(box_total))
     P_tot        = list(np.zeros((2,2)) for i in range(box_total))
     P_win        = list(np.zeros((2,2)) for i in range(box_total))
-    # ang_elipse_tot         = list(0. for i in range(box_total))
-    # axis_a_win_texture     = list(0. for i in range(box_total))
-    # axis_b_win_texture     = list(0. for i in range(box_total))
-    # ang_elipse_win_texture = list(0. for i in range(box_total))
-    # axis_a_win_B           = list(0. for i in range(box_total))
-    # axis_b_win_B           = list(0. for i in range(box_total))
-    # ang_elipse_win_B       = list(0. for i in range(box_total))
-    # axis_a_win_T           = list(0. for i in range(box_total))
-    # axis_b_win_T           = list(0. for i in range(box_total))
-    # ang_elipse_win_T       = list(0. for i in range(box_total))
-    #    ratio=float(box_per_column_y)/box_per_line_x
     ratio        = float((yf - y0)) / (xf - x0)
-#    vid_def.write("set size 1,%f\n"% (ratio))
     image_resolution_x, image_resolution_y= 1300, 1300 * ratio
     vid_def.write("set terminal pngcairo  size %d,%d enhanced font 'Verdana, 18' crop\n"% (image_resolution_x, image_resolution_y)) 
     vid_def.write("set xrange [0:%f]  \n" % box_per_line_x)
@@ -544,9 +533,6 @@ def box_variables_definition_experiment(box_per_column_y, box_per_line_x):
     vy_tot         = list(0. for i in range(box_total))
     density_tot    = list(0  for i in range(box_total))
     texture_tot    = list(np.zeros((2,2)) for i in range(box_total))
-    # axis_a_tot     = list(0. for i in range(box_total))
-    # axis_b_tot     = list(0. for i in range(box_total))
-    # ang_elipse_tot = list(0. for i in range(box_total))
     vid_def.write("set size ratio -1 \n")
 #    vid_def.write("set term png  \n")
     vid_veloc_dens.write("set size ratio -1  \n")
@@ -562,8 +548,6 @@ def box_variables_definition_experiment(box_per_column_y, box_per_line_x):
     vel_win.write("arrow=1.\n")
 
     return box_total, ratio, vx_tot, vy_tot, density_tot, texture_tot
-#    return box_total, ratio, vx_tot, vy_tot, density_tot, axis_a_tot,\
-#        axis_b_tot, ang_elipse_tot
 
 
 def velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0):
@@ -1263,9 +1247,35 @@ def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_win, vy
     plt.legend()
     plt.close()
 
-        
-
-
+#axis to measure initial conditions set to the simulation, like density, vicsek parameter and h (plastic to total strain rate)    
+def axis_zero_simu(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, density_tot, B_tot, T_tot, V_tot, P_tot, box_size, image_counter, caixa_zero,v0):  
+    vx_axis_zero,vy_axis_zero=[],[]
+    density_zero = []
+    P_axis_zero,V_axis_zero = [],[]
+    avP=np.zeros((2,2))
+    avV=np.zeros((2,2))
+    #print vx_win
+    for i in range(box_total):
+        bx = i % box_per_line_x
+        by = int(i / box_per_line_x)
+        if bx == caixa_zero :
+            vx_axis_zero.append(vx_tot[i])
+            vy_axis_zero.append(vy_tot[i])
+            density_zero.append(density_tot[i])
+            P_axis_zero.append(P_tot[i])
+            V_axis_zero.append(V_tot[i])
+    phix=np.sum(vx_axis_zero)/image_counter #average vx per image
+    phiy=np.sum(vy_axis_zero)/image_counter  #average vy per image
+    phi=np.sqrt(phix**2+phiy**2)/np.sum(density_zero)/v0
+    rho=np.sum(density_zero)/len(density_zero)/box_size/box_size/image_counter
+    for i in range(len(density_zero)):
+        avP += P_axis_zero[i]
+        avV += V_axis_zero[i]
+    h=np.sum(np.multiply(avP,avV))/np.sum(np.multiply(avV,avV))
+    print 'rho=%f phi=%f h=%f '%(rho,phi,h)
+    #print avP
+    #print avV
+    
 def five_axis_simu(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, texture_win, B_win, T_win, V_win, P_win, system_type, image_counter, path, r_obst) :
     caixas_meia_altura    = box_per_column_y/2
     caixas_quarto_altura  = box_per_column_y/4
@@ -1980,7 +1990,7 @@ if system_type == "superboids":
     box_size             = float(file_input_parameter.readline().split()[1])
     window_size          = int(file_input_parameter.readline().split()[1])
     max_dist             = float(file_input_parameter.readline().split()[1])
-    
+    caixa_zero           = int(max_dist/box_size)+1
     print "\nYou analise a", system_type, "system, data is read from files:\n", name_arq_header_in," (header)\n", name_arq_data_in," (data)\n", name_arq_neigh_in," (neighbors)"
     file_arq_header_in   = open(name_arq_header_in)
     file_arq_data_in     = open(name_arq_data_in)
@@ -2270,6 +2280,7 @@ if system_type == "szabo-boids":
             if line_splitted[0] == "Max-dist:" :
                 max_dist = float(line_splitted[1])
                 max_dist = 2.
+                caixa_zero = int(max_dist/box_size)+1
             if line_splitted[0] == "dt:" :
                 dt = float(line_splitted[1])
                 #image_0       = int(time_0/dt/delta_images)
@@ -2427,7 +2438,8 @@ if system_type == "vicsek-gregoire":
     y0      = 0.
     yf      = box_size * int(Ly / box_size)
     box_per_line_x, box_per_column_y = int((delta_x)/box_size), int((yf-y0)/box_size)
-    
+    caixa_zero           = int(max_dist/box_size)+1    
+
     if x0 < 0. or xf > Lx :
         print "Warning: Reseting limits to 0, Lx"
         x0 = 0.
@@ -2617,7 +2629,7 @@ if system_type == "potts":
     y0            = 0.0
     yf            = box_size * int(Ly / box_size)
     box_per_line_x, box_per_column_y = int((delta_x) / box_size), int((yf - y0) / box_size)
-
+    caixa_zero           = int(max_dist/box_size)+1    
     if x0 < 0. or xf > Lx :
         print "Warning: Reseting limits to 0, Lx"
         x0 = 0.
@@ -2823,7 +2835,7 @@ if system_type == "voronoi":
     y0       = -box_size * int(Ly / box_size) / 2
     yf       =  box_size * int(Ly / box_size) / 2
     box_per_line_x, box_per_column_y = int((delta_x) / box_size), int((yf - y0) / box_size)
-
+    caixa_zero           = int(max_dist/box_size)+1    
     if x0 < -Lx/2.0 or xf > Lx/2.0 :
         print "Warning: Reseting limits to 0, Lx"
         x0 = -Lx/2.0
@@ -3000,7 +3012,6 @@ if system_type == "voronoi":
     os.system("rm files.dat");                        
 
 
-# Before starting time averages we exclude box at the borders.
 image_counter  = image - image_0 - 1
 r_obst = float(R_OBST) / float(box_size)
 x_obst = (X_OBST - x0) / box_size
@@ -3014,15 +3025,17 @@ if system_type == 'experiment':
     # Five axis analysis for experiment
     five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, texture_tot, system_type, image_counter,r_obst)
 else:
-    box_per_line_x, box_per_column_y, density_tot, vx_tot, vy_tot, texture_tot, B_tot, T_tot, V_tot, P_tot= \
-        zero_borders_and_obstacle_simu(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, B_tot, T_tot, V_tot, P_tot, system_type)
+    axis_zero_simu(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, density_tot, B_tot, T_tot, V_tot, P_tot, box_size, image_counter, caixa_zero, v0) 
     # Here we write the time averages of density, velocity and deformation elipse for simus
-
     vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, B_win, T_win, V_win, P_win = average_density_velocity_deformation(box_per_line_x, \
     box_per_column_y, vx_tot, vy_tot, density_tot, texture_tot, B_tot, T_tot, V_tot, P_tot, vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, B_win, \
     T_win, V_win, P_win, count_events, v0, vel_win_file_name, vel_fluct_win_file_name, dens_win_file_name, path, image_counter, window_size, r_obst)
     # Five axis analysis for simulations
     five_axis_simu(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, texture_win, B_win, T_win, V_win, P_win, system_type, image_counter,path,r_obst)
+    #Axis zero call
+        # box_per_line_x, box_per_column_y, density_tot, vx_tot, vy_tot, texture_tot, B_tot, T_tot, V_tot, P_tot= \
+        # zero_borders_and_obstacle_simu(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, B_tot, T_tot, V_tot, P_tot, system_type)
+
 
 file_input_parameter.close()
 vid_veloc_dens.close()
