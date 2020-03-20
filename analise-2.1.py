@@ -1333,7 +1333,8 @@ def axis_zero_simu(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, 
             NT_axis_zero.append(NT_tot[i])
     phix=np.sum(vx_axis_zero)/image_counter #average vx per image
     phiy=np.sum(vy_axis_zero)/image_counter  #average vy per image
-    phi=np.sqrt(phix**2+phiy**2)/np.sum(density_zero)/v0
+    phi=np.sqrt(phix**2+phiy**2)/len(density_zero)/v0
+    #phi=np.sqrt(phix**2+phiy**2)/np.sum(density_zero)/v0
     rho=np.sum(density_zero)/len(density_zero)/box_size/box_size/image_counter
     for i in range(len(density_zero)):
         # avP  += P_axis_zero[i]
