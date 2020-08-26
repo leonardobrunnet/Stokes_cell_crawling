@@ -394,7 +394,7 @@ while(t<passos*dt):
     if intt%division_time == 0 : #division
         if death_list : #take a death to revival
             mother=rand.choice(live_list)
-            while part[mother].r[0]>-L[0]/4:
+            while part[mother].r[0]>-3*L[0]/4:
                 mother=rand.choice(live_list)
                 print mother,part[mother].r[0]
             new=death_list.pop(0)
