@@ -241,6 +241,10 @@ output_file_name="output_simu_szabo.dat"
 output_counter_name = 'last_column_counter.txt'
 passos=1800000
 save_time = 1000
+input_data = sys.argv[0:4]
+tau=float(input_data[1])
+division_time=int(input_data[2])
+initial_state=int(input_data[3])    
 if initial_state== 0 :
     N=10
     L=np.array([100,50])
@@ -249,9 +253,6 @@ if initial_state== 0 :
     nb2=nb[1]*nb[0]
     dt=0.01
     exit_fig=1000
-    input_data = sys.argv[0:3]
-    tau=float(input_data[1])
-    division_time=int(input_data[2])
     rand.seed(0.1)
     cylinder_radius=15
     t=0
@@ -333,11 +334,17 @@ if initial_state == 1:
         if line_splitted[0] == "figindex:":
             figindex        = int(line_splitted[1])
         if line_splitted[0] == "tau:":
-            tau             = float(line_splitted[1])
+            taul             = float(line_splitted[1])
+            if taul != tau :
+                print "Attention! Previous simu performed with other tau"
+                exit()
         if line_splitted[0] == "size_disp:":
             size_disp             = float(line_splitted[1])
         if line_splitted[0] == "division_time:":
-            division_time     = float(line_splitted[1])
+            division_timel     = int(line_splitted[1])
+            if division_timel != division_time :
+                print "Attention! Previous simu performed with other division_time"
+                exit()
         if line_splitted[0] == "death_list:":
             if len(line_splitted) == 1 :
                 death_list = []
@@ -362,7 +369,7 @@ for i in range(N):
         delta=part[i].r[0]-L[0]
         part[i].r[0]-=delta*1.5
     part[i].Mybox=part[i].mybox()
-    print i,N,part[i].Mybox,nb2, part[i].r
+    #print i,N,part[i].Mybox,nb2, part[i].r
     box[part[i].Mybox].mylist.append(i)
     # Construct list of particles in neighboring boxes
 
@@ -404,10 +411,10 @@ while(t<passos*dt):
             
         else:
             mother=rand.choice(live_list) #create a new cell
-            while part[mother].r[0]>-L[0]/4:
+            while part[mother].r[0]>-3*L[0]/4:
                 mother=rand.choice(live_list)
-                print mother, "not zombie",part[mother].r[0]
             new = N
+            print mother, "not zombie",part[mother].r[0]
             live_list.append(N)
             N+=1
             index =0
