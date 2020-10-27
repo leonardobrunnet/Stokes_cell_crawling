@@ -5,6 +5,10 @@
 #good noise value 1.0
 #good density 1.0
 #good valeu for wall_osc~0.01
+#input_data = sys.argv[0:4]
+#tau=float(input_data[1])
+#division_time=int(input_data[2])
+#initial_state=int(input_data[3]) 0-start from t=0; 1-continue    
 
 import numpy as np
 import matplotlib
