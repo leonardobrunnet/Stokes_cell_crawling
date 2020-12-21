@@ -8,7 +8,6 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
-
     
 
 def texture_from_eigenvalues_and_angle(l1, l2, b):
@@ -42,16 +41,19 @@ def map_focus_region_to_part(points, list_neighbors, index_particle):
         part[aux].list_neigh = []
         for j in list_neighbors[i]:
             part[aux].list_neigh.append(index_particle[j])
-#        print aux, part[aux].list_neigh
+
 
 ############Particle class definition##############
 class particle:
     def __init__(self,ident):
-        self.r              = np.array([0,0])
-        self.r_old          = np.array([0,0])
+        self.Delta_counter  = 0
+        self.Delta          = 0.
+        self.r              = np.array([-200.,-200.])
+        self.r_orig          = np.array([-200.,-200.])
         self.ident          = ident  #indice geral da particula
         self.list_neigh     = []
         self.list_neigh_old = []
+        self.list_neigh_old_delta = []
         self.m_list         = []
         self.dm_list        = []
         self.lc_list        = [] 
@@ -72,8 +74,25 @@ class particle:
         self.DU             = np.zeros((2,2))
         self.NB             = np.zeros((2,2))
         self.NT             = np.zeros((2,2))
+
+
+    def my_original_position(self,x0,box_size):#new
+        self.r_orig=self.r
+        self.list_neigh_old_delta=self.list_neigh
+        return
         
-        
+    def delta_solid_liquid(self): #new
+        if self.r_orig[0] >x0+box_size and self.r_orig[0]<x0+2*box_size :
+            ll=len(self.list_neigh_old_delta)
+            if ll > 4:
+                for i in self.list_neigh_old_delta:
+                    dr_old_2=np.linalg.norm(part[i].r_orig-self.r_orig)**2
+                    dr_2=np.linalg.norm(part[i].r-self.r)**2
+                    self.Delta+=1-dr_old_2/dr_2
+                self.Delta/=ll
+                self.Delta_counter=1
+        return
+
     def texture(self):
         self.M   = np.zeros((2,2))
         n        = len(self.list_neigh)
@@ -81,8 +100,6 @@ class particle:
             for i in self.list_neigh:
                 m = self.calc_m(i)
                 self.M += m
-                # if self.ident == 24:
-                #     print i,n,m/n
             self.M /= n
             self.log_M()
             try:
@@ -114,8 +131,6 @@ class particle:
 
     
     def copy_to_old(self):
-        # if len(self.list_neigh) > 0:
-        #     print self.list_neigh_old, self.list_neigh
         self.list_neigh_old=copy.deepcopy(self.list_neigh)
         self.r_old=copy.deepcopy(self.r)
         self.U_old=copy.deepcopy(self.U)
@@ -1016,12 +1031,18 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
     box_total         = box_per_column_y*box_per_line_x
     window_size_h     = window_size/2
     count_box_win     = list(0 for i in range(box_total))
+#    print density_tot
     for bx in range(window_size_h + 1, box_per_line_x - window_size_h):
+        aux1 =  box_per_column_y - window_size_h - (window_size_h + 1)
+        if aux1 <= 0 :
+            print "use a smaller window_size value!"
+            exit()
         for by in range(window_size_h + 1, box_per_column_y - window_size_h):
             box = bx + (by * box_per_line_x)
             for k in range(-window_size_h, window_size_h):
                 for l in range(-window_size_h, window_size_h):
-                    if density_tot[(bx + k) + (by + l) * box_per_line_x] > 0 :
+                    aux = density_tot[(bx + k) + (by + l) * box_per_line_x]
+                    if  aux > 0 :
                         box                 = bx + (by*box_per_line_x)
                         density_win[box]   += density_tot[(bx + k) + ((by + l) * box_per_line_x)]
 		        vx_win[box]        += vx_tot[(bx + k) + ((by + l) * box_per_line_x)]
@@ -1043,7 +1064,6 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
                 NT_win[box]          = np.zeros((2,2))
                 V_win[box]          = np.zeros((2,2))
                 P_win[box]          = np.zeros((2,2))
-
     #Average win calculus and data print (gnuplot script for velocity)
     module_mean         = 0
     count_busy_box      = 0
@@ -1051,7 +1071,6 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
 	if density_win[box] > 0 :
 	    module_mean       += math.sqrt(vx_win[box]*vx_win[box] + vy_win[box]*vy_win[box])
 	    count_busy_box    += density_win[box]
-   
     arrow_size = count_busy_box / module_mean/40
     #create script gnu to plot velocity-density
     create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst)
@@ -1307,7 +1326,7 @@ def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_win, vy
     plt.close()
 
 #axis to measure initial conditions set to the simulation, like density, vicsek parameter and h (plastic to total strain rate)    
-def axis_zero_simu(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, density_tot, NB_tot, NT_tot, V_tot, P_tot, DU_tot, DM_tot, box_size, image_counter, caixa_zero,v0):  
+def axis_zero_simu(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, density_tot, NB_tot, NT_tot, V_tot, P_tot, DU_tot, DM_tot, box_size, image_counter, caixa_zero,v0,av_Delta):  
     vx_axis_zero,vy_axis_zero=[],[]
     density_zero = []
     P_axis_zero,V_axis_zero, DU_axis_zero,  DM_axis_zero, NB_axis_zero, NT_axis_zero = [],[], [], [], [], []
@@ -1360,7 +1379,7 @@ def axis_zero_simu(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, 
 #    print np.multiply(devNBT,unitB)
 #    print " "
 #    print np.multiply(devNT,unitB)
-    print 'rho=%f phi=%f hNTNBT=%f hNTNB=%f '%(rho,phi,hNTNBT,hNTNB)
+    print 'rho=%f phi=%f hNTNBT=%f hNTNB=%f Delta=%f '%(rho,phi,hNTNBT,hNTNB,av_Delta)
     # print "devNT"
     # print devNT
     # print " "
@@ -1866,16 +1885,29 @@ def imag_count(system_type, name_arq_data_in) :
                 counter += 1
                 
     if system_type == 'szabo-boids' :
+        part_count = 0
         file_arq_data_in = open(name_arq_data_in)
         while 1:
             line = file_arq_data_in.readline()
             if not line:
                 break
             line_splitted = line.split()
+            if line_splitted == []:
+                line = file_arq_data_in.readline()
+                if not line:
+                    break
+                line_splitted = line.split()
+            
             if line_splitted[0] == 'x' :
                 counter += 1
+                part_count=0
+            else:
+                if counter >1 :
+                    part_count+=1
             if line_splitted[0] == 'Number_of_particles:' :
                 max_number_particles = int(line_splitted[1])
+            if part_count > max_number_particles and counter > 0:
+                max_number_particles = part_count
         file_arq_data_in.close()
 
     if system_type == 'vicsek-gregoire' :
@@ -1884,7 +1916,7 @@ def imag_count(system_type, name_arq_data_in) :
         max_number_particles = 0
         
         while 1:
-            line = file_arq_data_in.readline()           
+            line = file_arq_data_in.readline()    
             if not line:
                 break #EOF
             line_splitted        = line.split()
@@ -2143,6 +2175,7 @@ if system_type == "superboids":
     y0, yf           = box_size*int(-Ly/(2*box_size)), box_size*int(Ly/(2*box_size))
     box_per_line_x   = int((delta_x) / box_size)
     box_per_column_y = int((yf - y0) / box_size)
+    Delta_calculus=0  #new
 
     if x0 < -Lx/2 or xf > Lx/2 :
         print "Warning: Reseting limits to -Lx/2, Lx/2"
@@ -2162,7 +2195,7 @@ if system_type == "superboids":
     points            = []
     index_particle    = []
     
-    #local defintions to put diagonalized matrices values
+    #local definitions to put diagonalized matrices values
     axis_a_texture     = list(0. for i in range(box_total))
     axis_b_texture     = list(0. for i in range(box_total))
     ang_elipse_texture = list(0. for i in range(box_total))
@@ -2215,7 +2248,11 @@ if system_type == "superboids":
                     points=np.array(points)
                     list_neighbors=delaunay(points,max_dist)
                     map_focus_region_to_part(points,list_neighbors,index_particle)
+                    print part[0]
                     map(lambda i:i.texture(), part)
+                    if count_events == 1 :#new
+                        map(lambda i:i.my_original_position(x0,box_size), part) #new
+
                     if  count_events > 1 :
                         map(lambda i:i.calc_NB_and_NT_and_V_and_P_and_DU_and_DM(x0,xf,max_dist), part)
                     for i in index_particle:
@@ -2235,6 +2272,21 @@ if system_type == "superboids":
                             DM_box[box] += part[i].DM
 
                     map(lambda i:i.copy_to_old(), part)
+                    if count_events > 1 and Delta_calculus == 0: #new
+                        map(lambda i:i.delta_solid_liquid(), part)#new
+                        av_Delta,av_x,tot=0.,0.,0#new
+                        for i in part:#new
+                            if i.Delta_counter > 0 :#new
+                                av_x+=i.r[0]#new
+                                tot+=i.Delta_counter#new
+                                av_Delta+=i.Delta#new
+                                # if i.r[0]>-35 :
+                                #     print i.r_orig[0],i.r[0], i.ident
+                        #print av_x/tot, av_Delta/tot, tot#new
+                        if av_x/tot > -35. :#new
+                            Delta_calculus = 1 #new
+                            av_Delta/=tot
+                            #print av_Delta, tot#new
 
 
                 for box in range(box_total):
@@ -2361,12 +2413,12 @@ if system_type == "szabo-boids":
                 Lx      = int(line_splitted[1])
                 Ly      = int(line_splitted[2])
                 delta_x = int((xf + x0) * R_OBST / box_size) * box_size
+                
                 x0      = X_OBST-x0 * R_OBST
                 xf      = x0 + delta_x
                 delta_y =int((yf + y0) * R_OBST / box_size) * box_size
                 y0      = Y_OBST - y0 * R_OBST
                 yf      = y0 + delta_y
-                
                 # y0 = -box_size*int(Ly/box_size)
                 # yf =  box_size*int(Ly/box_size)
                 #box_size = box_size*2
@@ -2377,7 +2429,7 @@ if system_type == "szabo-boids":
                     texture_win, NB_win, NT_win, V_win, P_win, DU_win, DM_win=\
                     box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf)
 
-                #local defintions to put diagonalized matrices values
+                #local definitions to put diagonalized matrices values
                 axis_a_texture     = list(0. for i in range(box_total))
                 axis_b_texture     = list(0. for i in range(box_total))
                 ang_elipse_texture = list(0. for i in range(box_total))
@@ -2400,6 +2452,8 @@ if system_type == "szabo-boids":
                 caixa_zero = int(max_dist/box_size)+1
             if line_splitted[0] == "dt:" :
                 dt = float(line_splitted[1])
+                Delta_calculus=0  #new
+                #T_solid_liquid = dt*delta_images*(image_f-image_0) #new
                 #image_0       = int(time_0/dt/delta_images)
                 #image_f       = int(time_f/dt/delta_images)
                 #image_counter = image_f-image_0
@@ -2432,21 +2486,28 @@ if system_type == "szabo-boids":
                         density_now[box] += 1.0
                         points.append([x,y])
                         index_particle.append(count_particle)
-#                        print index_particle[0],points[0],part[0].r
                     count_particle   += 1
                     line = file_arq_data_in.readline()
                     if not line : break
                     line_splitted = line.split()
+                # if count_events > 1 :
+                #     print list(set(index_particle)-set(index_particle_old))
+                
+                # index_particle_old=copy.deepcopy(index_particle)
                 image        += 1
                 count_events += 1
 
-                # Calculus of textures, B and T and V and P and DU ##################
+                # Calculus of textures, B and T and V and P and DU and Delta ##################
                 number_particles   = len(points)
                 if number_particles > 0:
                     points         = np.array(points)
+                    # print points
+                    # exit()
                     list_neighbors = delaunay(points,max_dist)
                     map_focus_region_to_part(points, list_neighbors, index_particle)
                     map(lambda i:i.texture(), part)
+                    if count_events == 1 :#new
+                        map(lambda i:i.my_original_position(x0,box_size), part) #new
                     if  count_events > 1 :
                         map(lambda i:i.calc_NB_and_NT_and_V_and_P_and_DU_and_DM(x0,xf,max_dist), part)
                     for i in index_particle:
@@ -2466,8 +2527,22 @@ if system_type == "szabo-boids":
                             DM_box[box] += part[i].DM
 #                    print part[index_particle[1]].r,part[index_particle[1]].r_old
                     map(lambda i:i.copy_to_old(), part)
-                    
-#                    for i in range(box_total):
+                    if count_events > 1 and Delta_calculus == 0: #new
+                        map(lambda i:i.delta_solid_liquid(), part)#new
+                        av_Delta,av_x,tot=0.,0.,0#new
+                        for i in part:#new
+                            if i.Delta_counter > 0 :#new
+                                av_x+=i.r[0]#new
+                                tot+=i.Delta_counter#new
+                                av_Delta+=i.Delta#new
+                                # if i.r[0]>-35 :
+                                #     print i.r_orig[0],i.r[0], i.ident
+                        #print av_x/tot, av_Delta/tot, tot#new
+                        if av_x/tot > -35. :#new
+                            Delta_calculus = 1 #new
+                            av_Delta/=tot
+                            #print av_Delta, tot#new
+
 
                 
                 #Calculate the averages over boxes
@@ -2503,6 +2578,8 @@ if system_type == "szabo-boids":
                             ang_elipse_P[box]   = angle.real
                             DU_box[box]         = DU_box[box] / density_now[box]
                             DM_box[box]         = DM_box[box] / density_now[box]
+              
+
 
                 #Function call to write velocity-density gnu script
                 velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_now, density_now, system_type, image, v0)
@@ -2564,7 +2641,7 @@ if system_type == "vicsek-gregoire":
     yf      = box_size * int(Ly / box_size)
     box_per_line_x, box_per_column_y = int((delta_x)/box_size), int((yf-y0)/box_size)
     caixa_zero           = int(max_dist/box_size)+1    
-
+    Delta_calculus=0  #new
     if x0 < 0. or xf > Lx :
         print "Warning: Reseting limits to 0, Lx"
         x0 = 0.
@@ -2649,6 +2726,8 @@ if system_type == "vicsek-gregoire":
                 list_neighbors = delaunay(points,max_dist)
                 map_focus_region_to_part(points,list_neighbors,index_particle)
                 map(lambda i:i.texture(), part)
+                if count_events == 1 :#new
+                    map(lambda i:i.my_original_position(x0,box_size), part) #new
                 if  count_events > 1 :
                     map(lambda i:i.calc_NB_and_NT_and_V_and_P_and_DU_and_DM(x0,xf,max_dist), part)
                 for i in index_particle:
@@ -2669,6 +2748,21 @@ if system_type == "vicsek-gregoire":
                         #print NB_box[box]
 
                 map(lambda i:i.copy_to_old(), part)
+                if count_events > 1 and Delta_calculus == 0: #new
+                    map(lambda i:i.delta_solid_liquid(), part)#new
+                    av_Delta,av_x,tot=0.,0.,0#new
+                    for i in part:#new
+                        if i.Delta_counter > 0 :#new
+                            av_x+=i.r[0]#new
+                            tot+=i.Delta_counter#new
+                            av_Delta+=i.Delta#new
+                            # if i.r[0]>-35 :
+                            #     print i.r_orig[0],i.r[0], i.ident
+                    #print av_x/tot, av_Delta/tot, tot#new
+                    if av_x/tot > -35. :#new
+                        Delta_calculus = 1 #new
+                        av_Delta/=tot
+                        #print av_Delta, tot#new
 
                 #Calculate the average velocity over boxes
             for box in range(box_total):
@@ -2761,7 +2855,8 @@ if system_type == "potts":
     y0            = 0.0
     yf            = box_size * int(Ly / box_size)
     box_per_line_x, box_per_column_y = int((delta_x) / box_size), int((yf - y0) / box_size)
-    caixa_zero           = int(max_dist/box_size)+1    
+    caixa_zero           = int(max_dist/box_size)+1
+    Delta_calculus=0  #new
     if x0 < 0. or xf > Lx :
         print "Warning: Reseting limits to 0, Lx"
         x0 = 0.
@@ -2856,6 +2951,9 @@ if system_type == "potts":
 
                 #calculate textures, B and T
                 map(lambda i:i.texture(), part)
+                if count_events == 1 :#new
+                    map(lambda i:i.my_original_position(x0,box_size), part) #new
+
                 if  count_events > 1 :
                     map(lambda i:i.calc_NB_and_NT_and_V_and_P_and_DU_and_DM(x0,xf,max_dist), part)
 
@@ -2875,6 +2973,22 @@ if system_type == "potts":
                         DU_box[box] += part[i].DU
                         DM_box[box] += part[i].DM
                 map(lambda i:i.copy_to_old(), part)
+                if count_events > 1 and Delta_calculus == 0: #new
+                    map(lambda i:i.delta_solid_liquid(), part)#new
+                    av_Delta,av_x,tot=0.,0.,0#new
+                    for i in part:#new
+                        if i.Delta_counter > 0 :#new
+                            av_x+=i.r[0]#new
+                            tot+=i.Delta_counter#new
+                            av_Delta+=i.Delta#new
+                            # if i.r[0]>-35 :
+                            #     print i.r_orig[0],i.r[0], i.ident
+                    #print av_x/tot, av_Delta/tot, tot#new
+                    if av_x/tot > -35. :#new
+                        Delta_calculus = 1 #new
+                        av_Delta/=tot
+                        #print av_Delta, tot#new
+                
             #Calculate the averages over boxes
             # for i in range(box_total):
             #     print NB_box
@@ -2969,7 +3083,8 @@ if system_type == "voronoi":
     y0       = -box_size * int(Ly / box_size) / 2
     yf       =  box_size * int(Ly / box_size) / 2
     box_per_line_x, box_per_column_y = int((delta_x) / box_size), int((yf - y0) / box_size)
-    caixa_zero           = int(max_dist/box_size)+1    
+    caixa_zero           = int(max_dist/box_size)+1
+    Delta_calculus=0  #new
     if x0 < -Lx/2.0 or xf > Lx/2.0 :
         print "Warning: Reseting limits to 0, Lx"
         x0 = -Lx/2.0
@@ -3057,6 +3172,9 @@ if system_type == "voronoi":
                 list_neighbors = delaunay(points,max_dist)
                 map_focus_region_to_part(points, list_neighbors, index_particle)
                 map(lambda i:i.texture(), part)
+                if count_events == 1 :#new
+                    map(lambda i:i.my_original_position(x0,box_size), part) #new
+                
                 if  count_events > 1 :
                     map(lambda i:i.calc_NB_and_NT_and_V_and_P_and_DU_and_DM(x0,xf,max_dist), part)
                 for i in index_particle:
@@ -3075,6 +3193,22 @@ if system_type == "voronoi":
                         DU_box[box] += part[i].DU
                         DM_box[box] += part[i].DM
                 map(lambda i:i.copy_to_old(), part)
+                if count_events > 1 and Delta_calculus == 0: #new
+                    map(lambda i:i.delta_solid_liquid(), part)#new
+                    av_Delta,av_x,tot=0.,0.,0#new
+                    for i in part:#new
+                        if i.Delta_counter > 0 :#new
+                            av_x+=i.r[0]#new
+                            tot+=i.Delta_counter#new
+                            av_Delta+=i.Delta#new
+                            # if i.r[0]>-35 :
+                            #     print i.r_orig[0],i.r[0], i.ident
+                    #print av_x/tot, av_Delta/tot, tot#new
+                    if av_x/tot > -35. :#new
+                        Delta_calculus = 1 #new
+                        av_Delta/=tot
+                        #print av_Delta, tot#new
+                
             #Calculate the average velocity over boxes
             for box in range(box_total):
                 if density_now[box] > 0 :
@@ -3168,7 +3302,7 @@ else:
     box_per_line_x, box_per_column_y, density_tot, vx_tot, vy_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot= \
         zero_borders_and_obstacle_simu(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot, system_type)
       
-    axis_zero_simu(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, density_tot, NB_tot, NT_tot, V_tot, P_tot, DU_tot, DM_tot, box_size, image_counter, caixa_zero, v0) 
+    axis_zero_simu(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, density_tot, NB_tot, NT_tot, V_tot, P_tot, DU_tot, DM_tot, box_size, image_counter, caixa_zero, v0,av_Delta) 
     # Here we write the time averages of density, velocity and deformation elipse for simus
     vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, NB_win, NT_win, V_win, P_win = average_density_velocity_deformation(box_per_line_x, \
     box_per_column_y, vx_tot, vy_tot, density_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot, vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, NB_win, \
