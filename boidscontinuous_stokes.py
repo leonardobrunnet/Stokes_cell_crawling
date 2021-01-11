@@ -66,12 +66,12 @@ class particle:
     Frep=30.0
     #Fadh=0.75 #original value
 #    Fadh=10.0
-    Fadh=0.1
+    #Fadh=0.1
     #Req=5./6. # original work by Szabo
     #R0=1.0
 #    Req=1.0
     R0=3.0
-    def __init__(self, x, y, vx, vy, ident, Raio_equilibrio):
+    def __init__(self, x, y, vx, vy, ident, Raio_equilibrio,fadh):
         self.r = np.array([x,y])
         self.v =  np.array([vx*self.v0,vy*self.v0])
         self.theta = np.arctan2(vy,vx)
@@ -82,6 +82,7 @@ class particle:
         self.Req = 2+Raio_equilibrio
         self.cross = 0
         self.cross2 = 0
+        self.Fadh = fadh
     
     def mybox(self): #Each particle calculates the box it is in
         if np.isnan(self.r[0]) == True or np.isnan(self.r[1]) == True :
@@ -251,7 +252,7 @@ if len(sys.argv) !=5 :
     exit()
 tau=float(input_data[1])
 division_time=int(input_data[2])
-fadh=(input_data[3])
+fadh=float(input_data[3])
 initial_state=int(input_data[4])
 if initial_state== 0 :
     N=10
@@ -285,7 +286,7 @@ if initial_state== 0 :
     #part=list(particle(-L[0]+3*L[0]/4.*rand.random(),L[1]*2*(rand.random()-0.5), rand.random()-0.5,rand.random()-0.5, i, size_disp*(rand.random()-0.5) ) for i in range(N))
     #part=list(particle(L[0]*2*(rand.random()-0.5),L[1]*2*(rand.random()-0.5), rand.random()-0.5,rand.random()-0.5, i, size_disp*(rand.random()-0.5) ) for i in range(N))
     #part=list(particle(-L[0]+3*L[0]/4.*rand.random(),L[1]*2*(rand.random()-0.5), 1.,0., i, size_disp*(rand.random()-0.5) ) for i in range(N))
-    part=list(particle(-L[0]+L[0]*rand.random()/4.,L[1]*2*(rand.random()-0.5), 1.,0., i, size_disp*(rand.random()-0.5) ) for i in range(N))
+    part=list(particle(-L[0]+L[0]*rand.random()/4.,L[1]*2*(rand.random()-0.5), 1.,0., i, size_disp*(rand.random()-0.5),fadh ) for i in range(N))
     map(lambda i:i.out_of_cylinder(cylinder_radius), part) #avoiding cells to enter de cylinder
     output_file.write("noise: %f\n"%part[0].noise)
     output_file.write("v0: %f\n"%part[0].v0)
@@ -366,7 +367,7 @@ if initial_state == 1:
             break
         line_splitted = line.split()
         live_list.append(int(line_splitted[0]))
-        part.append(particle(float(line_splitted[1]),float(line_splitted[2]),float(line_splitted[3]),float(line_splitted[4]),int(line_splitted[0]),size_disp*(rand.random()-0.5)))
+        part.append(particle(float(line_splitted[1]),float(line_splitted[2]),float(line_splitted[3]),float(line_splitted[4]),int(line_splitted[0]),size_disp*(rand.random()-0.5),fadh))
 box=list(boite(i) for i in range(nb2))
 
 # Construct list of particles in each box
@@ -435,7 +436,7 @@ while(t<passos*dt):
         vx,vy=-part[mother].v
         if index == 0:
         #create the ne w born and put it on the box
-            part.append(particle(x,y,vx,vy,new,size_disp*(rand.random()-0.5)))
+            part.append(particle(x,y,vx,vy,new,size_disp*(rand.random()-0.5),fadh))
         if index == 1:
             part[new].r=np.array([x,y])
             part[new].v=np.array([vx,vy])
