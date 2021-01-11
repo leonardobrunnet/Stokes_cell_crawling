@@ -59,14 +59,14 @@ def save_state(N,lbox,exit_fig,cylinder_radius,L,dt,t,figindex,tau,part):
 #Particle class definition
 class particle:
    # noise=0.6 #original value
-    noise=0.1
+    noise=0.6
 #    noise_T=10.0
     v0 = 0.1
     mu=1.0
     Frep=30.0
     #Fadh=0.75 #original value
 #    Fadh=10.0
-    Fadh=10.0
+    Fadh=0.1
     #Req=5./6. # original work by Szabo
     #R0=1.0
 #    Req=1.0
@@ -245,15 +245,19 @@ output_file_name="output_simu_szabo.dat"
 output_counter_name = 'last_column_counter.txt'
 passos=1800000
 save_time = 1000
-input_data = sys.argv[0:4]
+input_data = sys.argv[0:5]
+if len(sys.argv) !=5 :
+    print "Need 4 arguments:tau,division_time,fadh and initial state "
+    exit()
 tau=float(input_data[1])
 division_time=int(input_data[2])
-initial_state=int(input_data[3])    
+fadh=(input_data[3])
+initial_state=int(input_data[4])
 if initial_state== 0 :
     N=10
     L=np.array([100,50])
-    lbox=1
-    nb=2*L#/lbox)
+    lbox=2
+    nb=2*L/lbox
     nb2=nb[1]*nb[0]
     dt=0.01
     exit_fig=1000
@@ -457,8 +461,6 @@ while(t<passos*dt):
             y.append(part[i].r[1])
             vx.append(part[i].v[0])
             vy.append(part[i].v[1])
-        for i in range(len(x)):
-            output_file.write("%f %f %f %f \n"%(x[i],y[i],vx[i],vy[i]))
 
         plt.scatter(x,y,s=sizes,alpha=0.3)
         name=str(figindex)+".png"
@@ -469,6 +471,9 @@ while(t<passos*dt):
         fig.savefig(name,bbox_inches='tight')
         figindex+=1
         fig.clf()
+        for i in part:
+            output_file.write("%f %f %f %f \n"%(i.r[0],i.r[1],i.v[0],i.v[1]))
+
     if intt%save_time == 0:
         save_state(N,lbox,exit_fig,cylinder_radius,L,dt,t,figindex,tau,part)
     intt+=1
