@@ -59,7 +59,7 @@ def save_state(N,lbox,exit_fig,cylinder_radius,L,dt,t,figindex,tau,part):
 #Particle class definition
 class particle:
    # noise=0.6 #original value
-    noise=0.6
+    #noise=0.6
 #    noise_T=10.0
     v0 = 0.1
     mu=1.0
@@ -71,7 +71,7 @@ class particle:
     #R0=1.0
 #    Req=1.0
     R0=3.0
-    def __init__(self, x, y, vx, vy, ident, Raio_equilibrio,fadh):
+    def __init__(self, x, y, vx, vy, ident, Raio_equilibrio,fadh,noise):
         self.r = np.array([x,y])
         self.v =  np.array([vx*self.v0,vy*self.v0])
         self.theta = np.arctan2(vy,vx)
@@ -83,6 +83,7 @@ class particle:
         self.cross = 0
         self.cross2 = 0
         self.Fadh = fadh
+        self.noise = noise
     
     def mybox(self): #Each particle calculates the box it is in
         if np.isnan(self.r[0]) == True or np.isnan(self.r[1]) == True :
@@ -246,14 +247,15 @@ output_file_name="output_simu_szabo.dat"
 output_counter_name = 'last_column_counter.txt'
 passos=1800000
 save_time = 1000
-input_data = sys.argv[0:5]
-if len(sys.argv) !=5 :
-    print "Need 4 arguments:tau,division_time,fadh and initial state "
+input_data = sys.argv[0:6]
+if len(sys.argv) !=6 :
+    print "Need 4 arguments:tau,division_time,fadh,noise and initial state "
     exit()
 tau=float(input_data[1])
 division_time=int(input_data[2])
 fadh=float(input_data[3])
-initial_state=int(input_data[4])
+noise=float(input_data[4])
+initial_state=int(input_data[5])
 if initial_state== 0 :
     N=10
     L=np.array([100,50])
@@ -286,7 +288,7 @@ if initial_state== 0 :
     #part=list(particle(-L[0]+3*L[0]/4.*rand.random(),L[1]*2*(rand.random()-0.5), rand.random()-0.5,rand.random()-0.5, i, size_disp*(rand.random()-0.5) ) for i in range(N))
     #part=list(particle(L[0]*2*(rand.random()-0.5),L[1]*2*(rand.random()-0.5), rand.random()-0.5,rand.random()-0.5, i, size_disp*(rand.random()-0.5) ) for i in range(N))
     #part=list(particle(-L[0]+3*L[0]/4.*rand.random(),L[1]*2*(rand.random()-0.5), 1.,0., i, size_disp*(rand.random()-0.5) ) for i in range(N))
-    part=list(particle(-L[0]+L[0]*rand.random()/4.,L[1]*2*(rand.random()-0.5), 1.,0., i, size_disp*(rand.random()-0.5),fadh ) for i in range(N))
+    part=list(particle(-L[0]+L[0]*rand.random()/4.,L[1]*2*(rand.random()-0.5), 1.,0., i, size_disp*(rand.random()-0.5),fadh,noise ) for i in range(N))
     map(lambda i:i.out_of_cylinder(cylinder_radius), part) #avoiding cells to enter de cylinder
     output_file.write("noise: %f\n"%part[0].noise)
     output_file.write("v0: %f\n"%part[0].v0)
@@ -367,7 +369,7 @@ if initial_state == 1:
             break
         line_splitted = line.split()
         live_list.append(int(line_splitted[0]))
-        part.append(particle(float(line_splitted[1]),float(line_splitted[2]),float(line_splitted[3]),float(line_splitted[4]),int(line_splitted[0]),size_disp*(rand.random()-0.5),fadh))
+        part.append(particle(float(line_splitted[1]),float(line_splitted[2]),float(line_splitted[3]),float(line_splitted[4]),int(line_splitted[0]),size_disp*(rand.random()-0.5),fadh,noise))
 box=list(boite(i) for i in range(nb2))
 
 # Construct list of particles in each box
@@ -436,7 +438,7 @@ while(t<passos*dt):
         vx,vy=-part[mother].v
         if index == 0:
         #create the ne w born and put it on the box
-            part.append(particle(x,y,vx,vy,new,size_disp*(rand.random()-0.5),fadh))
+            part.append(particle(x,y,vx,vy,new,size_disp*(rand.random()-0.5),fadh,noise))
         if index == 1:
             part[new].r=np.array([x,y])
             part[new].v=np.array([vx,vy])
