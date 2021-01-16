@@ -242,20 +242,21 @@ class boite:
 global N,L,lbox,nb,dt,nb2,t,cylinder_radius,death_list,live_list
 initial_state=0 #if 0 launch initial conditions if 1 read from file
 wall_osc = 0.001  #distance from wall of a reinjected boid
-size_disp = 0.1  #particle size Req dispersion
 output_file_name="output_simu_szabo.dat"
 output_counter_name = 'last_column_counter.txt'
 passos=1800000
 save_time = 1000
-input_data = sys.argv[0:6]
-if len(sys.argv) !=6 :
-    print "Need 4 arguments:tau,division_time,fadh,noise and initial state "
+input_data = sys.argv[0:7]
+if len(sys.argv) !=7 :
+    print "Need 6 arguments:tau,division_time,fadh,noise,size_disp, initial state\nFor example: python boidscontinous_stokes.py 4 100 0.1 1 0.2 0 "
     exit()
 tau=float(input_data[1])
 division_time=int(input_data[2])
 fadh=float(input_data[3])
 noise=float(input_data[4])
-initial_state=int(input_data[5])
+size_disp = float(input_data[5]) #particle size Req dispersion
+initial_state=int(input_data[6])
+
 if initial_state== 0 :
     N=10
     L=np.array([100,50])
