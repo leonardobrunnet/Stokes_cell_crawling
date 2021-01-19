@@ -289,7 +289,7 @@ if initial_state== 0 :
     #part=list(particle(-L[0]+3*L[0]/4.*rand.random(),L[1]*2*(rand.random()-0.5), rand.random()-0.5,rand.random()-0.5, i, size_disp*(rand.random()-0.5) ) for i in range(N))
     #part=list(particle(L[0]*2*(rand.random()-0.5),L[1]*2*(rand.random()-0.5), rand.random()-0.5,rand.random()-0.5, i, size_disp*(rand.random()-0.5) ) for i in range(N))
     #part=list(particle(-L[0]+3*L[0]/4.*rand.random(),L[1]*2*(rand.random()-0.5), 1.,0., i, size_disp*(rand.random()-0.5) ) for i in range(N))
-    part=list(particle(-L[0]+L[0]*rand.random()/4.,L[1]*2*(rand.random()-0.5), 1.,0., i, size_disp*(rand.random()-0.5),fadh,noise ) for i in range(N))
+    part=list(particle(-L[0]+L[0]*rand.random()/4.,L[1]*2*(rand.random()-0.5), 0.1*(rand.random()-0.5),0.1*(rand.random()-0.5), i, size_disp*(rand.random()-0.5),fadh,noise ) for i in range(N))
     map(lambda i:i.out_of_cylinder(cylinder_radius), part) #avoiding cells to enter de cylinder
     output_file.write("noise: %f\n"%part[0].noise)
     output_file.write("v0: %f\n"%part[0].v0)
