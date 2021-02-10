@@ -91,6 +91,8 @@ class particle:
                     self.Delta+=1-dr_old_2/dr_2
                 self.Delta/=ll
                 self.Delta_counter=1
+            #print self.r_orig[0],self.ident,x0+box_size, x0+2*box_size
+            #exit()
         return
 
     def texture(self):
@@ -2172,6 +2174,7 @@ if system_type == "superboids":
     delta_x          = int((xf + x0) * R_OBST / box_size) * box_size
     x0               = X_OBST-x0*R_OBST
     xf               = x0+delta_x
+    x_Delta          = X_OBST-3*R_OBST    
     y0, yf           = box_size*int(-Ly/(2*box_size)), box_size*int(Ly/(2*box_size))
     box_per_line_x   = int((delta_x) / box_size)
     box_per_column_y = int((yf - y0) / box_size)
@@ -2280,13 +2283,17 @@ if system_type == "superboids":
                                 av_x+=i.r[0]#new
                                 tot+=i.Delta_counter#new
                                 av_Delta+=i.Delta#new
-                                # if i.r[0]>-35 :
+                                # if i.r[0]>x_Delta :
                                 #     print i.r_orig[0],i.r[0], i.ident
-                        #print av_x/tot, av_Delta/tot, tot#new
-                        if av_x/tot > -35. :#new
-                            Delta_calculus = 1 #new
-                            av_Delta/=tot
-                            #print av_Delta, tot#new
+                        if tot > 0 :
+                            print av_x/tot, av_Delta/tot, tot#new
+                            if av_x/tot > x_Delta :#new
+                                Delta_calculus = 1 #new
+                                av_Delta/=tot
+                                #print av_Delta, tot#new
+
+                        else:
+                            print "No particles in the measuring interval"
 
 
                 for box in range(box_total):
@@ -2413,9 +2420,11 @@ if system_type == "szabo-boids":
                 Lx      = int(line_splitted[1])
                 Ly      = int(line_splitted[2])
                 delta_x = int((xf + x0) * R_OBST / box_size) * box_size
-                
                 x0      = X_OBST-x0 * R_OBST
                 xf      = x0 + delta_x
+                x_Delta = X_OBST-3*R_OBST
+                # print x_Delta
+                # exit()
                 delta_y =int((yf + y0) * R_OBST / box_size) * box_size
                 y0      = Y_OBST - y0 * R_OBST
                 yf      = y0 + delta_y
@@ -2533,12 +2542,13 @@ if system_type == "szabo-boids":
                         for i in part:#new
                             if i.Delta_counter > 0 :#new
                                 av_x+=i.r[0]#new
-                                tot+=i.Delta_counter#new
+                                tot+=1#new
                                 av_Delta+=i.Delta#new
-                                # if i.r[0]>-35 :
-                                #     print i.r_orig[0],i.r[0], i.ident
-                        #print av_x/tot, av_Delta/tot, tot#new
-                        if av_x/tot > -35. :#new
+                                #if i.r[0]>x_Delta :
+                                print i.r_orig[0],i.r[0], i.ident
+                        #
+                        print av_x/tot, av_Delta/tot, tot#new
+                        if av_x/tot > x_Delta :#new
                             Delta_calculus = 1 #new
                             av_Delta/=tot
                             #print av_Delta, tot#new
@@ -2637,6 +2647,7 @@ if system_type == "vicsek-gregoire":
     delta_x =int((xf+x0)*R_OBST/box_size)*box_size
     x0      = X_OBST-x0*R_OBST
     xf      = x0+delta_x
+    x_Delta = X_OBST-3*R_OBST
     y0      = 0.
     yf      = box_size * int(Ly / box_size)
     box_per_line_x, box_per_column_y = int((delta_x)/box_size), int((yf-y0)/box_size)
@@ -2659,9 +2670,13 @@ if system_type == "vicsek-gregoire":
     print "\nYou analise a", system_type, "system, data is read from files:\n", name_arq_data_in
     max_number_particles   = imag_count(system_type,name_arq_data_in) #conta o numero de imagens
     file_arq_data_in       = open(name_arq_data_in)  #reabre o arquivo para leituras das posicoes e vel.
-#    line_splitted = sys.stdin.readline().split() #le da linha de comando o intervalo de imagens desejado
-    image_0                = int(time_0/Delta_t)
-    image_f                = int(time_f/Delta_t)
+    line_splitted = sys.stdin.readline().split() #le da linha de comando o intervalo de imagens desejado
+    if not line_splitted:
+        image_0                = int(time_0/Delta_t)
+        image_f                = int(time_f/Delta_t)
+    else:
+        image_0=int(line_splitted[0])
+        image_f=int(line_splitted[1])
     image_counter          = image_f - image_0
     image                  = 1
     line_counter           = 0
@@ -2691,6 +2706,7 @@ if system_type == "vicsek-gregoire":
             break #EOF
         line_splitted = line.split()
         nlines        = int(line_splitted[1])
+        
         if image <= image_0 :
             print "Skipping image:",image
             for i in range(nlines) :
@@ -2756,10 +2772,10 @@ if system_type == "vicsek-gregoire":
                             av_x+=i.r[0]#new
                             tot+=i.Delta_counter#new
                             av_Delta+=i.Delta#new
-                            # if i.r[0]>-35 :
-                            #     print i.r_orig[0],i.r[0], i.ident
-                    #print av_x/tot, av_Delta/tot, tot#new
-                    if av_x/tot > -35. :#new
+                            #if i.r[0]>x_Delta :
+                                #print i.r_orig[0],i.r[0], i.ident
+                    print av_x/tot, av_Delta/tot, tot#new
+                    if av_x/tot > x_Delta :#new
                         Delta_calculus = 1 #new
                         av_Delta/=tot
                         #print av_Delta, tot#new
@@ -2852,6 +2868,7 @@ if system_type == "potts":
     delta_x       = int((xf + x0) * R_OBST / box_size) * box_size
     x0            = X_OBST - x0 * R_OBST
     xf            = x0 + delta_x
+    x_Delta = X_OBST-3*R_OBST
     y0            = 0.0
     yf            = box_size * int(Ly / box_size)
     box_per_line_x, box_per_column_y = int((delta_x) / box_size), int((yf - y0) / box_size)
@@ -2981,10 +2998,10 @@ if system_type == "potts":
                             av_x+=i.r[0]#new
                             tot+=i.Delta_counter#new
                             av_Delta+=i.Delta#new
-                            # if i.r[0]>-35 :
+                            # if i.r[0]>x_Delta :
                             #     print i.r_orig[0],i.r[0], i.ident
                     #print av_x/tot, av_Delta/tot, tot#new
-                    if av_x/tot > -35. :#new
+                    if av_x/tot > x_Delta :#new
                         Delta_calculus = 1 #new
                         av_Delta/=tot
                         #print av_Delta, tot#new
@@ -3080,6 +3097,7 @@ if system_type == "voronoi":
     delta_x  =  int((xf + x0) * R_OBST / box_size) * box_size
     x0       =  X_OBST - x0 * R_OBST
     xf       =  x0 + delta_x
+    x_Delta  =  X_OBST - 3 * R_OBST
     y0       = -box_size * int(Ly / box_size) / 2
     yf       =  box_size * int(Ly / box_size) / 2
     box_per_line_x, box_per_column_y = int((delta_x) / box_size), int((yf - y0) / box_size)
@@ -3201,10 +3219,10 @@ if system_type == "voronoi":
                             av_x+=i.r[0]#new
                             tot+=i.Delta_counter#new
                             av_Delta+=i.Delta#new
-                            # if i.r[0]>-35 :
+                            # if i.r[0]>x_Delta :
                             #     print i.r_orig[0],i.r[0], i.ident
                     #print av_x/tot, av_Delta/tot, tot#new
-                    if av_x/tot > -35. :#new
+                    if av_x/tot > x_Delta :#new
                         Delta_calculus = 1 #new
                         av_Delta/=tot
                         #print av_Delta, tot#new
