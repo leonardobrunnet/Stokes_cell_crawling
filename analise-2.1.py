@@ -76,13 +76,13 @@ class particle:
         self.NT             = np.zeros((2,2))
 
 
-    def my_original_position(self,x0,box_size):#new
+    def my_original_position(self):#new
         self.r_orig=self.r
         self.list_neigh_old_delta=self.list_neigh
         return
         
-    def delta_solid_liquid(self): #new
-        if self.r_orig[0] >x0+box_size and self.r_orig[0]<x0+2*box_size :
+    def delta_solid_liquid(self,Delta_x0): #new
+        if self.r_orig[0] >Delta_x0+box_size and self.r_orig[0]<Delta_x0+2*box_size :
             ll=len(self.list_neigh_old_delta)
             if ll > 4:
                 for i in self.list_neigh_old_delta:
@@ -1328,7 +1328,7 @@ def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_win, vy
     plt.close()
 
 #axis to measure initial conditions set to the simulation, like density, vicsek parameter and h (plastic to total strain rate)    
-def axis_zero_simu(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, density_tot, NB_tot, NT_tot, V_tot, P_tot, DU_tot, DM_tot, box_size, image_counter, caixa_zero,v0,av_Delta):  
+def axis_zero_simu(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, density_tot, NB_tot, NT_tot, V_tot, P_tot, DU_tot, DM_tot, box_size, image_counter, caixa_zero,v0,av_Delta):
     vx_axis_zero,vy_axis_zero=[],[]
     density_zero = []
     P_axis_zero,V_axis_zero, DU_axis_zero,  DM_axis_zero, NB_axis_zero, NT_axis_zero = [],[], [], [], [], []
@@ -2174,11 +2174,17 @@ if system_type == "superboids":
     delta_x          = int((xf + x0) * R_OBST / box_size) * box_size
     x0               = X_OBST-x0*R_OBST
     xf               = x0+delta_x
-    x_Delta          = X_OBST-3*R_OBST    
+    print "Measure Delta before (1) or after the obstacle (2)?"#new
+    line_splitted        = sys.stdin.readline().split()#new
+    if int(line_splitted[0])==1 :                      #new
+        Delta_x0 = x0                                  #new
+    if    int(line_splitted[0])==2 :                   #new 
+        Delta_x0 = X_OBST+3*R_OBST                     #new
+    x_Delta = Delta_x0+3*R_OBST                      #new
     y0, yf           = box_size*int(-Ly/(2*box_size)), box_size*int(Ly/(2*box_size))
     box_per_line_x   = int((delta_x) / box_size)
     box_per_column_y = int((yf - y0) / box_size)
-    Delta_calculus=0  #new
+    Delta_calculus=0 
 
     if x0 < -Lx/2 or xf > Lx/2 :
         print "Warning: Reseting limits to -Lx/2, Lx/2"
@@ -2251,10 +2257,10 @@ if system_type == "superboids":
                     points=np.array(points)
                     list_neighbors=delaunay(points,max_dist)
                     map_focus_region_to_part(points,list_neighbors,index_particle)
-                    print part[0]
+                    #print part[0]
                     map(lambda i:i.texture(), part)
-                    if count_events == 1 :#new
-                        map(lambda i:i.my_original_position(x0,box_size), part) #new
+                    if count_events == 1 :
+                        map(lambda i:i.my_original_position(), part)
 
                     if  count_events > 1 :
                         map(lambda i:i.calc_NB_and_NT_and_V_and_P_and_DU_and_DM(x0,xf,max_dist), part)
@@ -2275,27 +2281,30 @@ if system_type == "superboids":
                             DM_box[box] += part[i].DM
 
                     map(lambda i:i.copy_to_old(), part)
-                    if count_events > 1 and Delta_calculus == 0: #new
-                        map(lambda i:i.delta_solid_liquid(), part)#new
-                        av_Delta,av_x,tot=0.,0.,0#new
-                        for i in part:#new
-                            if i.Delta_counter > 0 :#new
-                                av_x+=i.r[0]#new
-                                tot+=i.Delta_counter#new
-                                av_Delta+=i.Delta#new
+                    if count_events > 1 and Delta_calculus == 0: 
+                        map(lambda i:i.delta_solid_liquid(Delta_x0), part)
+                        av_Delta,av_x,tot=0.,0.,0
+                        for i in part:
+                            if i.Delta_counter > 0 :
+                                av_x+=i.r[0]
+                                tot+=i.Delta_counter
+                                av_Delta+=i.Delta
                                 # if i.r[0]>x_Delta :
                                 #     print i.r_orig[0],i.r[0], i.ident
-                        if tot > 0 :
-                            print av_x/tot, av_Delta/tot, tot#new
-                            if av_x/tot > x_Delta :#new
-                                Delta_calculus = 1 #new
-                                av_Delta/=tot
-                                #print av_Delta, tot#new
+                        if tot == 0 : 
+                            print "\nNo cells in Delta measuring region yet.\nTry images at later times\nExiting...\n"
+                            exit()
+                                
+                        print av_x/tot, av_Delta/tot, tot
+                        if av_x/tot > x_Delta :
+                            Delta_calculus = 1 
+                            av_Delta/=tot
+                            print "Finished calculationg Delta! Delta=%f"%av_Delta 
+                            if av_Delta<0 : #new
+                                print "\nNegative values may indicate you have holes in the Delta measuring area\n"         #new
+                
 
-                        else:
-                            print "No particles in the measuring interval"
-
-
+                            
                 for box in range(box_total):
                     if density_now[box] > 0 :
 
@@ -2372,6 +2381,15 @@ if system_type == "superboids":
                 index_particle    = []
 
             else:
+                if av_x/tot  < x_Delta :     
+                    print " "
+                    print "Need more images to calculate Delta!!"
+                    av_Delta/=tot
+                    print "Up to now Delta=%f! Average position av_x=%f. Need to go up to  x_Delta=%f "%(av_Delta,av_x/tot,x_Delta)
+                    print " "
+                    if av_Delta<0 : #new
+                        print "\nNegative values may indicate you have holes in the Delta measuring area\n"         #new
+
                 break
             fat_boids_counter = 0
             while line.replace( '\r' , '' ) == '\n' : # skip blank lines
@@ -2422,7 +2440,13 @@ if system_type == "szabo-boids":
                 delta_x = int((xf + x0) * R_OBST / box_size) * box_size
                 x0      = X_OBST-x0 * R_OBST
                 xf      = x0 + delta_x
-                x_Delta = X_OBST-3*R_OBST
+                print "Measure Delta before (1) or after the obstacle (2)?"#new
+                line_splitted        = sys.stdin.readline().split()#new
+                if int(line_splitted[0])==1 :                      #newszabo
+                    Delta_x0 = x0                                  #new
+                if    int(line_splitted[0])==2 :                   #new 
+                    Delta_x0 = X_OBST+3*R_OBST                     #new
+                x_Delta = Delta_x0+3*R_OBST                        #new
                 # print x_Delta
                 # exit()
                 delta_y =int((yf + y0) * R_OBST / box_size) * box_size
@@ -2461,11 +2485,7 @@ if system_type == "szabo-boids":
                 caixa_zero = int(max_dist/box_size)+1
             if line_splitted[0] == "dt:" :
                 dt = float(line_splitted[1])
-                Delta_calculus=0  #new
-                #T_solid_liquid = dt*delta_images*(image_f-image_0) #new
-                #image_0       = int(time_0/dt/delta_images)
-                #image_f       = int(time_f/dt/delta_images)
-                #image_counter = image_f-image_0
+                Delta_calculus=0 
         if line_counter > 9 :
             if image <= image_0 :
                 print "Skipping image:",image 
@@ -2515,8 +2535,8 @@ if system_type == "szabo-boids":
                     list_neighbors = delaunay(points,max_dist)
                     map_focus_region_to_part(points, list_neighbors, index_particle)
                     map(lambda i:i.texture(), part)
-                    if count_events == 1 :#new
-                        map(lambda i:i.my_original_position(x0,box_size), part) #new
+                    if count_events == 1 :
+                        map(lambda i:i.my_original_position(), part) 
                     if  count_events > 1 :
                         map(lambda i:i.calc_NB_and_NT_and_V_and_P_and_DU_and_DM(x0,xf,max_dist), part)
                     for i in index_particle:
@@ -2536,24 +2556,31 @@ if system_type == "szabo-boids":
                             DM_box[box] += part[i].DM
 #                    print part[index_particle[1]].r,part[index_particle[1]].r_old
                     map(lambda i:i.copy_to_old(), part)
-                    if count_events > 1 and Delta_calculus == 0: #new
-                        map(lambda i:i.delta_solid_liquid(), part)#new
-                        av_Delta,av_x,tot=0.,0.,0#new
-                        for i in part:#new
-                            if i.Delta_counter > 0 :#new
-                                av_x+=i.r[0]#new
-                                tot+=1#new
-                                av_Delta+=i.Delta#new
+                    if count_events > 1 and Delta_calculus == 0:
+                        map(lambda i:i.delta_solid_liquid(Delta_x0), part)
+                        av_Delta,av_x,tot=0.,0.,0
+                        for i in part:
+                            if i.Delta_counter > 0 :
+                                av_x+=i.r[0]
+                                tot+=1
+                                av_Delta+=i.Delta
+                                if np.abs(i.r_orig[0]-i.r[0]) < 10**(-5):
+                                    print i.ident,i.r,i.r_orig
+
+                                
                                 #if i.r[0]>x_Delta :
-                                print i.r_orig[0],i.r[0], i.ident
-                        #
-                        print av_x/tot, av_Delta/tot, tot#new
-                        if av_x/tot > x_Delta :#new
-                            Delta_calculus = 1 #new
+                                #print i.r_orig[0],i.r[0], i.ident
+
+                        if tot == 0 : 
+                            print "\nNo cells in Delta measuring region yet.\nTry images at later times\n"
+                            exit()
+                        print av_x/tot, av_Delta/tot, x_Delta
+                        if av_x/tot > x_Delta :
+                            Delta_calculus = 1 
                             av_Delta/=tot
-                            #print av_Delta, tot#new
-
-
+                            print "Finished calculationg Delta! Delta=%f"%av_Delta 
+                            if av_Delta<0 : #new
+                                print "\nNegative values may indicate you have holes in the Delta measuring area\n"         #new
                 
                 #Calculate the averages over boxes
                 for box in range(box_total):
@@ -2631,8 +2658,16 @@ if system_type == "szabo-boids":
                 points         = []
                 index_particle = []
             else:
-                break
+                if av_x/tot  < x_Delta :
+                    print " "
+                    print "Need more images to calculate Delta!!"
+                    av_Delta/=tot
+                    print "Up to now Delta=%f! Average position av_x=%f. Need to go up to  x_Delta=%f "%(av_Delta,av_x/tot,x_Delta)
+                    print " "
+                    if av_Delta<0 : #new
+                        print "\nNegative values may indicate you have holes in the Delta measuring area\n"         #new
 
+                break
 
             
 if system_type == "vicsek-gregoire":
@@ -2647,12 +2682,18 @@ if system_type == "vicsek-gregoire":
     delta_x =int((xf+x0)*R_OBST/box_size)*box_size
     x0      = X_OBST-x0*R_OBST
     xf      = x0+delta_x
-    x_Delta = X_OBST-3*R_OBST
+    print "Measure Delta before (1) or after the obstacle (2)?"#new
+    line_splitted        = sys.stdin.readline().split()#new
+    if int(line_splitted[0])==1 :                      #new
+        Delta_x0 = x0                                  #new
+    if    int(line_splitted[0])==2 :                   #new 
+        Delta_x0 = X_OBST+3*R_OBST                     #new
+    x_Delta = Delta_x0+3*R_OBST                      #new
     y0      = 0.
     yf      = box_size * int(Ly / box_size)
     box_per_line_x, box_per_column_y = int((delta_x)/box_size), int((yf-y0)/box_size)
     caixa_zero           = int(max_dist/box_size)+1    
-    Delta_calculus=0  #new
+    Delta_calculus=0  
     if x0 < 0. or xf > Lx :
         print "Warning: Reseting limits to 0, Lx"
         x0 = 0.
@@ -2723,6 +2764,9 @@ if system_type == "vicsek-gregoire":
             for i in range(nlines) :
                 line_splitted  = file_arq_data_in.readline().split()
                 x, y = float(line_splitted[0]), float(line_splitted[1])
+                #if i == 8790 :
+                #        print x,x0
+
                 if x > x0 and x < xf and y > y0 and y < yf : 
                     xx                = int((x-x0) / box_size)
                     yy                = int((y-y0) / box_size) * box_per_line_x
@@ -2732,6 +2776,7 @@ if system_type == "vicsek-gregoire":
                     density_now[box] += 1.0
                     points.append([x,y])
                     index_particle.append(i)
+
             image        += 1
             count_events += 1
             
@@ -2742,11 +2787,13 @@ if system_type == "vicsek-gregoire":
                 list_neighbors = delaunay(points,max_dist)
                 map_focus_region_to_part(points,list_neighbors,index_particle)
                 map(lambda i:i.texture(), part)
-                if count_events == 1 :#new
-                    map(lambda i:i.my_original_position(x0,box_size), part) #new
+                if count_events == 1 :
+                    map(lambda i:i.my_original_position(), part)
                 if  count_events > 1 :
                     map(lambda i:i.calc_NB_and_NT_and_V_and_P_and_DU_and_DM(x0,xf,max_dist), part)
                 for i in index_particle:
+                    #if i == 8790 :
+                        #print part[i].r
                     dx = part[i].r[0]-x0
                     dy = part[i].r[1]-y0
                     Dx = xf - part[i].r[0]
@@ -2764,21 +2811,30 @@ if system_type == "vicsek-gregoire":
                         #print NB_box[box]
 
                 map(lambda i:i.copy_to_old(), part)
-                if count_events > 1 and Delta_calculus == 0: #new
-                    map(lambda i:i.delta_solid_liquid(), part)#new
-                    av_Delta,av_x,tot=0.,0.,0#new
-                    for i in part:#new
-                        if i.Delta_counter > 0 :#new
-                            av_x+=i.r[0]#new
-                            tot+=i.Delta_counter#new
-                            av_Delta+=i.Delta#new
-                            #if i.r[0]>x_Delta :
-                                #print i.r_orig[0],i.r[0], i.ident
-                    print av_x/tot, av_Delta/tot, tot#new
-                    if av_x/tot > x_Delta :#new
-                        Delta_calculus = 1 #new
+                if count_events > 1 and Delta_calculus == 0: 
+                    map(lambda i:i.delta_solid_liquid(Delta_x0), part)
+                    av_Delta,av_x,tot=0.,0.,0
+                    for i in part:
+                        if i.Delta_counter > 0 :
+                            if np.abs(i.r_orig[0]-i.r[0]) < 10**(-10):
+                                i.Delta_counter =0
+                            else:
+                                av_x+=i.r[0]
+                                tot+=i.Delta_counter
+                                av_Delta+=i.Delta
+                            #                            if av_Delta/tot > 1 :
+                    if tot == 0 : 
+                        print "\nNo cells in Delta measuring region yet.\nTry images at later times\n"
+                        exit()
+
+                    print av_x/tot, av_Delta/tot, x_Delta
+                    if av_x/tot > x_Delta :
+                        Delta_calculus = 1 
                         av_Delta/=tot
-                        #print av_Delta, tot#new
+                        print "Finished calculationg Delta! Delta=%f"%av_Delta 
+                        if av_Delta<0 : #new
+                            print "\nNegative values may indicate you have holes in the Delta measuring area\n"         #new
+
 
                 #Calculate the average velocity over boxes
             for box in range(box_total):
@@ -2855,7 +2911,16 @@ if system_type == "vicsek-gregoire":
             index_particle    = []
 
         else:
-                break
+            if av_x/tot  < x_Delta :
+                print " "
+                print "Need more images to calculate Delta!!"
+                av_Delta/=tot
+                print "Up to now Delta=%f! Average position av_x=%f. Need to go up to  x_Delta=%f "%(av_Delta,av_x/tot,x_Delta)
+                print " "
+                if av_Delta<0 : #new
+                    print "\nNegative values may indicate you have holes in the Delta measuring area\n"         #new
+
+            break
 
 if system_type == "potts":
     window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag, box_size = read_param(file_input_parameter)
@@ -2868,12 +2933,18 @@ if system_type == "potts":
     delta_x       = int((xf + x0) * R_OBST / box_size) * box_size
     x0            = X_OBST - x0 * R_OBST
     xf            = x0 + delta_x
-    x_Delta = X_OBST-3*R_OBST
+    print "Measure Delta before (1) or after the obstacle (2)?"#new
+    line_splitted        = sys.stdin.readline().split()#new
+    if int(line_splitted[0])==1 :                      #new
+        Delta_x0 = x0                                  #new
+    if    int(line_splitted[0])==2 :                   #new 
+        Delta_x0 = X_OBST+3*R_OBST                     #new
+    x_Delta = Delta_x0+3*R_OBST                      #new
     y0            = 0.0
     yf            = box_size * int(Ly / box_size)
     box_per_line_x, box_per_column_y = int((delta_x) / box_size), int((yf - y0) / box_size)
     caixa_zero           = int(max_dist/box_size)+1
-    Delta_calculus=0  #new
+    Delta_calculus=0 
     if x0 < 0. or xf > Lx :
         print "Warning: Reseting limits to 0, Lx"
         x0 = 0.
@@ -2968,8 +3039,8 @@ if system_type == "potts":
 
                 #calculate textures, B and T
                 map(lambda i:i.texture(), part)
-                if count_events == 1 :#new
-                    map(lambda i:i.my_original_position(x0,box_size), part) #new
+                if count_events == 1 :
+                    map(lambda i:i.my_original_position(), part)
 
                 if  count_events > 1 :
                     map(lambda i:i.calc_NB_and_NT_and_V_and_P_and_DU_and_DM(x0,xf,max_dist), part)
@@ -2990,21 +3061,27 @@ if system_type == "potts":
                         DU_box[box] += part[i].DU
                         DM_box[box] += part[i].DM
                 map(lambda i:i.copy_to_old(), part)
-                if count_events > 1 and Delta_calculus == 0: #new
-                    map(lambda i:i.delta_solid_liquid(), part)#new
-                    av_Delta,av_x,tot=0.,0.,0#new
-                    for i in part:#new
-                        if i.Delta_counter > 0 :#new
-                            av_x+=i.r[0]#new
-                            tot+=i.Delta_counter#new
-                            av_Delta+=i.Delta#new
+                if count_events > 1 and Delta_calculus == 0:
+                    map(lambda i:i.delta_solid_liquid(Delta_x0), part)
+                    av_Delta,av_x,tot=0.,0.,0
+                    for i in part:
+                        if i.Delta_counter > 0 :
+                            av_x+=i.r[0]
+                            tot+=i.Delta_counter
+                            av_Delta+=i.Delta
                             # if i.r[0]>x_Delta :
                             #     print i.r_orig[0],i.r[0], i.ident
-                    #print av_x/tot, av_Delta/tot, tot#new
-                    if av_x/tot > x_Delta :#new
-                        Delta_calculus = 1 #new
+
+                    if tot == 0 : 
+                        print "\nNo cells in Delta measuring region yet.\nTry images at later times\n"
+                        exit()
+                    print av_x/tot, av_Delta/tot, tot
+                    if av_x/tot > x_Delta :
+                        Delta_calculus = 1 
                         av_Delta/=tot
-                        #print av_Delta, tot#new
+                        if av_Delta<0 : #new
+                            print "\nNegative values may indicate you have holes in the Delta measuring area\n"         #new
+
                 
             #Calculate the averages over boxes
             # for i in range(box_total):
@@ -3085,7 +3162,16 @@ if system_type == "potts":
             index_particle = []
 
         else:
-                break
+            if av_x/tot  < x_Delta :
+                print " "
+                print "Need more images to calculate Delta!!"
+                av_Delta/=tot
+                print "Up to now Delta=%f! Average position av_x=%f. Need to go up to  x_Delta=%f "%(av_Delta,av_x/tot,x_Delta)
+                print " "
+                if av_Delta<0 : #new
+                    print "\nNegative values may indicate you have holes in the Delta measuring area\n"         #new
+                
+            break
 
 if system_type == "voronoi":
     # voronoi model works with obstacle at 0.0 , 0.0 and system goes from - Lx/2.0 to Lx/2.0 but the articles can go even further
@@ -3097,12 +3183,18 @@ if system_type == "voronoi":
     delta_x  =  int((xf + x0) * R_OBST / box_size) * box_size
     x0       =  X_OBST - x0 * R_OBST
     xf       =  x0 + delta_x
-    x_Delta  =  X_OBST - 3 * R_OBST
+    print "Measure Delta before (1) or after the obstacle (2)?"
+    line_splitted        = sys.stdin.readline().split()
+    if int(line_splitted[0])==1 :                      
+        Delta_x0 = x0                                  
+    if    int(line_splitted[0])==2 :                   
+        Delta_x0 = X_OBST+3*R_OBST                     
+    x_Delta = Delta_x0+3*R_OBST                      
     y0       = -box_size * int(Ly / box_size) / 2
     yf       =  box_size * int(Ly / box_size) / 2
     box_per_line_x, box_per_column_y = int((delta_x) / box_size), int((yf - y0) / box_size)
     caixa_zero           = int(max_dist/box_size)+1
-    Delta_calculus=0  #new
+    Delta_calculus=0  
     if x0 < -Lx/2.0 or xf > Lx/2.0 :
         print "Warning: Reseting limits to 0, Lx"
         x0 = -Lx/2.0
@@ -3190,8 +3282,8 @@ if system_type == "voronoi":
                 list_neighbors = delaunay(points,max_dist)
                 map_focus_region_to_part(points, list_neighbors, index_particle)
                 map(lambda i:i.texture(), part)
-                if count_events == 1 :#new
-                    map(lambda i:i.my_original_position(x0,box_size), part) #new
+                if count_events == 1 :
+                    map(lambda i:i.my_original_position(), part)
                 
                 if  count_events > 1 :
                     map(lambda i:i.calc_NB_and_NT_and_V_and_P_and_DU_and_DM(x0,xf,max_dist), part)
@@ -3211,21 +3303,27 @@ if system_type == "voronoi":
                         DU_box[box] += part[i].DU
                         DM_box[box] += part[i].DM
                 map(lambda i:i.copy_to_old(), part)
-                if count_events > 1 and Delta_calculus == 0: #new
-                    map(lambda i:i.delta_solid_liquid(), part)#new
-                    av_Delta,av_x,tot=0.,0.,0#new
-                    for i in part:#new
-                        if i.Delta_counter > 0 :#new
-                            av_x+=i.r[0]#new
-                            tot+=i.Delta_counter#new
-                            av_Delta+=i.Delta#new
+                if count_events > 1 and Delta_calculus == 0: 
+                    map(lambda i:i.delta_solid_liquid(Delta_x0), part)
+                    av_Delta,av_x,tot=0.,0.,0
+                    for i in part:
+                        if i.Delta_counter > 0 :
+                            av_x+=i.r[0]
+                            tot+=i.Delta_counter
+                            av_Delta+=i.Delta
                             # if i.r[0]>x_Delta :
                             #     print i.r_orig[0],i.r[0], i.ident
-                    #print av_x/tot, av_Delta/tot, tot#new
-                    if av_x/tot > x_Delta :#new
-                        Delta_calculus = 1 #new
+                    if tot == 0 : 
+                        print "\nNo cells in Delta measuring region yet.\nTry images at later times\n"
+                        exit()
+                    print av_x/tot, av_Delta/tot, tot
+                    if av_x/tot > x_Delta :
+                        Delta_calculus = 1 
                         av_Delta/=tot
-                        #print av_Delta, tot#new
+                        print "Finished calculationg Delta! Delta=%f"%av_Delta 
+                        if av_Delta<0 : #new
+                            print "\nNegative values may indicate you have holes in the Delta measuring area\n"         #new
+
                 
             #Calculate the average velocity over boxes
             for box in range(box_total):
@@ -3302,7 +3400,17 @@ if system_type == "voronoi":
             points          = []
             index_particle  = []
     os.system("rm files.dat");                        
+    if av_x/tot  < x_Delta :
+        print " "
+        print "Need more images to calculate Delta!!"
+        av_Delta/=tot
+        print "Up to now Delta=%f! Average position av_x=%f. Need to go up to  x_Delta=%f "%(av_Delta,av_x/tot,x_Delta)
+        print " "
+        if av_Delta<0 : #new
+            print "\nNegative values may indicate you have holes in the Delta measuring area\n"         #new
 
+
+##############################Finish reading data#####################
 
 image_counter  = image - image_0 - 1
 r_obst = float(R_OBST) / float(box_size)
@@ -3319,7 +3427,8 @@ if system_type == 'experiment':
 else:
     box_per_line_x, box_per_column_y, density_tot, vx_tot, vy_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot= \
         zero_borders_and_obstacle_simu(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot, system_type)
-      
+
+    
     axis_zero_simu(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, density_tot, NB_tot, NT_tot, V_tot, P_tot, DU_tot, DM_tot, box_size, image_counter, caixa_zero, v0,av_Delta) 
     # Here we write the time averages of density, velocity and deformation elipse for simus
     vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, NB_win, NT_win, V_win, P_win = average_density_velocity_deformation(box_per_line_x, \
