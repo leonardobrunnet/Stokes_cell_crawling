@@ -84,6 +84,7 @@ class particle:
     def delta_solid_liquid(self,Delta_x0): #new
         if self.r_orig[0] >Delta_x0+box_size and self.r_orig[0]<Delta_x0+2*box_size :
             ll=len(self.list_neigh_old_delta)
+            self.Delta = 0
             if ll > 4:
                 for i in self.list_neigh_old_delta:
                     dr_old_2=np.linalg.norm(part[i].r_orig-self.r_orig)**2
@@ -91,7 +92,7 @@ class particle:
                     self.Delta+=1-dr_old_2/dr_2
                 self.Delta/=ll
                 self.Delta_counter=1
-            #print self.r_orig[0],self.ident,x0+box_size, x0+2*box_size
+            #print self.r_orig[0],self.ident,self.Delta
             #exit()
         return
 
@@ -2822,6 +2823,7 @@ if system_type == "vicsek-gregoire":
                                 av_x+=i.r[0]
                                 tot+=i.Delta_counter
                                 av_Delta+=i.Delta
+                                #print tot,i.Delta,av_Delta
                             #                            if av_Delta/tot > 1 :
                     if tot == 0 : 
                         print "\nNo cells in Delta measuring region yet.\nTry images at later times\n"
