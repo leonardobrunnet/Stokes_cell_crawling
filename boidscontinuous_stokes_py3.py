@@ -19,43 +19,7 @@ import random as rand
 import os
 import sys
 from numba import jit
-from numba import jitclass
-#function to save system state each 10000 steps
-def save_state(N,lbox,exit_fig,cylinder_radius,L,dt,t,figindex,tau,part):
-    state_file_name="state_simu_szabo.dat"
-    state_file = open(state_file_name,'w')
-    state_file.write("Number_of_particles: %d\n"%N)
-    state_file.write("Box_size: %d\n"%lbox)
-    state_file.write("Steps_between_images: %d \n"%exit_fig)
-    state_file.write("Radius: %f \n"%cylinder_radius)
-    state_file.write("Obst_position: 0. 0.\n")
-    state_file.write("Dimensions: %d %d \n"%(L[0],L[1]))
-    state_file.write("Max-dist: 4 \n")
-    state_file.write("dt: %f \n"%dt)
-    state_file.write("t: %f \n"%t)
-    state_file.write("noise: %f\n"%part[0].noise)
-    state_file.write("v0: %f\n"%part[0].v0)
-    state_file.write("mu: %f\n"%part[0].mu)
-    state_file.write("Frep: %f\n"%part[0].Frep)
-    state_file.write("Fadh: %f\n"%part[0].Fadh)
-    state_file.write("R0: %f\n"%part[0].R0)
-    state_file.write("figindex: %d\n"%figindex)
-    state_file.write("tau: %f\n"%tau)
-    state_file.write("size_disp: %f\n"%size_disp)           
-    state_file.write("division_time: %d \n"%division_time)
-    state_file.write("death_list: ")
-    for i in death_list:
-        state_file.write("%d "%i)
-    state_file.write("\n")
-    state_file.write("x y vx vy \n")
-    x,y,vx,vy=[],[],[],[]
-    list(map(lambda i:x.append(i.r[0]), part))
-    list(map(lambda i:y.append(i.r[1]), part))
-    list(map(lambda i:vx.append(i.v[0]), part))
-    list(map(lambda i:vy.append(i.v[1]), part))
-    for i in range(len(x)):
-        state_file.write("%d %f %f %f %f \n"%(i,x[i],y[i],vx[i],vy[i]))
-
+from mydefs import initial_0, initial_1, outfile_init, save_state, make_graph, state_init
 
 #Particle class definition
 class particle:
@@ -93,18 +57,62 @@ class particle:
         j=int((self.r[0]+L[0])/lbox)+nb[0]*int((self.r[1]+L[1])/lbox)
         return j
 
+    def set_new_born_neigh(self):
+        newbox=self.Mybox
+        #Create lists with the indexes of the neighboring boxes to change the particles there too
+        #This particle will be in the lists of three boxes above its box and one in the left
+        new_neigh_box_list=[]
+        if newbox%nb[0] != 0 :                              #test if not first column
+            new_neigh_box_list.append(newbox-1)             #add to left box list  
+        if newbox%nb[0] != 0 and newbox > nb[0] :           #test if not first column and not first line
+            new_neigh_box_list.append(newbox-nb[0]-1)       #add left box above list
+        if newbox > nb[0] :                                 #test if not first line
+            new_neigh_box_list.append(newbox-nb[0])         #add central box above list
+        if newbox > nb[0] and newbox%nb[0] != nb[0]-1:      #test if not frst line and last column
+            new_neigh_box_list.append(newbox-nb[0]+1)       #add right box list above
+        #put the particle in the new_neighborlists
+        for k in new_neigh_box_list :
+            box[k].neighboxlist.append(self.ident)
+
     def changebox(self):
         if self.Mybox != -1 :
+            oldbox=self.Mybox
             newbox=self.mybox()
-            if newbox!=self.Mybox : #verify particle box change
-                box[self.Mybox].mylist.remove(self.ident) #this is safe since particles ident is unique
+            if newbox!=oldbox : #verify particle box change
+                box[oldbox].mylist.remove(self.ident) #this is safe since particles ident is unique
                 box[newbox].mylist.append(self.ident)
-#                if self.ident not in box[self.Mybox].mylist:
-#                    print(box[self.Mybox].mylist,self.ident,self.r, newbox, self.Mybox,t)
-#                    exit()
-                #box[self.Mybox].mylist.remove(self.ident)
                 self.Mybox=newbox
-        return self.Mybox
+                #Create lists with the indexes of the neighboring boxes to change the particles there too
+                #This particle was in the lists of three boxes above its box and one in the left
+                old_neigh_box_list=[]
+                new_neigh_box_list=[]
+                if oldbox%nb[0] != 0 :                              #test if not first column
+                    old_neigh_box_list.append(oldbox-1)             #index of the box on the left 
+                if newbox%nb[0] != 0 :                              #test if not first column
+                    new_neigh_box_list.append(newbox-1)             #add to left box list  
+                if oldbox%nb[0] != 0 and oldbox > nb[0] :           #test if not first column and not first line
+                    old_neigh_box_list.append(oldbox-nb[0]-1)       #add left box above list
+                if newbox%nb[0] != 0 and newbox > nb[0] :           #test if not first column and not first line
+                    new_neigh_box_list.append(newbox-nb[0]-1)       #add left box above list
+                if oldbox  > nb[0] :                                #test if not first line
+                    old_neigh_box_list.append(oldbox-nb[0])         #add central box above list   
+                if newbox > nb[0] :                                 #test if not first line
+                    new_neigh_box_list.append(newbox-nb[0])         #add central box above list
+                if oldbox > nb[0]  and oldbox%nb[0] != nb[0]-1:     #test if not first line and last column
+                    old_neigh_box_list.append(oldbox-nb[0]+1)       #add right box list above
+                if newbox > nb[0] and newbox%nb[0] != nb[0]-1:      #test if not frst line and last column
+                    new_neigh_box_list.append(newbox-nb[0]+1)       #add right box list above
+                #take the particle off the old_neighborlists
+                for k in old_neigh_box_list :
+                    # print(oldbox,newbox,self.ident,k)
+                    # print(box[k].neighboxlist)
+                    box[k].neighboxlist.remove(self.ident)
+                #put the particle in the new_neighborlists
+                for k in new_neigh_box_list :
+                    box[k].neighboxlist.append(self.ident)
+                    # print(oldbox,newbox,self.ident,k)
+                    # print(box[k].neighboxlist)
+        return 
 
     def mov(self): #Particle moviment
         if self.Mybox != -1 :
@@ -237,15 +245,15 @@ class boite:
             self.neighboxlist.extend(box[self.index+nb[0]].mylist)   #add central box list below
         if self.index+nb[0]<nb2 and self.index%nb[0]!=nb[0]-1:       #test if not last line and last column
             self.neighboxlist.extend(box[self.index+nb[0]+1].mylist) #add right box list below
-
 #Main program                                  
 #global variables
 global N,L,lbox,nb,dt,nb2,t,cylinder_radius,death_list,live_list
-initial_state=0 #if 0 launch initial conditions if 1 read from file
 wall_osc = 0.001  #distance from wall of a reinjected boid
 output_file_name="output_simu_szabo.dat"
 output_counter_name = 'last_column_counter.txt'
-passos=1800000
+state_file_name = "state_simu_szabo.dat"
+
+passos=20000
 save_time = 1000
 input_data = sys.argv[0:7]
 if len(sys.argv) !=7 :
@@ -256,136 +264,51 @@ division_time=int(input_data[2])
 fadh=float(input_data[3])
 noise=float(input_data[4])
 size_disp = float(input_data[5]) #particle size Req dispersion
-initial_state=int(input_data[6])
+initial_state=int(input_data[6])  #if 0, launch initial conditions, if 1, read from file
+
 
 if initial_state== 0 :
-    N=10
-    L=np.array([100,50])
-    lbox=2
-    nbf=2*L/lbox
-    nb=nbf.astype(int)
-    nb2=nb[1]*nb[0]
-    dt=0.01
-    exit_fig=1000
     rand.seed(0.1)
-    cylinder_radius=15
-    t=0
-    figindex=0
-    death_list=[]
-    live_list=list(range(N))
-    output_file = open(output_file_name,'w')
+    N,L,lbox,nb,nb2,dt,exit_fig,cylinder_radius,t,figindex,death_list,live_list=initial_0()
+    #initialize N particles
+    part=list(particle(-L[0]+L[0]*rand.random()/4.,L[1]*2*(rand.random()-0.5), 0.1*(rand.random()-0.5),0.1*(rand.random()-0.5), i, size_disp*(rand.random()-0.5),fadh,noise) for i in range(N))
+    #avoiding cells to enter de cylinder
+    list(map(lambda i:i.out_of_cylinder(cylinder_radius), part)) 
+    output_counter_name = 'last_column_counter.txt'
     output_counter_file = open(output_counter_name,'w')
-    output_file.write("Number_of_particles: %d\n"%N)
-    output_file.write("Box_size: %d\n"%lbox)
-    output_file.write("Steps_between_images: %d \n"%exit_fig)
-    output_file.write("Radius: %f \n"%cylinder_radius)
-    output_file.write("Obst_position: 0. 0.\n")
-    output_file.write("Dimensions: %d %d \n"%(L[0],L[1]))
-    output_file.write("Max-dist: 4 \n")
-    output_file.write("dt: %f \n"%dt)
-    output_file.write("size-dispersion: %f \n"%size_disp)
-    output_file.write("division_time: %f \n"%division_time)
-
-#initialize N particles
-    part=list(particle(-L[0]+L[0]*rand.random()/4.,L[1]*2*(rand.random()-0.5), 0.1*(rand.random()-0.5),0.1*(rand.random()-0.5), i, size_disp*(rand.random()-0.5),fadh,noise ) for i in range(N))
-    list(map(lambda i:i.out_of_cylinder(cylinder_radius), part)) #avoiding cells to enter de cylinder
-    output_file.write("noise: %f\n"%part[0].noise)
-    output_file.write("v0: %f\n"%part[0].v0)
-    output_file.write("mu: %f\n"%part[0].mu)
-    output_file.write("Frep: %f\n"%part[0].Frep)
-    output_file.write("Fadh: %f\n"%part[0].Fadh)
-    output_file.write("R0: %f\n"%part[0].R0)
-    output_file.write("tau: %f\n"%tau)
-
+    #save parameters, initialize outfile
+    outfile_init(output_file_name,N,lbox,exit_fig,cylinder_radius,L,dt,size_disp,division_time,part[0].noise,part[0].v0,part[0].mu,part[0].Frep,part[0].Fadh,part[0].R0,tau)
 
 if initial_state == 1:
-    state_file_name = "state_simu_szabo.dat"
-    state_file = open(state_file_name)
-    output_file=open(output_file_name,"a")
+    state_file_name="state_simu_szabo.dat"
+    output_counter_name = 'last_column_counter.txt'
     output_counter_file = open(output_counter_name,'a')
-    line_splitted = [1]
+    death_list, x, y, vx, vy, N, lbox, exit_fig, cylinder_radius, L, nb, nb2, dt, t, noise, Fadh, figindex, tau, size_disp, division_time = initial_1(tau,division_time,state_file_name)
     part=[]
     live_list=[]
-    part_counter = 0
-    
-    while line_splitted[0] != "x":
-        line = state_file.readline()
-        if not line :
-            break
-        line_splitted = line.split()
-        if line_splitted[0] == "Number_of_particles:" :
-            N = int(line_splitted[1])
-        if line_splitted[0] == "Box_size:" :
-            lbox = int(line_splitted[1])
-        if line_splitted[0] ==  "Steps_between_images:":
-            exit_fig = int(line_splitted[1])
-        if line_splitted[0] ==  "Radius:":
-            cylinder_radius = float(line_splitted[1])
-        if line_splitted[0] == "Dimensions:":
-            L0,L1           = int(line_splitted[1]),int(line_splitted[2])
-            L=np.array([L0,L1])
-            nbf=2*L/lbox
-            nb=nbf.astype(int)
-            nb2=nb[1]*nb[0]
-        if line_splitted[0] ==  "dt:":
-            dt = float(line_splitted[1])
-        if line_splitted[0] ==  "t:":
-            t = float(line_splitted[1])
-        if line_splitted[0] == "noise:":
-            noise = float(line_splitted[1])
-        if line_splitted[0] == "v0:":
-            v0 = float(line_splitted[1])
-        if line_splitted[0] == "mu:":
-            mu = float(line_splitted[1])
-        if line_splitted[0] == "Frep:":
-            Frep            = float(line_splitted[1])
-        if line_splitted[0] == "Fadh:":
-            Fadh = line_splitted[1]
-        if line_splitted[0] == "R0:":
-            R0              = float(line_splitted[1])
-        if line_splitted[0] == "figindex:":
-            figindex        = int(line_splitted[1])
-        if line_splitted[0] == "tau:":
-            taul             = float(line_splitted[1])
-            if taul != tau :
-                print("Attention! Previous simu performed with other tau")
-                exit()
-        if line_splitted[0] == "size_disp:":
-            size_disp             = float(line_splitted[1])
-        if line_splitted[0] == "division_time:":
-            division_timel     = int(line_splitted[1])
-            if division_timel != division_time :
-                print("Attention! Previous simu performed with other division_time")
-                exit()
-        if line_splitted[0] == "death_list:":
-            if len(line_splitted) == 1 :
-                death_list = []
-            else:
-                death_list=list(map(int,line_splitted[1:]))
-        
-            #            state_file.write("division_time: %f \n"%division_time)
-    while 1 :
-        line = state_file.readline()
-        if not line :
-            break
-        line_splitted = line.split()
-        live_list.append(int(line_splitted[0]))
-        part.append(particle(float(line_splitted[1]),float(line_splitted[2]),float(line_splitted[3]),float(line_splitted[4]),int(line_splitted[0]),size_disp*(rand.random()-0.5),fadh,noise))
+    for i in range(N):
+        part.append(particle(x[i],y[i],vx[i],vy[i],i,size_disp*(rand.random()-0.5),fadh,noise))
+        if i not in death_list:
+            live_list.append(i)
+
+#create the boxes
 box=list(boite(i) for i in range(nb2))
 
 # Construct list of particles in each box
-#print(len(part),N)
-
 for i in range(N):
     if part[i].r[0] > L[0]:
-        delta=part[i].r[0]-L[0]
-        part[i].r[0]-=delta*1.5
-    part[i].Mybox=part[i].mybox()
-    #print(i,N,part[i].Mybox,nb2, part[i].r)
-    box[part[i].Mybox].mylist.append(i)
-    # Construct list of particles in neighboring boxes
+        part[i].Mybox=-1
+        # delta=part[i].r[0]-L[0]
+        # part[i].r[0]-=delta*1.5
+    else:
+        part[i].Mybox=part[i].mybox()
+        #print(i,N,part[i].Mybox,nb2, part[i].r)
+        box[part[i].Mybox].mylist.append(i)
+
+# Construct list of particles in neighboring boxes
 
 list(map(lambda i:i.neighbor_list(), box))
+
 
 #System evolution
 intt=0
@@ -395,10 +318,10 @@ while(t<passos*dt):
     #Move all particles
     t+=dt #update time
     list(map(lambda i:i.mov(), part))
-    #Find the newboxes
+    #Find the newboxes and the neighboring boxes
     list(map(lambda i:i.changebox(), part))
     #Construct the list of particles in neighboring boxes
-    list(map(lambda i:i.neighbor_list(), box))
+    #list(map(lambda i:i.neighbor_list(), box))
     #Reset forces
     list(map(lambda i:i.zeroforce(), part))
 
@@ -449,6 +372,7 @@ while(t<passos*dt):
         if newbox > 19999:
             print(newbox,x,y)
         box[newbox].mylist.append(new)
+        part[new].set_new_born_neigh()
 #        if new < N : print(newbox)
     # Make a scatter graph
     delta=5.
@@ -456,30 +380,10 @@ while(t<passos*dt):
 #    if intt > 10000 : exit_fig = 10
     if(intt%exit_fig==0):
 #        print(t,cross,cross2)
-        output_file.write("x y vx vy \n")
-        plt.axis([-L[0]-delta,L[0]+delta,-L[1]-delta,L[1]+delta])
-        plt.axes().set_aspect(1.0)
-        circle=plt.Circle((0.,0.),radius=cylinder_radius-0.5,color='r')
-        x,y,vx,vy=[],[],[],[]
-        for i in live_list:
-            x.append(part[i].r[0])
-            y.append(part[i].r[1])
-            vx.append(part[i].v[0])
-            vy.append(part[i].v[1])
-
-        plt.scatter(x,y,s=sizes,alpha=0.3)
-        name=str(figindex)+".png"
-        fig = plt.gcf()
-        plt.rc("savefig",dpi=300)
-        ax = fig.gca()
-        ax.add_artist(circle)
-        fig.savefig(name,bbox_inches='tight')
-        figindex+=1
-        fig.clf()
-        for i in part:
-            output_file.write("%f %f %f %f \n"%(i.r[0],i.r[1],i.v[0],i.v[1]))
-
+        figindex=make_graph(L,live_list,part,figindex,cylinder_radius)
     if intt%save_time == 0:
-        save_state(N,lbox,exit_fig,cylinder_radius,L,dt,t,figindex,tau,part)
+        state_init(state_file_name,N,lbox,exit_fig,cylinder_radius,L,dt,t,size_disp,division_time,noise,part[0].v0,part[0].mu,part[0].Frep,part[0].Fadh,part[0].R0,tau,death_list,figindex)
+        save_state(state_file_name,part)
+        save_state(output_file_name,part)
     intt+=1
 
