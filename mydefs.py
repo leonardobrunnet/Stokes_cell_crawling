@@ -59,8 +59,11 @@ def make_graph(L,live_list,part,figindex,cylinder_radius):
 
     delta=5.
     sizes=6.0
+    fig=plt.figure()
     plt.axis([-L[0]-delta,L[0]+delta,-L[1]-delta,L[1]+delta])
     plt.axes().set_aspect(1.0)
+    fig.patch.set_facecolor('#E0E0E0')
+    fig.patch.set_alpha(0.7)
     circle=plt.Circle((0.,0.),radius=cylinder_radius-0.5,color='r')
     x,y,vx,vy=[],[],[],[]
     for i in live_list:
@@ -69,13 +72,15 @@ def make_graph(L,live_list,part,figindex,cylinder_radius):
         vx.append(part[i].v[0])
         vy.append(part[i].v[1])
 
-    plt.scatter(x,y,s=sizes,alpha=0.3)
+    plt.scatter(x,y,s=sizes,alpha=0.5)
     name=str(figindex)+".png"
     fig = plt.gcf()
     plt.rc("savefig",dpi=300)
     ax = fig.gca()
+    ax.patch.set_facecolor('#E0E0E0')
+    ax.patch.set_alpha(0.5)
     ax.add_artist(circle)
-    fig.savefig(name,bbox_inches='tight')
+    fig.savefig(name,bbox_inches='tight',facecolor=fig.get_facecolor())
     figindex+=1
     fig.clf()
     return figindex
@@ -97,7 +102,7 @@ def initial_0():
     live_list=list(range(N))
     return N,L,lbox,nb,nb2,dt,exit_fig,cylinder_radius,t,figindex,death_list,live_list
 
-def initial_1(tau,division_time,state_file_name):
+def initial_1(tau,division_time,v0,state_file_name):
     import numpy as np
     import random as rand
     state_file = open(state_file_name)
@@ -129,7 +134,13 @@ def initial_1(tau,division_time,state_file_name):
         if line_splitted[0] == "noise:":
             noise = float(line_splitted[1])
         if line_splitted[0] == "v0:":
-            v0 = float(line_splitted[1])
+            v0l = float(line_splitted[1])
+            print(v0l,v0)
+            delta_v0=np.abs(v0l-v0)
+            if delta_v0 > 1.e-6 :
+                print("Attention! Previous simu performed with other v0\n Exiting!!")
+                exit()
+
         if line_splitted[0] == "mu:":
             mu = float(line_splitted[1])
         if line_splitted[0] == "Frep:":
@@ -144,7 +155,7 @@ def initial_1(tau,division_time,state_file_name):
             taul             = float(line_splitted[1])
             delta_tau=np.abs(taul-tau)
             if delta_tau > 1.e-6 :
-                print("Attention! Previous simu performed with other tau")
+                print("Attention! Previous simu performed with other tau!\n Exiting!!")
                 exit()
         if line_splitted[0] == "size-disp:":
             size_disp             = float(line_splitted[1])
@@ -173,4 +184,4 @@ def initial_1(tau,division_time,state_file_name):
         vy.append(float(line_splitted[3]))
 
 
-    return death_list, x, y, vx, vy, N, lbox, exit_fig, cylinder_radius, L, nb, nb2, dt, t, noise, fadh, figindex, tau, size_disp, division_time
+    return death_list, x, y, vx, vy, N, lbox, exit_fig, cylinder_radius, L, nb, nb2, dt, t, v0, fadh, figindex, tau, size_disp, division_time
