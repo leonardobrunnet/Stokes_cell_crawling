@@ -24,9 +24,9 @@ from mydefs import initial_0, initial_1, outfile_init, save_state, make_graph, s
 #Particle class definition
 class particle:
    # noise=0.6 #original value
-    #noise=0.6
-#    noise_T=10.0
-    v0 = 0.1
+    noise=np.sqrt(2.)
+    #noise_T=10.0
+#    v0 = 0.1
     mu=1.0
     Frep=30.0
     #Fadh=0.75 #original value
@@ -36,9 +36,10 @@ class particle:
     #R0=1.0
 #    Req=1.0
     R0=3.0
-    def __init__(self, x, y, vx, vy, ident, Raio_equilibrio,fadh,noise):
+    def __init__(self, x, y, vx, vy, ident, Raio_equilibrio,fadh,v0):
         self.r = np.array([x,y])
-        self.v =  np.array([vx*self.v0,vy*self.v0])
+        self.v0 = v0
+        self.v =  np.array([vx*v0,vy*v0])
         self.theta = np.arctan2(vy,vx)
         self.n = np.array([np.cos(self.theta),np.sin(self.theta)])
         self.ident = ident
@@ -48,7 +49,7 @@ class particle:
         self.cross = 0
         self.cross2 = 0
         self.Fadh = fadh
-        self.noise = noise
+
 
     def mybox(self): #Each particle calculates the box it is in
         if np.isnan(self.r[0]) == True or np.isnan(self.r[1]) == True :
@@ -217,7 +218,7 @@ class particle:
         else :
             self.cross=0
 
-    def zerocross2(self): #testing the number of particles in the last cell column
+    def zerocross2(self): #testing the number of particles in the first cell column
         if L[0]+self.r[0] > self.R0 and L[0]+self.r[0] < 2*self.R0:
             self.cross2=1
         else :
@@ -248,30 +249,31 @@ class boite:
 #Main program                                  
 #global variables
 global N,L,lbox,nb,dt,nb2,t,cylinder_radius,death_list,live_list
-wall_osc = 0.001  #distance from wall of a reinjected boid
-output_file_name="output_simu_szabo.dat"
-output_counter_name = 'last_column_counter.txt'
-state_file_name = "state_simu_szabo.dat"
 
-passos=20000
-save_time = 1000
+passos=500000
+save_time = 10000
 input_data = sys.argv[0:7]
 if len(sys.argv) !=7 :
-    print("Need 6 arguments:tau,division_time,fadh,noise,size_disp, initial state\nFor example: python boidscontinous_stokes.py 4 100 0.1 1 0.2 0 ")
+    print("Need 6 arguments:tau,division_time,fadh,v0,size_disp, initial state\nFor example: python boidscontinous_stokes.py 4 100 1.0 0.5 0.2 0 ")
     exit()
 tau=float(input_data[1])
 division_time=int(input_data[2])
 fadh=float(input_data[3])
-noise=float(input_data[4])
+v0=float(input_data[4])
 size_disp = float(input_data[5]) #particle size Req dispersion
 initial_state=int(input_data[6])  #if 0, launch initial conditions, if 1, read from file
+
+wall_osc = 0.001  #distance from wall of a reinjected boid
+output_file_name="output_simu_szabo.dat"
+output_counter_name = 'last_column_counter.txt'
+state_file_name = "state_simu_szabo.dat"
 
 
 if initial_state== 0 :
     rand.seed(0.1)
     N,L,lbox,nb,nb2,dt,exit_fig,cylinder_radius,t,figindex,death_list,live_list=initial_0()
     #initialize N particles
-    part=list(particle(-L[0]+L[0]*rand.random()/4.,L[1]*2*(rand.random()-0.5), 0.1*(rand.random()-0.5),0.1*(rand.random()-0.5), i, size_disp*(rand.random()-0.5),fadh,noise) for i in range(N))
+    part=list(particle(-L[0]+L[0]*rand.random()/4.,L[1]*2*(rand.random()-0.5), 2*(rand.random()-0.5),2*(rand.random()-0.5), i, size_disp*(rand.random()-0.5),fadh,v0) for i in range(N))
     #avoiding cells to enter de cylinder
     list(map(lambda i:i.out_of_cylinder(cylinder_radius), part)) 
     output_counter_name = 'last_column_counter.txt'
@@ -283,11 +285,11 @@ if initial_state == 1:
     state_file_name="state_simu_szabo.dat"
     output_counter_name = 'last_column_counter.txt'
     output_counter_file = open(output_counter_name,'a')
-    death_list, x, y, vx, vy, N, lbox, exit_fig, cylinder_radius, L, nb, nb2, dt, t, noise, Fadh, figindex, tau, size_disp, division_time = initial_1(tau,division_time,state_file_name)
+    death_list, x, y, vx, vy, N, lbox, exit_fig, cylinder_radius, L, nb, nb2, dt, t, v0, Fadh, figindex, tau, size_disp, division_time = initial_1(tau,division_time,v0,state_file_name)
     part=[]
     live_list=[]
     for i in range(N):
-        part.append(particle(x[i],y[i],vx[i],vy[i],i,size_disp*(rand.random()-0.5),fadh,noise))
+        part.append(particle(x[i],y[i],vx[i],vy[i],i,size_disp*(rand.random()-0.5),fadh,v0))
         if i not in death_list:
             live_list.append(i)
 
@@ -363,7 +365,7 @@ while(t<passos*dt):
         vx,vy=-part[mother].v
         if index == 0:
         #create the ne w born and put it on the box
-            part.append(particle(x,y,vx,vy,new,size_disp*(rand.random()-0.5),fadh,noise))
+            part.append(particle(x,y,vx,vy,new,size_disp*(rand.random()-0.5),fadh,v0))
         if index == 1:
             part[new].r=np.array([x,y])
             part[new].v=np.array([vx,vy])
@@ -382,7 +384,7 @@ while(t<passos*dt):
 #        print(t,cross,cross2)
         figindex=make_graph(L,live_list,part,figindex,cylinder_radius)
     if intt%save_time == 0:
-        state_init(state_file_name,N,lbox,exit_fig,cylinder_radius,L,dt,t,size_disp,division_time,noise,part[0].v0,part[0].mu,part[0].Frep,part[0].Fadh,part[0].R0,tau,death_list,figindex)
+        state_init(state_file_name,N,lbox,exit_fig,cylinder_radius,L,dt,t,size_disp,division_time,part[0].noise,v0,part[0].mu,part[0].Frep,part[0].Fadh,part[0].R0,tau,death_list,figindex)
         save_state(state_file_name,part)
         save_state(output_file_name,part)
     intt+=1
