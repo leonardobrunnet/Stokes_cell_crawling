@@ -3014,7 +3014,9 @@ if system_type == "potts":
     x_Delta = Delta_x0+3*R_OBST                      #new
     y0            = 0.0
     yf            = box_size * int(Ly / box_size)
-    box_per_line_x, box_per_column_y = int((delta_x) / box_size), int((yf - y0) / box_size)
+    #box_per_line_x, box_per_column_y = int((delta_x) / box_size), int((yf - y0) / box_size)
+    # estranho mas funciona melhor
+    box_per_line_x, box_per_column_y = int(math.ceil((delta_x) / box_size)), int(math.ceil((yf - y0) / box_size))
     caixa_zero           = int(max_dist/box_size)+1
     Delta_calculus=0 
     if x0 < 0. or xf > Lx :
