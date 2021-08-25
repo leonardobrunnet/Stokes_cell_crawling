@@ -1110,7 +1110,7 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
 #                print box, texture_win[box]
                 axis_a,axis_b, ang_elipse = axis_angle(texture_win[box])
                 #ells.append(Ellipse(np.array([(bx - box_per_line_x / 2.)/r_obst,(by - box_per_column_y / 2.) / r_obst]),1 / r_obst,axis_b / axis_a / r_obst, ang_elipse))
-                dev=np.abs(np.log(axis_a/axis_b))/2.
+                dev=np.abs(np.log(axis_a/axis_b))#/2. dividing by 2 would be the definition, but the line sizes get two small.
                 dbx=dev*np.sin(ang_elipse)
                 dby=dev*np.cos(ang_elipse)
                 lines.append([(bx,by),(bx+dbx,by+dby)])
