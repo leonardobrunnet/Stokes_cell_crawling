@@ -8,6 +8,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
+from matplotlib import collections as mc
     
 
 def texture_from_eigenvalues_and_angle(l1, l2, b):
@@ -31,6 +32,7 @@ def axis_angle(M):
     axis_a     = w[index_max]
     axis_b     = w[index_min]
     ang_elipse = math.atan2(v[1, index_max].real, v[0, index_max].real) * 180 / math.pi
+    ang_elipse = math.atan2(v[1, index_max].real, v[0, index_max].real)
     return axis_a, axis_b, ang_elipse
             
 # function mapping delaunay out index to particle index
@@ -1083,6 +1085,7 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
     create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst)
     create_gnu_script_fluct_vel(arrow_size/2, box_per_line_x, box_per_column_y, vel_fluct_win_file_name, dens_win_file_name,path,r_obst)
     ells = []
+    lines = []
     for bx in range(window_size_h + 1, box_per_line_x - window_size_h):
         for by in range(window_size_h + 1, box_per_column_y - window_size_h):
             box    = bx + (by * box_per_line_x)
@@ -1106,7 +1109,11 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
 	        vel_fluct_win.write("%d %d %f %f %f %f %f \n"% (bx, by, vx2_win[box], vy2_win[box], module, density_tot[box]/float(count_events), density_win[box]))
 #                print box, texture_win[box]
                 axis_a,axis_b, ang_elipse = axis_angle(texture_win[box])
-                ells.append(Ellipse(np.array([(bx - box_per_line_x / 2.)/r_obst,(by - box_per_column_y / 2.) / r_obst]),1 / r_obst,axis_b / axis_a / r_obst, ang_elipse))
+                #ells.append(Ellipse(np.array([(bx - box_per_line_x / 2.)/r_obst,(by - box_per_column_y / 2.) / r_obst]),1 / r_obst,axis_b / axis_a / r_obst, ang_elipse))
+                dev=np.abs(np.log(axis_a/axis_b))/2.
+                dbx=dev*np.sin(ang_elipse)
+                dby=dev*np.cos(ang_elipse)
+                lines.append([(bx,by),(bx+dbx,by+dby)])
 	        texture_win_file.write("%f %f %f %f %f \n"% ((bx - box_per_line_x / 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, axis_a / r_obst, axis_b / r_obst, ang_elipse))
                 axis_a,axis_b, ang_elipse = axis_angle(NB_win[box])
 	        NB_win_file.write("%f %f %f %f %f \n"% ((bx - box_per_line_x/ 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, axis_a / r_obst, axis_b / r_obst, ang_elipse))
@@ -1125,16 +1132,21 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
     vel_win.write("e \n")
     vel_win.write("pause -1 \n")
 
-    #Windowed elipsis for texture
+    ##Windowed elipsis for texture
+    #Windowed dev for texture
     fig, ax = plt.subplots(subplot_kw={'aspect': 'equal'})
-    for e in ells:
-        ax.add_artist(e)
-        e.set_clip_box(ax.bbox)
-#        e.set_alpha(np.random.rand())
-#        e.set_facecolor(np.random.rand(3))
-    ax.set_xlim(-box_per_line_x/2/r_obst,box_per_line_x/2/r_obst)
-    ax.set_ylim(-box_per_column_y/2./r_obst,box_per_column_y/2./r_obst)
-    plt.savefig(path+"/texture_win.png", dpi=300, bbox_inches="tight")
+    # for e in ells:
+    #         ax.add_artist(e)
+    #         e.set_clip_box(ax.bbox)
+    # #        e.set_alpha(np.random.rand())
+    # #        e.set_facecolor(np.random.rand(3))
+    lc = mc.LineCollection(lines, linewidth=1)
+    ax.add_collection(lc)
+    ax.autoscale()
+    #ax.set_xlim(-box_per_line_x/2/r_obst,box_per_line_x/2/r_obst)
+    #ax.set_ylim(-box_per_column_y/2./r_obst,box_per_column_y/2./r_obst)
+    #plt.savefig(path+"/texture_win.png", dpi=300, bbox_inches="tight")
+    fig.savefig(path+"/texture_win.png", dpi=300, bbox_inches="tight")
     return vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, NB_win, NT_win, V_win, P_win
 
 def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, texture_tot, system_type, image_counter,r_obst):
