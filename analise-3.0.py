@@ -5,7 +5,7 @@ import sys
 from scipy.spatial import Delaunay
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 from matplotlib import collections as mc
@@ -1033,7 +1033,45 @@ def average_density_velocity_deformation_experiment(box_per_line_x, box_per_colu
     ax.set_ylim(0, box_per_column_y)
     plt.savefig(path+"/texture_win.png", dpi = 300,bbox_inches = "tight")
 
+def show_fig(lines):
+    fig, ax = plt.subplots(subplot_kw={'aspect': 'equal'})
+    lc = mc.LineCollection(lines, linewidth=1)
+    ax.add_collection(lc)
+    ax.autoscale()
+    fig.show()
+    return fig
 
+def rescale_image(lines):
+    while True:
+        print "Enter size factor (any float > 0 )"
+        fac  = sys.stdin.readline()
+        if len(fac) > 1 :
+            break
+    fac=float(fac.split()[0])
+    newlines=[]
+    for i in lines:
+        ax = i[0][0]
+        ay = i[0][1]
+        bx = i[1][0]
+        by = i[1][1]
+        new = [(ax,ay), (ax+(bx-ax)*fac , ay+(by-ay)*fac)]
+        newlines.append(new)
+    lines=copy.deepcopy(newlines)
+    return lines
+
+def verifica(pergunta):
+    print pergunta
+    while True :
+        line_splitted  = sys.stdin.readline().split()
+        if line_splitted[0] =="y" :                     
+            return True
+        elif line_splitted[0] =="n" :
+            return False
+        else:
+            print "Please, say y or n"
+    return
+
+    
 def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_tot, vy_tot,  \
             density_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot, vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, NB_win, \
                                          NT_win, V_win, P_win, count_events, v0, vel_win_file_name, vel_fluct_win_file_name, dens_win_file_name, path, image_counter, window_size, r_obst) :
@@ -1111,8 +1149,8 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
                 axis_a,axis_b, ang_elipse = axis_angle(texture_win[box])
                 #ells.append(Ellipse(np.array([(bx - box_per_line_x / 2.)/r_obst,(by - box_per_column_y / 2.) / r_obst]),1 / r_obst,axis_b / axis_a / r_obst, ang_elipse))
                 dev=np.abs(np.log(axis_a/axis_b))#/2. dividing by 2 would be the definition, but the line sizes get two small.
-                dbx=dev*np.sin(ang_elipse)
-                dby=dev*np.cos(ang_elipse)
+                dbx=dev*np.cos(ang_elipse)
+                dby=dev*np.sin(ang_elipse)
                 lines.append([(bx,by),(bx+dbx,by+dby)])
 	        texture_win_file.write("%f %f %f %f %f \n"% ((bx - box_per_line_x / 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, axis_a / r_obst, axis_b / r_obst, ang_elipse))
                 axis_a,axis_b, ang_elipse = axis_angle(NB_win[box])
@@ -1134,20 +1172,27 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
 
     ##Windowed elipsis for texture
     #Windowed dev for texture
-    fig, ax = plt.subplots(subplot_kw={'aspect': 'equal'})
     # for e in ells:
     #         ax.add_artist(e)
     #         e.set_clip_box(ax.bbox)
     # #        e.set_alpha(np.random.rand())
     # #        e.set_facecolor(np.random.rand(3))
-    lc = mc.LineCollection(lines, linewidth=1)
-    ax.add_collection(lc)
-    ax.autoscale()
     #ax.set_xlim(-box_per_line_x/2/r_obst,box_per_line_x/2/r_obst)
     #ax.set_ylim(-box_per_column_y/2./r_obst,box_per_column_y/2./r_obst)
     #plt.savefig(path+"/texture_win.png", dpi=300, bbox_inches="tight")
-    fig.savefig(path+"/texture_win.png", dpi=300, bbox_inches="tight")
+
+    fig=show_fig(lines)
+    
+    while True :
+        rescale=verifica("Rescale line segment? y or n? \n")
+        if rescale == True :
+            lines=rescale_image(lines)
+            fig=show_fig(lines)
+        else:
+            plt.savefig(path+"/texture_win.png", dpi=300, bbox_inches="tight")
+            break
     return vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, NB_win, NT_win, V_win, P_win
+
 
 def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, texture_tot, system_type, image_counter,r_obst):
 
