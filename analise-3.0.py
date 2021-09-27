@@ -9,6 +9,7 @@ matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 from matplotlib import collections as mc
+import time
     
 
 def texture_from_eigenvalues_and_angle(l1, l2, b):
@@ -1039,6 +1040,8 @@ def show_fig(lines):
     ax.add_collection(lc)
     ax.autoscale()
     fig.show()
+    plt.pause(2)
+    #plt.close()
     return fig
 
 def rescale_image(lines):
@@ -1189,7 +1192,8 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
             lines=rescale_image(lines)
             fig=show_fig(lines)
         else:
-            plt.savefig(path+"/texture_win.png", dpi=300, bbox_inches="tight")
+            fig.savefig(path+"/texture_win.png", dpi=300, bbox_inches="tight")
+            plt.close()
             break
     return vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, NB_win, NT_win, V_win, P_win
 
@@ -1671,7 +1675,6 @@ def five_axis_simu(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, 
     axis_horiz = (np.arange(box_per_line_x)-caixas_meia_largura)/r_obst
     axis_vert  = (np.arange(box_per_column_y)-caixas_meia_altura)/r_obst
 
-
     plt.subplot(211)
     plt.ylabel('Vx')
     plt.plot(axis_horiz,vx_axis1,'k',label="axis-1")
@@ -1697,7 +1700,10 @@ def five_axis_simu(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, 
     plt.subplot(212)
     plt.ylabel('Vy')
     plt.xlabel('Y')
-    plt.plot(axis_vert,vy_axis3,'k',axis_vert,vy_axis4,'r',axis_vert,vy_axis5,'g')
+    plt.plot(axis_vert,vy_axis3,'k',label="axis-3")
+    plt.plot(axis_vert,vy_axis4,'r',label="axis-4")
+    plt.plot(axis_vert,vy_axis5,'g',label="axis-5")
+#    plt.plot(axis_vert,vy_axis3,'k',axis_vert,vy_axis4,'r',axis_vert,vy_axis5,'g')
     plt.legend()
     plt.savefig(path+"/six-axis-velocity-field-Y-direction-3-4-5.png",bbox_inches="tight")
     plt.close()
@@ -1911,7 +1917,7 @@ def five_axis_simu(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, 
     plt.legend()
     plt.savefig(path+"/six-axis-P-xy-all-axes.png",bbox_inches="tight")
     plt.close()
-    
+    return
     
 
 def imag_count(system_type, name_arq_data_in) :
