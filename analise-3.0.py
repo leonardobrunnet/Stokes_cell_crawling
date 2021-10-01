@@ -2485,6 +2485,7 @@ if system_type == "szabo-boids":
     window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag, box_size = read_param(file_input_parameter)
     name_arq_data_in = "%s/%s"% (line_splitted[0], filename)
     print "\nYou analise a", line_splitted[0], "system, data is read from file:\n", name_arq_data_in
+    box_size =  box_size * box_mag
     max_number_particles = imag_count(system_type,name_arq_data_in)
     file_arq_data_in     = open(name_arq_data_in)
     line_splitted        = sys.stdin.readline().split()
