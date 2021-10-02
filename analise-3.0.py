@@ -2208,6 +2208,8 @@ if system_type == "superboids":
     x0                   = int(line_splitted[1])
     line_splitted        = file_input_parameter.readline().split()
     xf                   = int(line_splitted[1])
+    box_mag              = float(file_input_parameter.readline().split()[1])
+    box_size =  box_size * box_mag
     #file_arq_neigh_in = open(name_arq_neigh_in)
     max_number_particles = imag_count(system_type,name_arq_neigh_in)
     #file_arq_neigh_in.close()
