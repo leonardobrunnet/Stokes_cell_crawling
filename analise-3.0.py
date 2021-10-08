@@ -1077,7 +1077,7 @@ def verifica(pergunta):
     
 def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_tot, vy_tot,  \
             density_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot, vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, NB_win, \
-                                         NT_win, V_win, P_win, count_events, v0, vel_win_file_name, vel_fluct_win_file_name, dens_win_file_name, path, image_counter, window_size, r_obst) :
+                                         NT_win, V_win, P_win, count_events, v0, vel_win_file_name, vel_fluct_win_file_name, dens_win_file_name, path, image_counter, window_size, r_obst, x_obst, y_obst) :
     box_total         = box_per_column_y*box_per_line_x
     window_size_h     = window_size/2
     count_box_win     = list(0 for i in range(box_total))
@@ -1151,10 +1151,16 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
 #                print box, texture_win[box]
                 axis_a,axis_b, ang_elipse = axis_angle(texture_win[box])
                 #ells.append(Ellipse(np.array([(bx - box_per_line_x / 2.)/r_obst,(by - box_per_column_y / 2.) / r_obst]),1 / r_obst,axis_b / axis_a / r_obst, ang_elipse))
-                dev=np.abs(np.log(axis_a/axis_b))#/2. dividing by 2 would be the definition, but the line sizes get two small.
+                dev=np.abs(np.log(axis_a/axis_b))/2. 
                 dbx=dev*np.cos(ang_elipse)
                 dby=dev*np.sin(ang_elipse)
-                lines.append([(bx,by),(bx+dbx,by+dby)])
+                #reescaling to the obstacule radius and centering in zero
+                dx=(bx - box_per_line_x / 2.) / r_obst
+                ddx=(bx+dbx - box_per_line_x / 2.) / r_obst
+                dy=(by - box_per_column_y / 2.) / r_obst
+                ddy=(by+dby - box_per_column_y / 2.) / r_obst
+                #coordinates of the lines representing the deviation
+                lines.append([(dx,dy),(ddx,ddy)]) 
 	        texture_win_file.write("%f %f %f %f %f \n"% ((bx - box_per_line_x / 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, axis_a / r_obst, axis_b / r_obst, ang_elipse))
                 axis_a,axis_b, ang_elipse = axis_angle(NB_win[box])
 	        NB_win_file.write("%f %f %f %f %f \n"% ((bx - box_per_line_x/ 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, axis_a / r_obst, axis_b / r_obst, ang_elipse))
@@ -2660,8 +2666,8 @@ if system_type == "szabo-boids":
                                 av_x+=i.r[0]
                                 tot+=1
                                 av_Delta+=i.Delta
-                                if np.abs(i.r_orig[0]-i.r[0]) < 10**(-5):
-                                    print i.ident,i.r,i.r_orig
+                                # if np.abs(i.r_orig[0]-i.r[0]) < 10**(-5):
+                                #     print i.ident,i.r,i.r_orig
 
                                 
                                 #if i.r[0]>x_Delta :
@@ -2670,7 +2676,7 @@ if system_type == "szabo-boids":
                         if tot == 0 : 
                             print "\nNo cells in Delta measuring region yet.\nTry images at later times\n"
                             exit()
-                        print av_x/tot, av_Delta/tot, x_Delta
+                        print "average x=%f average_Delta=%f x_target_for_Delta_calculation=%f"%(av_x/tot, av_Delta/tot, x_Delta)
                         if av_x/tot > x_Delta :
                             Delta_calculus = 1 
                             av_Delta/=tot
@@ -3584,7 +3590,6 @@ r_obst = float(R_OBST) / float(box_size)
 x_obst = (X_OBST - x0) / box_size
 y_obst = (Y_OBST - y0) / box_size
 
-
 if system_type == 'experiment':
     zero_borders_and_obstacle_experiment(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, system_type)
     # Here we write the time averages of density, velocity and deformation elipse for experiment
@@ -3600,7 +3605,7 @@ else:
     # Here we write the time averages of density, velocity and deformation elipse for simus
     vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, NB_win, NT_win, V_win, P_win = average_density_velocity_deformation(box_per_line_x, \
     box_per_column_y, vx_tot, vy_tot, density_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot, vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, NB_win, \
-    NT_win, V_win, P_win, count_events, v0, vel_win_file_name, vel_fluct_win_file_name, dens_win_file_name, path, image_counter, window_size, r_obst)
+                                                                                                                                     NT_win, V_win, P_win, count_events, v0, vel_win_file_name, vel_fluct_win_file_name, dens_win_file_name, path, image_counter, window_size, r_obst, x_obst, y_obst)
     # Five axis analysis for simulations
     five_axis_simu(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, texture_win, NB_win, NT_win, V_win, P_win, system_type, image_counter,path,r_obst)
     #Axis zero call
