@@ -2794,13 +2794,6 @@ if system_type == "vicsek-gregoire":
     delta_x =int((xf+x0)*R_OBST/box_size)*box_size
     x0      = X_OBST-x0*R_OBST
     xf      = x0+delta_x
-    print "Measure Delta before (1) or after the obstacle (2)?"#new
-    line_splitted        = sys.stdin.readline().split()#new
-    if int(line_splitted[0])==1 :                      #new
-        Delta_x0 = x0                                  #new
-    if    int(line_splitted[0])==2 :                   #new 
-        Delta_x0 = X_OBST+3*R_OBST                     #new
-    x_Delta = Delta_x0+3*R_OBST                      #new
     y0      = 0.
     yf      = box_size * int(Ly / box_size)
     box_per_line_x, box_per_column_y = int((delta_x)/box_size), int((yf-y0)/box_size)
@@ -2834,6 +2827,15 @@ if system_type == "vicsek-gregoire":
     image                  = 1
     line_counter           = 0
     count_events           = 0
+    ##########################################
+    print "Measure Delta before (1) or after the obstacle (2)?"#new
+    line_splitted        = sys.stdin.readline().split()#new
+    if int(line_splitted[0])==1 :                      #new
+        Delta_x0 = x0                                  #new
+    if    int(line_splitted[0])==2 :                   #new 
+        Delta_x0 = X_OBST+3*R_OBST                     #new
+    x_Delta = Delta_x0+3*R_OBST                      #new
+    ############################################
     part=list(particle(i) for i in range(max_number_particles))
     #local defintions to put diagonalized matrices values
     axis_a_texture     = list(0. for i in range(box_total))
