@@ -3065,6 +3065,18 @@ if system_type == "potts":
     delta_x       = int((xf + x0) * R_OBST / box_size) * box_size
     x0            = X_OBST - x0 * R_OBST
     xf            = x0 + delta_x
+    #arquivo de posicoes e velocidades
+    name_arq_data_in = "%s/posicoes.dat"% (system_type)
+    print "\nYou analise a", system_type, "system, data is read from files:\n", name_arq_data_in
+    file_arq_data_in       = open(name_arq_data_in)
+    max_number_particles   = imag_count(system_type, name_arq_data_in) #conta o numero de imagens
+    line_splitted        = sys.stdin.readline().split()
+    image_0              = int(line_splitted[0])
+    image_f              = int(line_splitted[1])
+    image_counter        = image_f-image_0
+    
+    print max_number_particles
+    file_arq_data_in.close()
     print "Measure Delta before (1) or after the obstacle (2)?"#new
     line_splitted        = sys.stdin.readline().split()#new
     if int(line_splitted[0])==1 :                      #new
@@ -3092,19 +3104,12 @@ if system_type == "potts":
             box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf)
 #    print x0,xf
 
-    #arquivo de posicoes e velocidades
-    name_arq_data_in = "%s/posicoes.dat"% (system_type)
-    print "\nYou analise a", system_type, "system, data is read from files:\n", name_arq_data_in
-    file_arq_data_in       = open(name_arq_data_in)
-    max_number_particles   = imag_count(system_type, name_arq_data_in) #conta o numero de imagens
-    print max_number_particles
-    file_arq_data_in.close()
     file_arq_data_in       = open(name_arq_data_in)  #reabre o arquivo para leituras das posicoes e vel.
 #    line_splitted = sys.stdin.readline().split() #le da linha de comando o intervalo de imagens desejado
-    image_0            = int(time_0 / Delta_t)
-    image_f            = int(time_f / Delta_t)
-    image_counter      = image_f - image_0
-    image              = 1
+#    image_0            = int(time_0 / Delta_t)
+    # image_f            = int(time_f / Delta_t)
+    # image_counter      = image_f - image_0
+    image              = 0
     line_counter       = 0
     count_events       = 0
     part               = list(particle(i) for i in range(max_number_particles))
@@ -3337,6 +3342,15 @@ if system_type == "voronoi":
     delta_x  =  int((xf + x0) * R_OBST / box_size) * box_size
     x0       =  X_OBST - x0 * R_OBST
     xf       =  x0 + delta_x
+    print "\nYou analise a", system_type, "system \n"
+    #conta o numero de imagens e o numero maximo de particulas
+    max_number_particles = imag_count(system_type," ")
+    line_splitted        = sys.stdin.readline().split()
+    image_0              = int(line_splitted[0])
+    image_f              = int(line_splitted[1])
+    image_counter        = image_f-image_0
+
+    nlines        = max_number_particles
     print "Measure Delta before (1) or after the obstacle (2)?"
     line_splitted        = sys.stdin.readline().split()
     if int(line_splitted[0])==1 :                      
@@ -3360,10 +3374,10 @@ if system_type == "voronoi":
         NT_box, V_box, P_box, DU_box, DM_box, texture_tot, NB_tot, NT_tot, V_tot, P_tot, DU_tot, DM_tot,\
         texture_win, NB_win, NT_win, V_win, P_win, DU_win, DM_win, boxes_zero, phix_now, phiy_now, phi_tot =\
             box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf)
-    image_0            = int(time_0 / Delta_t)
-    image_f            = int(time_f / Delta_t)
-    image_counter      = image_f - image_0
-    image              = 1
+#    image_0            = int(time_0 / Delta_t)
+#    image_f            = int(time_f / Delta_t)
+ #   image_counter      = image_f - image_0
+    image              = 0
     line_counter       = 0
     count_events       = 0
     axis_a_texture     = list(0. for i in range(box_total))
@@ -3383,10 +3397,6 @@ if system_type == "voronoi":
     ang_elipse_P       = list(0. for i in range(box_total))
 
 
-    print "\nYou analise a", system_type, "system \n"
-    #conta o numero de imagens e o numero maximo de particulas
-    max_number_particles = imag_count(system_type," ") 
-    nlines        = max_number_particles
     part           = list(particle(i) for i in range(max_number_particles))
     #arquivo de posicoes e velocidades
     os.system("ls voronoi/cell_*.dat > files.dat")
