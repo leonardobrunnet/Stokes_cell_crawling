@@ -1051,6 +1051,8 @@ def rescale_image(lines):
         if len(fac) > 1 :
             break
     fac=float(fac.split()[0])
+    file_analyse_log.write("Magnifying deviation lines by=%.3f\n"%(fac))
+
     newlines=[]
     for i in lines:
         ax = i[0][0]
@@ -1189,8 +1191,8 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
     #ax.set_xlim(-box_per_line_x/2/r_obst,box_per_line_x/2/r_obst)
     #ax.set_ylim(-box_per_column_y/2./r_obst,box_per_column_y/2./r_obst)
     #plt.savefig(path+"/texture_win.png", dpi=300, bbox_inches="tight")
-
     fig=show_fig(lines)
+    file_analyse_log.write("Magnifying deviation lines by 1\n")
     
     while True :
         rescale=verifica("Rescale line segment? y or n? \n")
@@ -2035,10 +2037,16 @@ def imag_count(system_type, name_arq_data_in) :
                 file_arq_data_in.readline()
         file_arq_data_in.close()
             
+    print "Counted", max_number_particles, "as max number of particles.\n"
     print "Counted", counter-1, "images.\n"
     print "Type initial and final image number you want to analyse (min=1, max=",counter-1,") - Use spaces to separate the two numbers"
-    print "Counted", max_number_particles, "as max number of particles."
-    return max_number_particles
+    line_splitted        = sys.stdin.readline().split()
+    min_imag,max_imag = int(line_splitted[0]),int(line_splitted[1])
+    if max_imag > counter-1 :
+        print "You cannot use  a final image greater than the total number of images. Exiting..."
+        exit()
+
+    return max_number_particles,min_imag,max_imag,counter-1
 
 ################## Here starts the main program ###############
 
@@ -2094,6 +2102,10 @@ file_axis3 = open("%s/axis3.dat"%path,"w")
 file_axis5 = open("%s/axis5.dat"%path,"w")
 file_axis6 = open("%s/axis6.dat"%path,"w")
 
+# Opening analyse log file
+
+file_analyse_log = open("%s/analyse.log"%path,"w")
+
 if system_type == 'experiment':
     arq_in      = "%s"%(line_splitted[2])
     print "You analise an", system_type, "system, reading data from file:\n", arq_in
@@ -2101,11 +2113,13 @@ if system_type == 'experiment':
     
     #Opening the data file
     file_input_parameter = open(arq_in)
-    imag_count(system_type, file_input_parameter)
+    max_number_particles,min_imag,max_imag,total_imag_number=imag_count(system_type, file_input_parameter)
     file_input_parameter.close()
-    line_splitted        = sys.stdin.readline().split()
-    image_0              = int(line_splitted[0])
-    image_f              = int(line_splitted[1])
+    if max_imag > total_imag_number :
+        print "You cannot use  a final image greater than the total number of images. Exiting..."
+        exit()
+    image_0              = int(min_imag)
+    image_f              = int(max_imag)
     file_input_parameter = open(arq_in)
     
     line_splitted        = ['0']
@@ -2207,25 +2221,24 @@ if system_type == "superboids":
     max_dist             = float(file_input_parameter.readline().split()[1])
     caixa_zero           = int(max_dist/box_size)+1
     print "\nYou analise a", system_type, "system, data is read from files:\n", name_arq_header_in," (header)\n", name_arq_data_in," (data)\n", name_arq_neigh_in," (neighbors)"
+    file_analyse_log.write("\nYou analise a %s system, data is read from files:\n%s (header)\n%s (data)\n%s (neighbors)"%(system_type,name_arq_header_in,name_arq_data_in,name_arq_neigh_in))
     file_arq_header_in   = open(name_arq_header_in)
     file_arq_data_in     = open(name_arq_data_in)
-#    file_arq_neigh_in = open(name_arq_neigh_in)
+    #    file_arq_neigh_in = open(name_arq_neigh_in)
     line_splitted        = file_input_parameter.readline().split()
     x0                   = int(line_splitted[1])
     line_splitted        = file_input_parameter.readline().split()
     xf                   = int(line_splitted[1])
     box_mag              = float(file_input_parameter.readline().split()[1])
     box_size =  box_size * box_mag
-    #file_arq_neigh_in = open(name_arq_neigh_in)
-    max_number_particles = imag_count(system_type,name_arq_neigh_in)
-    #file_arq_neigh_in.close()
-    line_splitted        = sys.stdin.readline().split() #lendo do teclado imagens final e inicial depois da analise do numero de imagens (funcao imag_count())
-    image_0              = int(line_splitted[0])
-    image_f              = int(line_splitted[1])
+    max_number_particles,min_imag,max_imag,total_imag_number=imag_count(system_type, name_arq_neigh_in)
+    file_input_parameter.close()
+    image_0              = min_imag
+    image_f              = max_imag
     v0                   = 0.007
     part                 = list(particle(i) for i in range(max_number_particles))
+    file_analyse_log.write("\nInitial image = %d\nFinal image = %d"%(image_0,image_f))
     # Reading superboids parameter file
-
     while 1 :
         line = file_arq_header_in.readline()
         if not line : break # EOF
@@ -2246,13 +2259,19 @@ if system_type == "superboids":
     delta_x          = int((xf + x0) * R_OBST / box_size) * box_size
     x0               = X_OBST-x0*R_OBST
     xf               = x0+delta_x
-    print "Measure Delta before (1) or after the obstacle (2)?"#new
-    line_splitted        = sys.stdin.readline().split()#new
-    if int(line_splitted[0])==1 :                      #new
-        Delta_x0 = x0                                  #new
-    if    int(line_splitted[0])==2 :                   #new 
-        Delta_x0 = X_OBST+3*R_OBST                     #new
-    x_Delta = Delta_x0+3*R_OBST                      #new
+    print "Measure Delta before (1) or after the obstacle (2)?"
+    line_splitted        = sys.stdin.readline().split()
+    if int(line_splitted[0])==1 :                     
+        Delta_x0 = x0                                 
+    if    int(line_splitted[0])==2 :                   
+        Delta_x0 = X_OBST+3*R_OBST                    
+    print "Entre the number of cylinder radius to measure delta along (1,2 or 3)"
+    d_delta       = int(sys.stdin.readline().split()[0])
+    x_Delta = Delta_x0+d_delta*R_OBST
+    if line_splitted[0]==1:
+        file_analyse_log.write("\nMeasuring Delta before the obstacle along a size of %d obstacle radius\n "%(d_delta))
+    else:
+        file_analyse_log.write("\nMeasuring Delta after the obstacle along a size of %d obstacle radius\n "%(d_delta))
     y0, yf           = box_size*int(-Ly/(2*box_size)), box_size*int(Ly/(2*box_size))
     box_per_line_x   = int((delta_x) / box_size)
     box_per_column_y = int((yf - y0) / box_size)
@@ -2360,7 +2379,7 @@ if system_type == "superboids":
                             P_box[box] += part[i].P
                             DU_box[box] += part[i].DU
                             DM_box[box] += part[i].DM
-
+                            
                     map(lambda i:i.copy_to_old(), part)
                     if count_events > 1 and Delta_calculus == 0: 
                         map(lambda i:i.delta_solid_liquid(Delta_x0), part)
@@ -2374,21 +2393,25 @@ if system_type == "superboids":
                                 #     print i.r_orig[0],i.r[0], i.ident
                         if tot == 0 : 
                             print "\nNo cells in Delta measuring region yet.\nTry images at later times\nExiting...\n"
+                            file_analyse_log.write("\n No cells in Delta measuring region yet.\nTry images at later times\nExiting...\n")
                             exit()
                                 
-                        print av_x/tot, av_Delta/tot, tot
+                        print "Average_position=%.3f, average_Delta=%.3f, total_cells=%d"%(av_x/tot, av_Delta/tot, tot)
+                        file_analyse_log.write("Average_position=%.3f, average_Delta=%.3f, total_cells=%d\n"%(av_x/tot, av_Delta/tot, tot))
                         if av_x/tot > x_Delta :
                             Delta_calculus = 1 
                             av_Delta/=tot
-                            print "Finished calculationg Delta! Delta=%f"%av_Delta 
+                            print "Finished calculationg Delta! Delta=%f"%av_Delta
+                            file_analyse_log.write("Finished calculating Delta! Average_Delta=%.3f\n"%(av_Delta))
                             if av_Delta<0 : #new
-                                print "\nNegative values may indicate you have holes in the Delta measuring area\n"         #new
-                
+                                print "\nNegative values may indicate you have holes in the Delta measuring area\n"   
+                                file_analyse_log.write("\nNegative values may indicate you have holes in the Delta measuring area\n")                
+
 
                             
                 for box in range(box_total):
                     if density_now[box] > 0 :
-
+                        
                         vx_now[box]                 = vx_now[box] / density_now[box]
 		        vy_now[box]                 = vy_now[box] / density_now[box]
                         texture_box[box]            = texture_box[box] / density_now[box]
@@ -2426,17 +2449,17 @@ if system_type == "superboids":
                                                 ang_elipse_texture, image-image_0,points,x0,y0,box_size)
                 if count_events > 1 :
                     NB_elipsis_script_simu(box_per_line_x, box_total, axis_a_B, axis_b_B,\
-                                                ang_elipse_B, image-image_0,points,x0,y0,box_size)
+                                           ang_elipse_B, image-image_0,points,x0,y0,box_size)
                     NT_elipsis_script_simu(box_per_line_x, box_total, axis_a_T, axis_b_T,\
-                                                ang_elipse_T, image-image_0,points,x0,y0,box_size)
+                                           ang_elipse_T, image-image_0,points,x0,y0,box_size)
                     V_elipsis_script_simu(box_per_line_x, box_total, axis_a_V, axis_b_V,\
-                                                ang_elipse_V, image-image_0,points,x0,y0,box_size)
+                                          ang_elipse_V, image-image_0,points,x0,y0,box_size)
                     P_elipsis_script_simu(box_per_line_x, box_total, axis_a_P, axis_b_P,\
-                                                ang_elipse_P, image-image_0,points,x0,y0,box_size)
+                                          ang_elipse_P, image-image_0,points,x0,y0,box_size)
 
 
-            #Summing each box at different times
-            #if image > image_0 and image <= image_f:
+                #Summing each box at different times
+                #if image > image_0 and image <= image_f:
                 for box in range(box_total) :
                     density_tot[box] += density_now[box]
                     vx_tot[box]      += vx_now[box]
@@ -2478,9 +2501,10 @@ if system_type == "superboids":
                     av_Delta/=tot
                     print "Up to now Delta=%f! Average position av_x=%f. Need to go up to  x_Delta=%f "%(av_Delta,av_x/tot,x_Delta)
                     print " "
+                    file_analyse_log.write("Up to now average_Delta=%.3f. Average position av_x=%.3f. Need to go up to  x_Delta=%.3f\n"%(av_Delta,av_x/tot,x_Delta))
                     if av_Delta<0 : #new
                         print "\nNegative values may indicate you have holes in the Delta measuring area\n"         #new
-
+                        file_analyse_log.write("\nNegative values may indicate you have holes in the Delta measuring area\n")
                 break
             fat_boids_counter = 0
             while line.replace( '\r' , '' ) == '\n' : # skip blank lines
@@ -2493,12 +2517,13 @@ if system_type == "szabo-boids":
     window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag, box_size = read_param(file_input_parameter)
     name_arq_data_in = "%s/%s"% (line_splitted[0], filename)
     print "\nYou analise a", line_splitted[0], "system, data is read from file:\n", name_arq_data_in
+    file_analyse_log.write("\nYou analise a %s system, data is read from file:\n%s "%(system_type,name_arq_data_in))
     box_size =  box_size * box_mag
-    max_number_particles = imag_count(system_type,name_arq_data_in)
     file_arq_data_in     = open(name_arq_data_in)
-    line_splitted        = sys.stdin.readline().split()
-    image_0              = int(line_splitted[0])
-    image_f              = int(line_splitted[1])
+    max_number_particles,min_imag,max_imag,total_imag_number=imag_count(system_type, name_arq_data_in)
+    file_input_parameter.close()
+    image_0              = min_imag
+    image_f              = max_imag
     image_counter        = image_f-image_0
     image                = 0
     line_counter         = 0
@@ -2506,10 +2531,11 @@ if system_type == "szabo-boids":
     v0                   = 0.1
     y0,yf                = 3.0, 3.0
     part           = list(particle(i) for i in range(max_number_particles))
+    file_analyse_log.write("\nInitial image = %d\nFinal image = %d\n"%(image_0,image_f))
 
-#    print x0, xf
+    #    print x0, xf
 
-   #Reading szabo-boids  data file
+    #Reading szabo-boids  data file
     while 1 :
         line = file_arq_data_in.readline()
         if not line : break
@@ -2538,9 +2564,15 @@ if system_type == "szabo-boids":
                     Delta_x0 = x0                                  #new
                 if    int(line_splitted[0])==2 :                   #new 
                     Delta_x0 = X_OBST+3*R_OBST                     #new
-                x_Delta = Delta_x0+3*R_OBST                        #new
-                # print x_Delta
-                # exit()
+                print "Entre the number of cylinder radius to measure delta along (1,2 or 3)"
+                d_delta       = int(sys.stdin.readline().split()[0])
+                x_Delta = Delta_x0+d_delta*R_OBST
+                if line_splitted[0]==1:
+                    print "\n Measuring Delta before the obstacle along a size of %d obstacle radius "%(d_delta)
+                    file_analyse_log.write("\n Measuring Delta before the obstacle along a size of %d obstacle radius "%(d_delta))
+                else:
+                    file_analyse_log.write("\n Measuring Delta after the obstacle along a size of %d obstacle radius "%(d_delta))
+                    print "\n Measuring Delta after the obstacle along a size of %d obstacle radius "%(d_delta)
                 delta_y =int((yf + y0) * R_OBST / box_size) * box_size
                 y0      = Y_OBST - y0 * R_OBST
                 yf      = y0 + delta_y
@@ -2552,7 +2584,7 @@ if system_type == "szabo-boids":
                     density_tot, vx_win, vy_win,vx2_win, vy2_win, density_win, texture_box, NB_box, \
                     NT_box, V_box, P_box, DU_box, DM_box, texture_tot, NB_tot, NT_tot, V_tot, P_tot, DU_tot, DM_tot, \
                     texture_win, NB_win, NT_win, V_win, P_win, DU_win, DM_win,  boxes_zero, phix_now, phiy_now, phi_tot =\
-                    box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf)
+                        box_variables_definition_simu(box_per_column_y, box_per_line_x, x0, y0, xf, yf)
 
                 #local definitions to put diagonalized matrices values
                 axis_a_texture     = list(0. for i in range(box_total))
@@ -2666,6 +2698,8 @@ if system_type == "szabo-boids":
                                 av_x+=i.r[0]
                                 tot+=1
                                 av_Delta+=i.Delta
+                            #print av_x
+
                                 # if np.abs(i.r_orig[0]-i.r[0]) < 10**(-5):
                                 #     print i.ident,i.r,i.r_orig
 
@@ -2675,15 +2709,19 @@ if system_type == "szabo-boids":
 
                         if tot == 0 : 
                             print "\nNo cells in Delta measuring region yet.\nTry images at later times\n"
+                            file_analyse_log.write("\n No cells in Delta measuring region yet.\nTry images at later times\nExiting...\n")
                             exit()
-                        print "average x=%f average_Delta=%f x_target_for_Delta_calculation=%f"%(av_x/tot, av_Delta/tot, x_Delta)
+                        print "Average x=%f, average_Delta=%f x_target_for_Delta_calculation=%f"%(av_x/tot, av_Delta/tot, x_Delta)
+                        file_analyse_log.write("Average_position=%.3f, average_Delta=%.3f, total_cells=%d\n"%(av_x/tot, av_Delta/tot, tot))
+                        
                         if av_x/tot > x_Delta :
                             Delta_calculus = 1 
                             av_Delta/=tot
-                            print "Finished calculationg Delta! Delta=%f"%av_Delta 
+                            print "Finished calculationg Delta! Delta=%f"%av_Delta                            
+                            file_analyse_log.write("\n No cells in Delta measuring region yet.\nTry images at later times\nExiting...\n")
                             if av_Delta<0 : #new
                                 print "\nNegative values may indicate you have holes in the Delta measuring area\n"         #new
-                
+                                file_analyse_log.write("\nNegative values may indicate you have holes in the Delta measuring area\n")                
                 #Calculate the averages over boxes
                 for box in range(box_total):
                     if density_now[box] > 0 :
@@ -2775,6 +2813,8 @@ if system_type == "szabo-boids":
                     av_Delta/=tot
                     print "Up to now Delta=%f! Average position av_x=%f. Need to go up to  x_Delta=%f "%(av_Delta,av_x/tot,x_Delta)
                     print " "
+                    file_analyse_log.write("Up to now average_Delta=%.3f. Average position av_x=%.3f. Need to go up to  x_Delta=%.3f\n"%(av_Delta,av_x/tot,x_Delta))
+
                     if av_Delta<0 : #new
                         print "\nNegative values may indicate you have holes in the Delta measuring area\n"         #new
 
@@ -2813,28 +2853,34 @@ if system_type == "vicsek-gregoire":
 
     #arquivo de posicoes e velocidades
     name_arq_data_in = "%s/data/posicoes.dat"% (system_type)
-    print "\nYou analise a", system_type, "system, data is read from files:\n", name_arq_data_in
-    max_number_particles   = imag_count(system_type,name_arq_data_in) #conta o numero de imagens
+    print "\nYou analyse a", system_type, "system, data is read from files:\n", name_arq_data_in
+    file_analyse_log.write("\nYou analiyse a %s system, data is read from file:\n%s "%(system_type,name_arq_data_in))
+    max_number_particles,min_imag,max_imag,total_imag_number   = imag_count(system_type,name_arq_data_in) #conta o numero de imagens
     file_arq_data_in       = open(name_arq_data_in)  #reabre o arquivo para leituras das posicoes e vel.
-    line_splitted = sys.stdin.readline().split() #le da linha de comando o intervalo de imagens desejado
-    if not line_splitted:
-        image_0                = int(time_0/Delta_t)
-        image_f                = int(time_f/Delta_t)
-    else:
-        image_0=int(line_splitted[0])
-        image_f=int(line_splitted[1])
+    image_0=min_imag
+    image_f=max_imag
+    file_analyse_log.write("\nInitial image = %d\nFinal image = %d\n"%(image_0,image_f))
+        
     image_counter          = image_f - image_0
     image                  = 1
     line_counter           = 0
     count_events           = 0
     ##########################################
-    print "Measure Delta before (1) or after the obstacle (2)?"#new
-    line_splitted        = sys.stdin.readline().split()#new
-    if int(line_splitted[0])==1 :                      #new
-        Delta_x0 = x0                                  #new
-    if    int(line_splitted[0])==2 :                   #new 
-        Delta_x0 = X_OBST+3*R_OBST                     #new
-    x_Delta = Delta_x0+3*R_OBST                      #new
+    print "Measure Delta before (1) or after the obstacle (2)?"
+    line_splitted        = sys.stdin.readline().split()
+    if int(line_splitted[0])==1 :                     
+        Delta_x0 = x0                                 
+    if    int(line_splitted[0])==2 :                   
+        Delta_x0 = X_OBST+3*R_OBST                    
+    print "Entre the number of cylinder radius to measure delta along (1,2 or 3)"
+    d_delta       = int(sys.stdin.readline().split()[0])
+    x_Delta = Delta_x0+d_delta*R_OBST
+    if line_splitted[0]==1:
+        file_analyse_log.write("\nMeasuring Delta before the obstacle along a size of %d obstacle radius "%(d_delta))
+        print "\nMeasuring Delta before the obstacle along a size of %d obstacle radius "%(d_delta)
+    else:
+        file_analyse_log.write("\n Measuring Delta after the obstacle along a size of %d obstacle radius "%(d_delta))
+        print "\nMeasuring Delta after the obstacle along a size of %d obstacle radius "%(d_delta)
     ############################################
     part=list(particle(i) for i in range(max_number_particles))
     #local defintions to put diagonalized matrices values
@@ -2861,7 +2907,6 @@ if system_type == "vicsek-gregoire":
             break #EOF
         line_splitted = line.split()
         nlines        = int(line_splitted[1])
-        
         if image <= image_0 :
             print "Skipping image:",image
             for i in range(nlines) :
@@ -2949,15 +2994,21 @@ if system_type == "vicsek-gregoire":
                             #                            if av_Delta/tot > 1 :
                     if tot == 0 : 
                         print "\nNo cells in Delta measuring region yet.\nTry images at later times\n"
-                        exit()
+                        file_analyse_log.write("\n No cells in Delta measuring region yet.\nTry images at later times\nExiting...\n")
 
-                    print av_x/tot, av_Delta/tot, x_Delta
+                        exit()
+                    print "Average_position=%.3f, average_Delta=%.3f, total_cells=%d"%(av_x/tot, av_Delta/tot, tot)
+                    file_analyse_log.write("Average_position=%.3f, average_Delta=%.3f, total_cells=%d\n"%(av_x/tot, av_Delta/tot, tot))
+
+    
                     if av_x/tot > x_Delta :
                         Delta_calculus = 1 
                         av_Delta/=tot
                         print "Finished calculationg Delta! Delta=%f"%av_Delta 
+                        file_analyse_log.write("Average_Delta=%.3f\n"%(av_Delta/tot))
                         if av_Delta<0 : #new
                             print "\nNegative values may indicate you have holes in the Delta measuring area\n"         #new
+                            file_analyse_log.write("\nNegative values may indicate you have holes in the Delta measuring area\n")                
 
 
                 #Calculate the average velocity over boxes
@@ -3064,28 +3115,46 @@ if system_type == "potts":
     Lx, Ly, R_OBST, X_OBST, Y_OBST, box_size, max_dist, Delta_t, v0 = read_param_potts(file_par_simu)
     box_size =  box_size * box_mag
     file_par_simu.close()
+    print x0,xf
     delta_x       = int((xf + x0) * R_OBST / box_size) * box_size
     x0            = X_OBST - x0 * R_OBST
     xf            = x0 + delta_x
+    print x0,xf
     #arquivo de posicoes e velocidades
     name_arq_data_in = "%s/posicoes.dat"% (system_type)
-    print "\nYou analise a", system_type, "system, data is read from files:\n", name_arq_data_in
+    print "\nYou analyse a", system_type, "system, data is read from files:\n", name_arq_data_in
+    file_analyse_log.write("\nYou analiyse a %s system, data is read from file:\n%s "%(system_type,name_arq_data_in))
     file_arq_data_in       = open(name_arq_data_in)
-    max_number_particles   = imag_count(system_type, name_arq_data_in) #conta o numero de imagens
-    line_splitted        = sys.stdin.readline().split()
-    image_0              = int(line_splitted[0])
-    image_f              = int(line_splitted[1])
+    max_number_particles,min_imag,max_imag,total_imag_number=imag_count(system_type, name_arq_data_in)
+    file_input_parameter.close()
+    image_0              = min_imag
+    image_f              = max_imag
+
+    #max_number_particles   = imag_count(system_type, name_arq_data_in) #conta o numero de imagens
+    # line_splitted        = sys.stdin.readline().split()
+    # image_0              = int(line_splitted[0])
+    # image_f              = int(line_splitted[1])
     image_counter        = image_f-image_0
-    
+    file_analyse_log.write("\nInitial image = %d\nFinal image = %d\n"%(image_0,image_f))
+
     print max_number_particles
     file_arq_data_in.close()
-    print "Measure Delta before (1) or after the obstacle (2)?"#new
-    line_splitted        = sys.stdin.readline().split()#new
-    if int(line_splitted[0])==1 :                      #new
-        Delta_x0 = x0                                  #new
-    if    int(line_splitted[0])==2 :                   #new 
-        Delta_x0 = X_OBST+3*R_OBST                     #new
-    x_Delta = Delta_x0+3*R_OBST                      #new
+    print "Measure Delta before (1) or after the obstacle (2)?"
+    line_splitted        = sys.stdin.readline().split()
+    if int(line_splitted[0])==1 :                      
+        Delta_x0 = x0                                  
+    if    int(line_splitted[0])==2 :                    
+        Delta_x0 = X_OBST+3*R_OBST                     
+    print "Entre the number of cylinder radius to measure delta along (1,2 or 3)"
+    d_delta       = int(sys.stdin.readline().split()[0])
+    x_Delta = Delta_x0+d_delta*R_OBST
+    print x_Delta
+    if line_splitted[0]==1:
+        file_analyse_log.write("\n Measuring Delta before the obstacle along a size of %d obstacle radius "%(d_delta))
+        print "\n Measuring Delta before the obstacle along a size of %d obstacle radius "%(d_delta)
+    else:
+        file_analyse_log.write("\n Measuring Delta after the obstacle along a size of %d obstacle radius "%(d_delta))
+        print "\n Measuring Delta after the obstacle along a size of %d obstacle radius "%(d_delta)
     y0            = 0.0
     yf            = box_size * int(Ly / box_size)
     #box_per_line_x, box_per_column_y = int((delta_x) / box_size), int((yf - y0) / box_size)
@@ -3225,13 +3294,20 @@ if system_type == "potts":
 
                     if tot == 0 : 
                         print "\nNo cells in Delta measuring region yet.\nTry images at later times\n"
+                        file_analyse_log.write("\n No cells in Delta measuring region yet.\nTry images at later times\nExiting...\n")
+
                         exit()
-                    print av_x/tot, av_Delta/tot, tot
+                    print "Average_position=%.3f, average_Delta=%.3f, total_cells=%d"%(av_x/tot, av_Delta/tot, tot)
+                    file_analyse_log.write("Average_position=%.3f, average_Delta=%.3f, total_cells=%d\n"%(av_x/tot, av_Delta/tot, tot))
+
                     if av_x/tot > x_Delta :
                         Delta_calculus = 1 
                         av_Delta/=tot
+                        print "Finished calculationg Delta! Delta=%f"%av_Delta 
+                        file_analyse_log.write("Average_Delta=%.3f\n"%(av_Delta/tot))
                         if av_Delta<0 : #new
                             print "\nNegative values may indicate you have holes in the Delta measuring area\n"         #new
+                            file_analyse_log.write("\nNegative values may indicate you have holes in the Delta measuring area\n")                
 
                 
             #Calculate the averages over boxes
@@ -3345,12 +3421,16 @@ if system_type == "voronoi":
     x0       =  X_OBST - x0 * R_OBST
     xf       =  x0 + delta_x
     print "\nYou analise a", system_type, "system \n"
+    file_analyse_log.write("\nYou analiyse a %s system, data is read from file:\nvoronoi/cells*.dat "%(system_type))
     #conta o numero de imagens e o numero maximo de particulas
-    max_number_particles = imag_count(system_type," ")
-    line_splitted        = sys.stdin.readline().split()
-    image_0              = int(line_splitted[0])
-    image_f              = int(line_splitted[1])
+    max_number_particles,min_imag,max_imag,total_imag_counter = imag_count(system_type," ")
+    image_f = max_imag
+    image_0 = min_imag
+    # line_splitted        = sys.stdin.readline().split()
+    # image_0              = int(line_splitted[0])
+    # image_f              = int(line_splitted[1])
     image_counter        = image_f-image_0
+    file_analyse_log.write("\nInitial image = %d\nFinal image = %d\n"%(image_0,image_f))
 
     nlines        = max_number_particles
     print "Measure Delta before (1) or after the obstacle (2)?"
@@ -3358,8 +3438,14 @@ if system_type == "voronoi":
     if int(line_splitted[0])==1 :                      
         Delta_x0 = x0                                  
     if    int(line_splitted[0])==2 :                   
-        Delta_x0 = X_OBST+3*R_OBST                     
-    x_Delta = Delta_x0+3*R_OBST                      
+        Delta_x0 = X_OBST+3*R_OBST
+    print "Entre the number of cylinder radius to measure delta along (1,2 or 3)"
+    d_delta       = int(sys.stdin.readline().split()[0])
+    x_Delta = Delta_x0+d_delta*R_OBST
+    if line_splitted[0]==1:
+        file_analyse_log.write("\n Measuring Delta before the obstacle along a size of %d obstacle radius "%(d_delta))
+    else:
+        file_analyse_log.write("\n Measuring Delta after the obstacle along a size of %d obstacle radius "%(d_delta))
     y0       = -box_size * int(Ly / box_size) / 2
     yf       =  box_size * int(Ly / box_size) / 2
     box_per_line_x, box_per_column_y = int((delta_x) / box_size), int((yf - y0) / box_size)
@@ -3491,14 +3577,21 @@ if system_type == "voronoi":
                             #     print i.r_orig[0],i.r[0], i.ident
                     if tot == 0 : 
                         print "\nNo cells in Delta measuring region yet.\nTry images at later times\n"
+                        file_analyse_log.write("\n No cells in Delta measuring region yet.\nTry images at later times\nExiting...\n")
+
                         exit()
-                    print av_x/tot, av_Delta/tot, tot
+                    print "Average_position=%.3f, average_Delta=%.3f, total_cells=%d"%(av_x/tot, av_Delta/tot, tot)
+                    file_analyse_log.write("\nAverage_position=%.3f, average_Delta=%.3f, total_cells=%d\n"%(av_x/tot, av_Delta/tot, tot))
+
+
                     if av_x/tot > x_Delta :
                         Delta_calculus = 1 
                         av_Delta/=tot
                         print "Finished calculationg Delta! Delta=%f"%av_Delta 
+                        file_analyse_log.write("Average_Delta=%.3f\n"%(av_Delta/tot))
                         if av_Delta<0 : #new
-                            print "\nNegative values may indicate you have holes in the Delta measuring area\n"         #new
+                            print "\nNegative values may indicate you have holes in the Delta measuring area\n"         
+                            file_analyse_log.write("\nNegative values may indicate you have holes in the Delta measuring area\n")                
 
                 
             #Calculate the average velocity over boxes
@@ -3591,8 +3684,11 @@ if system_type == "voronoi":
         av_Delta/=tot
         print "Up to now Delta=%f! Average position av_x=%f. Need to go up to  x_Delta=%f "%(av_Delta,av_x/tot,x_Delta)
         print " "
+        file_analyse_log.write("Up to now average_Delta=%.3f. Average position av_x=%.3f. Need to go up to  x_Delta=%.3f\n"%(av_Delta,av_x/tot,x_Delta))
+
         if av_Delta<0 : #new
-            print "\nNegative values may indicate you have holes in the Delta measuring area\n"         #new
+            print "\nNegative values may indicate you have holes in the Delta measuring area\n"
+            file_analyse_log.write("\nNegative values may indicate you have holes in the Delta measuring area\n")
 
     phi_tot = phi_tot/count_events
 ##############################Finish reading data#####################
