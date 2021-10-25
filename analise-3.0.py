@@ -2563,7 +2563,7 @@ if system_type == "szabo-boids":
                 if int(line_splitted[0])==1 :                      #newszabo
                     Delta_x0 = x0                                  #new
                 if    int(line_splitted[0])==2 :                   #new 
-                    Delta_x0 = X_OBST+3*R_OBST                     #new
+                    Delta_x0 = X_OBST+3*R_OBST                     #new     
                 print "Entre the number of cylinder radius to measure delta along (1,2 or 3)"
                 d_delta       = int(sys.stdin.readline().split()[0])
                 x_Delta = Delta_x0+d_delta*R_OBST
@@ -2718,7 +2718,7 @@ if system_type == "szabo-boids":
                             Delta_calculus = 1 
                             av_Delta/=tot
                             print "Finished calculationg Delta! Delta=%f"%av_Delta                            
-                            file_analyse_log.write("\n No cells in Delta measuring region yet.\nTry images at later times\nExiting...\n")
+                            file_analyse_log.write("Finished calculationg Delta! Delta=%f"%av_Delta)
                             if av_Delta<0 : #new
                                 print "\nNegative values may indicate you have holes in the Delta measuring area\n"         #new
                                 file_analyse_log.write("\nNegative values may indicate you have holes in the Delta measuring area\n")                
