@@ -1451,6 +1451,7 @@ def axis_zero_simu(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, 
 #    print np.multiply(devNBT,unitB)
 #    print " "
 #    print np.multiply(devNT,unitB)
+    file_analyse_log.write("\n phi= %f   Delta= %f   rho= %f \n"%(phi_tot,av_Delta,rho))
     print 'rho=%f phi=%f hNTNBT=%f hNTNB=%f Delta=%f '%(rho,phi_tot,hNTNBT,hNTNB,av_Delta)
     # print "devNT"
     # print devNT
