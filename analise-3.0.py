@@ -39,6 +39,7 @@ def axis_angle(M):
 # function mapping delaunay out index to particle index
 def map_focus_region_to_part(points, list_neighbors, index_particle):
     for i,w in enumerate(points):
+        #print i, index_particle
         aux                  = index_particle[i]
         part[aux].r          = np.array(w)
         part[aux].list_neigh = []
@@ -51,8 +52,8 @@ class particle:
     def __init__(self,ident):
         self.Delta_counter  = 0
         self.Delta          = 0.
-        self.r              = np.array([-200.,-200.])
-        self.r_orig          = np.array([-200.,-200.])
+        self.r              = np.array([-2000.,-2000.])
+        self.r_orig          = np.array([-2000.,-2000.])
         self.ident          = ident  #indice geral da particula
         self.list_neigh     = []
         self.list_neigh_old = []
@@ -2336,7 +2337,11 @@ if system_type == "superboids":
                         vy_now[box]      += vyy
                         density_now[box] += 1.0
                         points.append([x,y])
-                        index_particle.append(fat_boids_counter-1)
+                        #index_particle.append(fat_boids_counter-1)
+                        index=int(line_splitted[7])
+                        index_particle.append(index)
+                        #part.append(particle(index))
+                        #print index_particle
                         #boxes_zero, phix_now, phiy_now
                         if xx == caixa_zero :
                             normv=np.sqrt(vxx**2+vyy**2)
@@ -3235,7 +3240,8 @@ if system_type == "potts":
                     vy_now[box]      += vyy
                     density_now[box] += 1.0
                     points.append([x,y])
-                    index_particle.append(i)
+                    index=int(line_splitted[6])
+                    index_particle.append(index)
                     #boxes_zero, phix_now, phiy_now
                     if xx == caixa_zero :
                         normv=np.sqrt(vxx**2+vyy**2)
