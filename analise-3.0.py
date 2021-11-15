@@ -83,6 +83,8 @@ class particle:
     def my_original_position(self):#new
         self.r_orig=self.r
         self.list_neigh_old_delta=self.list_neigh
+        #print self.ident, self.r, self.list_neigh
+        #exit()
         return
         
     def delta_solid_liquid(self,Delta_x0): #new
@@ -93,10 +95,16 @@ class particle:
                 for i in self.list_neigh_old_delta:
                     dr_old_2=np.linalg.norm(part[i].r_orig-self.r_orig)**2
                     dr_2=np.linalg.norm(part[i].r-self.r)**2
-                    self.Delta+=1-dr_old_2/dr_2
-                self.Delta/=ll
+                    delta_loc = 1-dr_old_2/dr_2
+                    if delta_loc > 0 :
+                        self.Delta+=delta_loc
+                    else:
+                        ll-=1
+                    #print self.ident,i,np.sqrt(dr_old_2),np.sqrt(dr_2),1-dr_old_2/dr_2
+                if ll > 0 :
+                    self.Delta/=ll
                 self.Delta_counter=1
-            #print self.r_orig[0],self.ident,self.Delta
+            #print self.ident,self.r_orig[0],self.Delta
             #exit()
         return
 
