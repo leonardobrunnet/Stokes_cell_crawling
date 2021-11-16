@@ -39,7 +39,7 @@ def axis_angle(M):
 # function mapping delaunay out index to particle index
 def map_focus_region_to_part(points, list_neighbors, index_particle):
     for i,w in enumerate(points):
-        #print i, index_particle
+        #print i, index_particle[i]
         aux                  = index_particle[i]
         part[aux].r          = np.array(w)
         part[aux].list_neigh = []
@@ -2043,8 +2043,13 @@ def imag_count(system_type, name_arq_data_in) :
             counter             += 1
             n                    = int(line_splitted[1])
             max_number_particles = max(max_number_particles,n)
-            for i in range(n):
+            for i in range(n-1):
                 file_arq_data_in.readline()
+            line = file_arq_data_in.readline()           
+            max_imag=int(line.split()[6])
+            max_number_particles = max(max_number_particles,max_imag)
+            #print max_number_particles
+            
         file_arq_data_in.close()
             
     print "Counted", max_number_particles, "as max number of particles.\n"
@@ -3248,7 +3253,7 @@ if system_type == "potts":
                     vy_now[box]      += vyy
                     density_now[box] += 1.0
                     points.append([x,y])
-                    index=int(line_splitted[6])
+                    index=int(line_splitted[6])-1
                     index_particle.append(index)
                     #boxes_zero, phix_now, phiy_now
                     if xx == caixa_zero :
