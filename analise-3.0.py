@@ -2251,7 +2251,7 @@ if system_type == "superboids":
     image_0              = min_imag
     image_f              = max_imag
     v0                   = 0.007
-    part                 = list(particle(i) for i in range(max_number_particles))
+    part                 = list(particle(i) for i in range(max_number_particles+1))
     file_analyse_log.write("\nInitial image = %d\nFinal image = %d"%(image_0,image_f))
     # Reading superboids parameter file
     while 1 :
