@@ -41,6 +41,7 @@ def map_focus_region_to_part(points, list_neighbors, index_particle):
     for i,w in enumerate(points):
         #print i, index_particle[i]
         aux                  = index_particle[i]
+        #print aux
         part[aux].r          = np.array(w)
         part[aux].list_neigh = []
         for j in list_neighbors[i]:
@@ -1987,7 +1988,7 @@ def imag_count(system_type, name_arq_data_in) :
                 part_count=0
             else:
                 if counter >1 :
-                    part_count+=1
+                    part_count=int(line_splitted[4])
             if line_splitted[0] == 'Number_of_particles:' :
                 max_number_particles = int(line_splitted[1])
             if part_count > max_number_particles and counter > 0:
@@ -2006,9 +2007,10 @@ def imag_count(system_type, name_arq_data_in) :
             line_splitted        = line.split()
             counter             += 1
             n                    = int(line_splitted[1])
-            max_number_particles = max(max_number_particles,n)
             for i in range(n):
-                file_arq_data_in.readline()
+                line_splitted=file_arq_data_in.readline().split()
+                maxi_loc=int(line_splitted[5])
+                max_number_particles = max(max_number_particles,maxi_loc)
         file_arq_data_in.close()
         
     if system_type == 'voronoi' :
@@ -2659,7 +2661,8 @@ if system_type == "szabo-boids":
                         density_now[box] += 1.0
                         density_now[box] += 1.0
                         points.append([x,y])
-                        index_particle.append(count_particle)
+                        index=int(line_splitted[4])
+                        index_particle.append(index)
                         #boxes_zero, phix_now, phiy_now
                         if xx == caixa_zero :
                             normv=np.sqrt(vxx**2+vyy**2)
@@ -2955,6 +2958,7 @@ if system_type == "vicsek-gregoire":
                     vy_now[box]      += vyy
                     density_now[box] += 1.0
                     points.append([x,y])
+                    index= int(line_splitted[5])
                     index_particle.append(i)
                     #boxes_zero, phix_now, phiy_now
                     if xx == caixa_zero :
