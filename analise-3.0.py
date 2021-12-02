@@ -1436,7 +1436,8 @@ def axis_zero_simu(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, 
             # DM_axis_zero.append(DM_tot[i])
             NB_axis_zero.append(NB_tot[i])
             NT_axis_zero.append(NT_tot[i])
-    rho=np.sum(density_zero)/len(density_zero)/box_size/box_size/image_counter
+###    rho=np.sum(density_zero)/len(density_zero)/box_size/box_size/image_counter
+    rho=np.sum(density_zero)/len(density_zero)/image_counter
     for i in range(len(density_zero)):
         # avP  += P_axis_zero[i]
         # avV  += V_axis_zero[i]
