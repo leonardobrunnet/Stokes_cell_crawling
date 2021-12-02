@@ -2659,7 +2659,7 @@ if system_type == "szabo-boids":
                         vx_now[box]      += vxx
                         vy_now[box]      += vyy
                         density_now[box] += 1.0
-                        density_now[box] += 1.0
+ ##### duas linhas repetidas!!!!!                  density_now[box] += 1.0
                         points.append([x,y])
                         index=int(line_splitted[4])
                         index_particle.append(index)
