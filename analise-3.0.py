@@ -434,11 +434,13 @@ def read_param(file_input_parameter) :
             xf = int(line_splitted[1])
         if line_splitted[0] == 'file' :
             filename = line_splitted[1]
-        if line_splitted[0] == 'box_magnification' :
+        if line_splitted[0] == 'box_magnification' or line_splitted[0] == 'box_mag':
             box_mag = float(line_splitted[1])
         if line_splitted[0] == 'box_size' :
             box_size = int(line_splitted[1])
-    return window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag, box_size
+        if line_splitted[0] == 'area_1' :
+            area_1   = float(line_splitted[1])
+    return window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag, box_size, area_1
 
 
 def read_param_potts(file_par_simu) :
@@ -1146,7 +1148,8 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
 	    if density_win[box] > 0.0 and module > 0.0 :
                 normalization      = float(image_counter * count_box_win[box])
                 density_win[box]  /= normalization
-	        dens_win.write("%d %d %f \n" % (bx, by, density_win[box]))
+	        dens_win.write("%d %d %f \n" % (bx, by, (density_win[box]*(area_1/(box_size*box_size))) ))
+#	        dens_win.write("%d %d %f \n" % (bx, by, density_win[box]))
                 vx_win[box]       /= normalization
                 vy_win[box]       /= normalization
                 vx2_win[box]      /= normalization
@@ -1437,7 +1440,8 @@ def axis_zero_simu(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, 
             NB_axis_zero.append(NB_tot[i])
             NT_axis_zero.append(NT_tot[i])
 ###    rho=np.sum(density_zero)/len(density_zero)/box_size/box_size/image_counter
-    rho=np.sum(density_zero)/len(density_zero)/image_counter
+###    (density_win[box]*(area_1/(box_size*box_size))) 
+    rho=np.sum(density_zero)*(area_1/(box_size*box_size))/(len(density_zero)*image_counter)
     for i in range(len(density_zero)):
         # avP  += P_axis_zero[i]
         # avV  += V_axis_zero[i]
@@ -1463,6 +1467,7 @@ def axis_zero_simu(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, 
 #    print " "
 #    print np.multiply(devNT,unitB)
     file_analyse_log.write("\n phi= %f   Delta= %f   rho= %f \n"%(phi_tot,av_Delta,rho))
+    file_analyse_log.write("\n box_area= %f   area_1= %f   eq_particles_per_box= %f \n"%((box_size*box_size),area_1,(box_size*box_size)/area_1))
     print 'rho=%f phi=%f hNTNBT=%f hNTNB=%f Delta=%f '%(rho,phi_tot,hNTNBT,hNTNB,av_Delta)
     # print "devNT"
     # print devNT
@@ -2154,7 +2159,7 @@ if system_type == 'experiment':
             R_OBST   = float(line_splitted[1])
             R_OBST   = R_OBST/2.
         if(line_splitted[0] == 'Maximum_observed_velocity:') :
-            speed    = float(line_splitted[1])
+            speed    = float(line_slitted[1])
         if line_splitted[0] == 'Obstacle_position:' :
             X_OBST   = int(line_splitted[1])
             Y_OBST   = int(line_splitted[2])
@@ -2239,7 +2244,7 @@ if system_type == "superboids":
     max_dist             = float(file_input_parameter.readline().split()[1])
     caixa_zero           = int(max_dist/box_size)+1
     print "\nYou analise a", system_type, "system, data is read from files:\n", name_arq_header_in," (header)\n", name_arq_data_in," (data)\n", name_arq_neigh_in," (neighbors)"
-    file_analyse_log.write("\nYou analise a %s system, data is read from files:\n%s (header)\n%s (data)\n%s (neighbors)"%(system_type,name_arq_header_in,name_arq_data_in,name_arq_neigh_in))
+    file_analyse_log.write("\nYou analise a %s system, data is read from files:\n%s (header)\n%s (data)\n%s (neighbors)"%(system_type,name_arq_header_in,name_arq_data_in,name_arq_neigh_in))    
     file_arq_header_in   = open(name_arq_header_in)
     file_arq_data_in     = open(name_arq_data_in)
     #    file_arq_neigh_in = open(name_arq_neigh_in)
@@ -2249,12 +2254,14 @@ if system_type == "superboids":
     xf                   = int(line_splitted[1])
     box_mag              = float(file_input_parameter.readline().split()[1])
     box_size =  box_size * box_mag
+    area_1               = float(file_input_parameter.readline().split()[1])
     max_number_particles,min_imag,max_imag,total_imag_number=imag_count(system_type, name_arq_neigh_in)
     file_input_parameter.close()
     image_0              = min_imag
     image_f              = max_imag
     v0                   = 0.007
     part                 = list(particle(i) for i in range(max_number_particles+1))
+    file_analyse_log.write("Box_size: %f Box_mag = %f "%(box_size,box_mag))
     file_analyse_log.write("\nInitial image = %d\nFinal image = %d"%(image_0,image_f))
     # Reading superboids parameter file
     while 1 :
@@ -2536,7 +2543,7 @@ if system_type == "superboids":
     phi_tot = phi_tot/count_events
 if system_type == "szabo-boids":
     
-    window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag, box_size = read_param(file_input_parameter)
+    window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag, box_size, area_1 = read_param(file_input_parameter)
     name_arq_data_in = "%s/%s"% (line_splitted[0], filename)
     print "\nYou analise a", line_splitted[0], "system, data is read from file:\n", name_arq_data_in
     file_analyse_log.write("\nYou analise a %s system, data is read from file:\n%s "%(system_type,name_arq_data_in))
@@ -2553,6 +2560,7 @@ if system_type == "szabo-boids":
     v0                   = 0.1
     y0,yf                = 3.0, 3.0
     part           = list(particle(i) for i in range(max_number_particles))
+    file_analyse_log.write("Box_size: %f Box_mag = %f "%(box_size,box_mag))
     file_analyse_log.write("\nInitial image = %d\nFinal image = %d\n"%(image_0,image_f))
 
     #    print x0, xf
@@ -2660,7 +2668,7 @@ if system_type == "szabo-boids":
                         vx_now[box]      += vxx
                         vy_now[box]      += vyy
                         density_now[box] += 1.0
- ##### duas linhas repetidas!!!!!                  density_now[box] += 1.0
+##### duas linhas repetidas!!!!!                        density_now[box] += 1.0
                         points.append([x,y])
                         index=int(line_splitted[4])
                         index_particle.append(index)
@@ -2847,7 +2855,7 @@ if system_type == "szabo-boids":
     
 if system_type == "vicsek-gregoire":
 
-    window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag, box_size = read_param(file_input_parameter)
+    window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag, box_size, area_1 = read_param(file_input_parameter)
     file_input_parameter.close()
     aux           = "%s/include/%s"% (system_type, filename)
     file_par_simu = open(aux)
@@ -2880,6 +2888,7 @@ if system_type == "vicsek-gregoire":
     file_analyse_log.write("\nYou analiyse a %s system, data is read from file:\n%s "%(system_type,name_arq_data_in))
     max_number_particles,min_imag,max_imag,total_imag_number   = imag_count(system_type,name_arq_data_in) #conta o numero de imagens
     file_arq_data_in       = open(name_arq_data_in)  #reabre o arquivo para leituras das posicoes e vel.
+    file_analyse_log.write("Box_size: %f Box_mag = %f "%(box_size,box_mag))
     image_0=min_imag
     image_f=max_imag
     file_analyse_log.write("\nInitial image = %d\nFinal image = %d\n"%(image_0,image_f))
@@ -3132,7 +3141,7 @@ if system_type == "vicsek-gregoire":
     phi_tot = phi_tot/count_events
     
 if system_type == "potts":
-    window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag, box_size = read_param(file_input_parameter)
+    window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag, box_size, area_1 = read_param(file_input_parameter)
     file_input_parameter.close()
     aux           = "%s/Simulation/%s"% (system_type, filename)
     file_par_simu = open(aux)
@@ -3153,7 +3162,7 @@ if system_type == "potts":
     file_input_parameter.close()
     image_0              = min_imag
     image_f              = max_imag
-
+    file_analyse_log.write("Box_size: %f Box_mag = %f "%(box_size,box_mag))
     #max_number_particles   = imag_count(system_type, name_arq_data_in) #conta o numero de imagens
     # line_splitted        = sys.stdin.readline().split()
     # image_0              = int(line_splitted[0])
@@ -3437,7 +3446,7 @@ if system_type == "potts":
     
 if system_type == "voronoi":
     # voronoi model works with obstacle at 0.0 , 0.0 and system goes from - Lx/2.0 to Lx/2.0 but the articles can go even further
-    window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag, box_size = read_param(file_input_parameter)
+    window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag, box_size, area_1 = read_param(file_input_parameter)
     file_input_parameter.close()
     Lx, Ly, R_OBST, X_OBST, Y_OBST, box_size, Delta_t, v0, max_dist = read_param_voronoi(filename)
     box_size =  box_size * box_mag
@@ -3449,6 +3458,7 @@ if system_type == "voronoi":
     file_analyse_log.write("\nYou analiyse a %s system, data is read from file:\nvoronoi/cells*.dat "%(system_type))
     #conta o numero de imagens e o numero maximo de particulas
     max_number_particles,min_imag,max_imag,total_imag_counter = imag_count(system_type," ")
+    file_analyse_log.write("Box_size: %f Box_mag = %f "%(box_size,box_mag))
     image_f = max_imag
     image_0 = min_imag
     # line_splitted        = sys.stdin.readline().split()
@@ -3457,6 +3467,8 @@ if system_type == "voronoi":
     image_counter        = image_f-image_0
     file_analyse_log.write("\nInitial image = %d\nFinal image = %d\n"%(image_0,image_f))
 
+    print (" BOX SIZE %f  "%(box_size))
+    
     nlines        = max_number_particles
     print "Measure Delta before (1) or after the obstacle (2)?"
     line_splitted        = sys.stdin.readline().split()
