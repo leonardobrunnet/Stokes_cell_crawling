@@ -4,8 +4,8 @@ time_0   1000
 time_f   13000
 obstacle yes
 voronoi  no
-x0       6  \\regiao analisada
-xf       6  \\regiao analisada
+x0       5  \\regiao analisada
+xf       5  \\regiao analisada
 file     param.h
-
-
+box_magnification   1.0
+area_1   0.502654825
