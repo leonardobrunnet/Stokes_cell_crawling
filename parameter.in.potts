@@ -1,12 +1,11 @@
 model    potts
 window   4
-time_0   150000
-time_f   870000
+time_0   40000
+time_f   50000
 obstacle yes
-x0       6  \\regiao analisada medida em R0
-xf       6  \\regiao analisada medida em R0
+x0       5  \\regiao analisada medida em R0
+xf       5  \\regiao analisada medida em R0
 file     Stokes_potts_4.py
-
-
-
+box_magnification 1.6    \\factor to increase box size
+area_1   100.0
 
