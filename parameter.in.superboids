@@ -1,9 +1,9 @@
-system superboids 
-file 2018_08_16_20h08min_38sec 
+system superboids
+file  2021_11_07_21h13min_04sec
 box  2
 window 2
 max_dist 4
-x0  6 #numero de raios antes do centro 
-xf  6 #numero de raios depois do centro 
-
-
+x0  5 #numero de raios antes do centro
+xf  5 #numero de raios depois do centro
+box_mag 1.0
+area_1   5.309201585
