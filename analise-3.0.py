@@ -3770,6 +3770,8 @@ file_axis4.close()
 file_axis3.close()
 file_axis5.close()
 
-
+os.chdir(path)
+os.system('gnuplot scriptdenvel.gnu')
+os.chdir('../../')
 
         
