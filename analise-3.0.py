@@ -2159,7 +2159,7 @@ if system_type == 'experiment':
             R_OBST   = float(line_splitted[1])
             R_OBST   = R_OBST/2.
         if(line_splitted[0] == 'Maximum_observed_velocity:') :
-            speed    = float(line_slitted[1])
+            speed    = float(line_splitted[1])
         if line_splitted[0] == 'Obstacle_position:' :
             X_OBST   = int(line_splitted[1])
             Y_OBST   = int(line_splitted[2])
