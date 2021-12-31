@@ -1010,41 +1010,6 @@ def  zero_borders_and_obstacle_simu(box_per_line_x, box_per_column_y, r_obst, x_
 
     return box_per_line_x, box_per_column_y, density_tot, vx_tot, vy_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot
 
-def average_density_velocity_deformation_experiment(box_per_line_x, box_per_column_y, x, y, vx_tot, vy_tot, texture_tot, image_counter,path):
-    arrow = 0.7
-    image_resolution_x, image_resolution_y = 3000,3000
-    box_total = box_per_line_x * box_per_column_y
-    for i in range(box_total):
-        vx_tot[i] /= image_counter
-        vy_tot[i] /= image_counter
-    # vel_win.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(%f*$3):(%f*$4):($5)  with vectors notitle head size  0.3,20,60  filled palette \n" % (0, box_per_line_x, 0, box_per_column_y, arrow, arrow))
-    vel_win.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(%f*$3):(%f*$4):($5)  with vectors notitle   filled palette \n" % (0, box_per_line_x, 0, box_per_column_y, arrow, arrow))
-
-    ells = []
-    for i in range(box_total):
-        dens_win.write("%d %d %f \n" % (x[i], y[i], density_tot[i]))
-        module               = math.sqrt(vx_tot[i]**2 + vy_tot[i]**2)
-        texture_tot[i]      /= image_counter
-        axis_a, axis_b, ang  = axis_angle(texture_tot[i])
-        #print x[i], y[i]
-        if axis_b != 0. :
-            ells.append(Ellipse(np.array([x[i],y[i]]),axis_b / axis_a,1.,ang))
-        if module >0 :
-            vel_win.write("%d %d %f %f %f \n" % (x[i], y[i], vx_tot[i] / module, vy_tot[i] / module, module))
-            def_win.write("%d %d %f %f %f \n" % (x[i], y[i], axis_a, axis_b, ang))
-    vel_win.write("e \n")
-    vel_win.write("pause 2 \n")
-    vel_win.write("set terminal pngcairo  size %d,%d enhanced font 'Verdana, 18' crop\n"% (image_resolution_x, image_resolution_y))
-    vel_win.write("set output 'velocity-win.png'\n")
-    vel_win.write("replot \n") 
-    #Windowed elipsis for texture
-    fig, ax = plt.subplots(subplot_kw={'aspect': 'equal'})
-    for e in ells:
-        ax.add_artist(e)
-        e.set_clip_box(ax.bbox)
-    ax.set_xlim(0, box_per_line_x)
-    ax.set_ylim(0, box_per_column_y)
-    plt.savefig(path+"/texture_win.png", dpi = 300,bbox_inches = "tight")
 
 def show_fig(lines):
     fig, ax = plt.subplots(subplot_kw={'aspect': 'equal'})
@@ -1087,6 +1052,87 @@ def verifica(pergunta):
         else:
             print "Please, say y or n"
     return
+
+
+
+
+def average_density_velocity_deformation_experiment(box_per_line_x, box_per_column_y,
+                                                   r_obst, x_obst, y_obst, x0, xf, x, y, vx_tot, vy_tot, texture_tot, image_counter, path):
+    arrow = 0.7
+    x_obst -= 2
+    y_obst -= 2
+#    print (r_obst, x_obst, y_obst, x0, xf)
+#    exit
+    
+    image_resolution_x, image_resolution_y = 3000,3000
+    box_total = box_per_line_x * box_per_column_y
+    for i in range(box_total):
+        vx_tot[i] /= image_counter
+        vy_tot[i] /= image_counter
+    # vel_win.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(%f*$3):(%f*$4):($5)  with vectors notitle head size  0.3,20,60  filled palette \n" % (0, box_per_line_x, 0, box_per_column_y, arrow, arrow))
+    vel_win.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(%f*$3):(%f*$4):($5)  with vectors notitle   filled palette \n" % (0, box_per_line_x, 0, box_per_column_y, arrow, arrow))
+
+    ells = []
+    lines = []
+    for i in range(box_total):
+        dens_win.write("%d %d %f \n" % (x[i], y[i], density_tot[i]))
+        module               = math.sqrt(vx_tot[i]**2 + vy_tot[i]**2)
+        texture_tot[i]      /= image_counter
+        axis_a, axis_b, ang  = axis_angle(texture_tot[i])
+        #print x[i], y[i]
+        axis_a,axis_b, ang_elipse = axis_angle(texture_tot[i])
+        dev = np.abs(np.log(axis_a/axis_b))/2.
+        dbx = dev*np.cos(ang_elipse)
+        dby = dev*np.sin(ang_elipse)
+        #reescaling to the obstacule radius and centering in zero
+        dx  = float(x[i] - x_obst) / r_obst
+        ddx = float(x[i] + dbx - x_obst) / r_obst
+        dy  = float(y[i] - y_obst ) / r_obst
+        ddy = float(y[i] + dby - y_obst) / r_obst
+        #coordinates of the lines representing the deviation
+        if dx > -x0  and dx < xf:
+            lines.append([(dx,dy),(ddx,ddy)])
+        if axis_b != 0. :
+            if dx > -x0 and dx < xf:
+                ells.append(Ellipse(np.array([dx,dy]),0.2*axis_b / axis_a,0.2*1.,ang))
+        if module >0 :
+            if dx > -x0 and dx < xf:
+                vel_win.write("%f %f %f %f %f \n" % (dx, dy, vx_tot[i] / module, vy_tot[i] / module, module))
+                def_win.write("%f %f %f %f %f \n" % (dx, dy, axis_a, axis_b, ang))
+                texture_win_file.write("%f %f %f %f %f \n"% (dx, dy, axis_a / r_obst, axis_b / r_obst, ang))
+                deform_win_file.write(" %f %f %f %f %f \n"% (dx, dy, ddx, ddy, ang_elipse))
+            
+
+
+    fig=show_fig(lines)
+    file_analyse_log.write("Magnifying deviation lines by 1\n")
+    
+    while True :
+        rescale=verifica("Rescale line segment? y or n? \n")
+        if rescale == True :
+            lines=rescale_image(lines)
+            fig=show_fig(lines)
+        else:
+            fig.savefig(path+"/deform_win.png", dpi=300, bbox_inches="tight")
+            plt.close()
+            break
+    
+    
+    vel_win.write("e \n")
+    vel_win.write("pause 2 \n")
+    vel_win.write("set terminal pngcairo  size %d,%d enhanced font 'Verdana, 18' crop\n"% (image_resolution_x, image_resolution_y))
+    vel_win.write("set output 'velocity-win.png'\n")
+    vel_win.write("replot \n") 
+    #Windowed elipsis for texture
+    fig, ax = plt.subplots(subplot_kw={'aspect': 'equal'})
+    
+    for e in ells:
+        ax.add_artist(e)
+        e.set_clip_box(ax.bbox)
+    #ax.set_xlim(0, box_per_line_x)
+    ax.set_xlim(-x0, xf)
+    ax.set_ylim(-3.0, 3.0)
+    plt.savefig(path+"/texture_win.png", dpi = 300,bbox_inches = "tight")
 
     
 def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_tot, vy_tot,  \
@@ -1165,7 +1211,9 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
 	        vel_fluct_win.write("%d %d %f %f %f %f %f \n"% (bx, by, vx2_win[box], vy2_win[box], module, density_tot[box]/float(count_events), density_win[box]))
 #                print box, texture_win[box]
                 axis_a,axis_b, ang_elipse = axis_angle(texture_win[box])
-                #ells.append(Ellipse(np.array([(bx - box_per_line_x / 2.)/r_obst,(by - box_per_column_y / 2.) / r_obst]),1 / r_obst,axis_b / axis_a / r_obst, ang_elipse))
+                
+                ells.append(Ellipse(np.array([(bx - box_per_line_x / 2.)/r_obst,(by - box_per_column_y / 2.) / r_obst]),1 / r_obst,axis_b / axis_a / r_obst, ang_elipse))
+                
                 dev=np.abs(np.log(axis_a/axis_b))/2. 
                 dbx=dev*np.cos(ang_elipse)
                 dby=dev*np.sin(ang_elipse)
@@ -1176,15 +1224,31 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
                 ddy=(by+dby - box_per_column_y / 2.) / r_obst
                 #coordinates of the lines representing the deviation
                 lines.append([(dx,dy),(ddx,ddy)]) 
-	        texture_win_file.write("%f %f %f %f %f \n"% ((bx - box_per_line_x / 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, axis_a / r_obst, axis_b / r_obst, ang_elipse))
-                axis_a,axis_b, ang_elipse = axis_angle(NB_win[box])
-	        NB_win_file.write("%f %f %f %f %f \n"% ((bx - box_per_line_x/ 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, axis_a / r_obst, axis_b / r_obst, ang_elipse))
+	        texture_win_file.write("%f %f %f %f %f \n"% ((bx - box_per_line_x / 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, 
+                axis_a / r_obst, axis_b / r_obst, ang_elipse))
+                
+                deform_win_file.write("%f %f %f %f %f %f \n"% ((bx - box_per_line_x / 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, 
+                dx, dy, ddx, ddy))
+	        
+                axis_a, axis_b, ang_elipse = axis_angle(NB_win[box])
+                
+                NB_win_file.write("%f %f %f %f %f \n"% ((bx - box_per_line_x/ 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, 
+                axis_a / r_obst, axis_b / r_obst, ang_elipse))
+                
                 axis_a,axis_b, ang_elipse = axis_angle(NT_win[box])
-	        NT_win_file.write("%d %d %f %f %f \n"% ((bx - box_per_line_x / 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, axis_a / r_obst, axis_b / r_obst, ang_elipse))
+	        
+                NT_win_file.write("%d %d %f %f %f \n"% ((bx - box_per_line_x / 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst,
+                axis_a / r_obst, axis_b / r_obst, ang_elipse))
+                
                 axis_a,axis_b, ang_elipse = axis_angle(V_win[box])
-	        V_win_file.write("%f %f %f %f %f \n"% ((bx - box_per_line_x/ 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, axis_a / r_obst, axis_b / r_obst, ang_elipse))
+	        
+                V_win_file.write("%f %f %f %f %f \n"% ((bx - box_per_line_x/ 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, 
+                axis_a / r_obst, axis_b / r_obst, ang_elipse))
+                
                 axis_a,axis_b, ang_elipse = axis_angle(P_win[box])
-	        P_win_file.write("%d %d %f %f %f \n"% ((bx - box_per_line_x / 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, axis_a.real / r_obst, axis_b.real / r_obst, ang_elipse))
+                
+	        P_win_file.write("%d %d %f %f %f \n"% ((bx - box_per_line_x / 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, 
+                axis_a.real / r_obst, axis_b.real / r_obst, ang_elipse))
 	    else :
 	        vx_win[box] = 0.0
 	        vy_win[box] = 0.0
@@ -1194,16 +1258,9 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
     vel_win.write("e \n")
     vel_win.write("pause -1 \n")
 
-    ##Windowed elipsis for texture
-    #Windowed dev for texture
-    # for e in ells:
-    #         ax.add_artist(e)
-    #         e.set_clip_box(ax.bbox)
-    # #        e.set_alpha(np.random.rand())
-    # #        e.set_facecolor(np.random.rand(3))
-    #ax.set_xlim(-box_per_line_x/2/r_obst,box_per_line_x/2/r_obst)
-    #ax.set_ylim(-box_per_column_y/2./r_obst,box_per_column_y/2./r_obst)
-    #plt.savefig(path+"/texture_win.png", dpi=300, bbox_inches="tight")
+    
+
+    
     fig=show_fig(lines)
     file_analyse_log.write("Magnifying deviation lines by 1\n")
     
@@ -1213,10 +1270,28 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
             lines=rescale_image(lines)
             fig=show_fig(lines)
         else:
-            fig.savefig(path+"/texture_win.png", dpi=300, bbox_inches="tight")
+            fig.savefig(path+"/deform_win.png", dpi=300, bbox_inches="tight")
             plt.close()
             break
+        
+        
+    ##Windowed elipsis for texture
+    #Windowed dev for texture
+    fig, ax = plt.subplots(subplot_kw={'aspect': 'equal'})
+    for e in ells:
+         ax.add_artist(e)
+         e.set_clip_box(ax.bbox)
+    # #        e.set_alpha(np.random.rand())
+    # #        e.set_facecolor(np.random.rand(3))
+    ax.set_xlim(-box_per_line_x/2/r_obst,box_per_line_x/2/r_obst)
+    ax.set_ylim(-box_per_column_y/2./r_obst,box_per_column_y/2./r_obst)
+    plt.savefig(path+"/texture_win.png", dpi=300, bbox_inches="tight")    
+        
+        
+        
     return vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, NB_win, NT_win, V_win, P_win
+
+
 
 
 def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, texture_tot, system_type, image_counter,r_obst):
@@ -2105,12 +2180,14 @@ vel_win                  = open(path+'/'+vel_win_file_name,"w")
 vel_fluct_win_file_name  = "velocity-fluct-win.dat"
 vel_fluct_win            = open(path+'/'+vel_fluct_win_file_name,"w")
 def_win                  = open("%s/deformation-win.dat"%path,"w")
+deform_win_file_name     = "deform-win.dat"
+deform_win_file          = open(path+'/'+deform_win_file_name,"w")
 texture_win_file_name    = "texture-win.dat"
 texture_win_file         = open(path+'/'+texture_win_file_name,"w")
-NB_win_file_name          = "B-win.dat"
-NB_win_file               = open(path+'/'+NB_win_file_name,"w")
-NT_win_file_name          = "T-win.dat"
-NT_win_file               = open(path+'/'+NT_win_file_name,"w")
+NB_win_file_name         = "B-win.dat"
+NB_win_file              = open(path+'/'+NB_win_file_name,"w")
+NT_win_file_name         = "T-win.dat"
+NT_win_file              = open(path+'/'+NT_win_file_name,"w")
 V_win_file_name          = "V-win.dat"
 V_win_file               = open(path+'/'+V_win_file_name,"w")
 P_win_file_name          = "P-win.dat"
@@ -2668,7 +2745,6 @@ if system_type == "szabo-boids":
                         vx_now[box]      += vxx
                         vy_now[box]      += vyy
                         density_now[box] += 1.0
-##### duas linhas repetidas!!!!!                        density_now[box] += 1.0
                         points.append([x,y])
                         index=int(line_splitted[4])
                         index_particle.append(index)
@@ -3738,7 +3814,17 @@ y_obst = (Y_OBST - y0) / box_size
 if system_type == 'experiment':
     zero_borders_and_obstacle_experiment(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, system_type)
     # Here we write the time averages of density, velocity and deformation elipse for experiment
-    average_density_velocity_deformation_experiment(box_per_line_x, box_per_column_y, x, y, vx_tot, vy_tot, texture_tot, image_counter,path)
+    file_input_parameter.close()
+    file_input_parameter = open("parameter.in")
+    line_splitted        = file_input_parameter.readline().split()
+    system_type          = line_splitted[1]
+    
+    line_splitted        = file_input_parameter.readline().split()
+    x0 = int(line_splitted[1])
+    line_splitted        = file_input_parameter.readline().split()
+    xf = int(line_splitted[1])
+    average_density_velocity_deformation_experiment(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst,
+                                                            x0, xf, x, y, vx_tot, vy_tot, texture_tot, image_counter,path)
     # Five axis analysis for experiment
     five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, texture_tot, system_type, image_counter,r_obst)
 else:
@@ -3757,7 +3843,6 @@ else:
         # box_per_line_x, box_per_column_y, density_tot, vx_tot, vy_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot= \
         # zero_borders_and_obstacle_simu(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot, system_type)
 
-
 file_input_parameter.close()
 vid_veloc_dens.close()
 vid_def.close()
@@ -3770,8 +3855,10 @@ file_axis4.close()
 file_axis3.close()
 file_axis5.close()
 
-os.chdir(path)
+os.chdir(path) 
 os.system('gnuplot scriptdenvel.gnu')
-os.chdir('../../')
+os.chdir('../../') 
+
+
 
         
