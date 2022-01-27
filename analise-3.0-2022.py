@@ -343,7 +343,7 @@ def create_gnu_script_fluct_vel(arrow_size, box_per_line_x, box_per_column_y, ve
     #file_script_den_vel_fluct.write("replot \"%s\" u($1):($2):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors lw 2 lt rgb \"black\" \n"% vel_fluct_win_file_name)
     file_script_den_vel_fluct.write("replot \"%s\" u (($1-center_x)/r_obst):(($2-center_y)/r_obst):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors lw 2 lt rgb \"black\" \n"% vel_fluct_win_file_name)
     file_script_den_vel_fluct.write("replot \"../../circle.dat\" w l lw 6 lt rgb \"purple\" \n")
-    file_script_den_vel_fluct.write("replot \"-\" u ($1):($2):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors lw 4 lt rgb \"white\" \n")
+    file_script_den_vel_fluct.write("replot \"-\" u ($1):($2):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors lw 4 lt rgb \"purple\" \n")
     file_script_den_vel_fluct.write("0.0 0.0 %f 0.0 \n"%v0)
     file_script_den_vel_fluct.write("e \n ")
     #    file_script_den_vel_fluct.write("pause -1 \n")
@@ -397,7 +397,7 @@ def create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file
     #file_script_den_vel.write("replot \"%s\" u (($1-center_x)/r_obst):(($2-center_y)/r_obst):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors head size 1.5,5,60 lt rgb \"black\" \n"% vel_win_file_name)
     file_script_den_vel.write("replot \"%s\" u (($1-center_x)/r_obst):(($2-center_y)/r_obst):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors lw 2 lt rgb \"black\" \n"% vel_win_file_name)
     file_script_den_vel.write("replot \"../../circle.dat\" w l lw 6 lt rgb \"purple\" \n")
-    file_script_den_vel.write("replot \"-\" u ($1):($2):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors lw 4 lt rgb \"white\" \n")
+    file_script_den_vel.write("replot \"-\" u ($1):($2):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors lw 4 lt rgb \"purple\" \n")
     file_script_den_vel.write("0.0 0.0 %f 0.0 \n"%v0)
     file_script_den_vel.write("e \n ")
 
@@ -406,6 +406,62 @@ def create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file
     file_script_den_vel.write("set terminal pngcairo  size %d,%d enhanced font 'Verdana, 14' crop\n"% (image_resolution_x, image_resolution_y))
     file_script_den_vel.write("set output \"%s\" \n"% name_output_map)
     file_script_den_vel.write("replot \n")  
+    
+def create_gnu_script_equilibrium_density(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0):
+    center_x, center_y                     = box_per_line_x / 2, box_per_column_y / 2
+    proportion_x, proportion_y             = 1.0, 0.7
+    grid_x, grid_y, levels                 = 200, 200, 4
+    image_resolution_x, image_resolution_y = 2000, 1200
+    name_output_map                        = "density-eq-velocity.png"
+    file_script_eq_den_vel                 = open(path+"/scripteqdenvel.gnu","w")
+    
+    x_min = -((center_x/r_obst)-0.2)
+    x_max =   (center_x/r_obst)-0.2
+    y_min = -((center_y/r_obst)-0.2)
+    y_max =   (center_y/r_obst)-0.2
+   
+    file_script_eq_den_vel.write("set size ratio -1\n") 
+    file_script_eq_den_vel.write("center_x = %d \n"% center_x)
+    file_script_eq_den_vel.write("center_y = %d \n"% center_y)
+    file_script_eq_den_vel.write("r_obst = %f \n"% r_obst)
+    file_script_eq_den_vel.write("set tics font \", 30\" \n")
+    file_script_eq_den_vel.write("set xlabel \"x\" font \",50\" \n")
+    file_script_eq_den_vel.write("set ylabel \"y\" font \",50\" offset -3,0,0 \n")
+    file_script_eq_den_vel.write("set border 31 lw 8.0 \n")
+    file_script_eq_den_vel.write("set cbrange[-1.0:1.0] \n")
+    file_script_eq_den_vel.write("set cblabel '{/Symbol r}' enhanced font \",50\" offset 3,0,0 \n")
+    file_script_eq_den_vel.write("set palette defined ( 0  '#000000',\\\n")
+    file_script_eq_den_vel.write("                      1  '#0000ff',\\\n")
+    file_script_eq_den_vel.write("                      2  '#5555ff',\\\n")
+    file_script_eq_den_vel.write("                      3  '#aaaaff',\\\n")
+    file_script_eq_den_vel.write("                      4  '#ddddff',\\\n")
+    file_script_eq_den_vel.write("                      5  '#ffffff',\\\n")
+    file_script_eq_den_vel.write("                      6  '#ffdddd',\\\n")
+    file_script_eq_den_vel.write("                      7  '#ffaaaa',\\\n")
+    file_script_eq_den_vel.write("                      8  '#ff5555',\\\n")
+    file_script_eq_den_vel.write("                      9  '#ff0000',\\\n")
+    file_script_eq_den_vel.write("                      10 '#aa0000')\n")
+    file_script_eq_den_vel.write("set nokey \n")
+    file_script_eq_den_vel.write("set dgrid3d %d,%d,%d \n"% (grid_x, grid_y, levels))
+    file_script_eq_den_vel.write("set pm3d explicit \n")
+    file_script_eq_den_vel.write("set output \"| head -n -2 > toto1.dat\" \n")
+    file_script_eq_den_vel.write("set table \n")
+    file_script_eq_den_vel.write("splot \"%s\" using (($1-center_x)/r_obst):(($2-center_y)/r_obst):($3-1) \n"% dens_win_file_name)
+    file_script_eq_den_vel.write("unset table \n")
+    file_script_eq_den_vel.write("unset dgrid3d \n")
+    file_script_eq_den_vel.write("mtf = %f \n"% arrow_size)
+    file_script_eq_den_vel.write(" \n")
+    file_script_eq_den_vel.write(" \n")
+    file_script_eq_den_vel.write("set pm3d map \n")
+    file_script_eq_den_vel.write("splot [%f:%f][%f:%f] \"toto1.dat\" \n"% (x_min, x_max, y_min, y_max))
+    file_script_eq_den_vel.write("replot \"%s\" u (($1-center_x)/r_obst):(($2-center_y)/r_obst):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors lw 2 lt rgb \"black\" \n"% vel_win_file_name)
+    file_script_eq_den_vel.write("replot \"../../circle.dat\" w l lw 6 lt rgb \"purple\" \n")
+    file_script_eq_den_vel.write("replot \"-\" u ($1):($2):(0.0):(mtf*$3):(mtf*$4):(0.0) with vectors lw 4 lt rgb \"purple\" \n")
+    file_script_eq_den_vel.write("0.0 0.0 %f 0.0 \n"%v0)
+    file_script_eq_den_vel.write("e \n ")
+    file_script_eq_den_vel.write("set terminal pngcairo  size %d,%d enhanced font 'Verdana, 14' crop\n"% (image_resolution_x, image_resolution_y))
+    file_script_eq_den_vel.write("set output \"%s\" \n"% name_output_map)
+    file_script_eq_den_vel.write("replot \n")  
 
 def create_gnu_script_texture_deformation(arrow_size, box_per_line_x, box_per_column_y, total_multiplier, path,r_obst,v0): 
     center_x, center_y                     = box_per_line_x / 2, box_per_column_y / 2                                         
@@ -546,7 +602,7 @@ def read_param(file_input_parameter) :
         if line_splitted[0] == 'box_magnification' or line_splitted[0] == 'box_mag':
             box_mag = float(line_splitted[1])
         if line_splitted[0] == 'box_size' :
-            box_size = int(line_splitted[1])
+            box_size = float(line_splitted[1])
         if line_splitted[0] == 'area_1' :
             area_1   = float(line_splitted[1])
     return window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag, box_size, area_1
@@ -590,13 +646,13 @@ def read_param_potts(file_par_simu) :
         if line_splitted[0] == 'CompuCell3DElmnt' :
             break
     Delta_t = 100 # this information is not in the simulation files for compucell :/
-    v0      = 1.0 # There is no v0 in Potts model
+    v0      = 0.05 # There is no v0 in Potts model
     return Lx, Ly, R_OBST, X_OBST, Y_OBST, box_size, max_dist, Delta_t, v0
 
 def read_param_voronoi(filename):
     X_OBST        = 0.0 
     Y_OBST        = 0.0
-    v0            = 1.0
+    v0            = 0.6
     # first file to be read make_initial.py
     aux           = system_type+"/"+filename
     file_par_simu = open(aux)
@@ -1172,17 +1228,14 @@ def average_density_velocity_deformation_experiment(box_per_line_x, box_per_colu
     arrow = 0.7
     x_obst -= 2
     y_obst -= 2
-#    print (r_obst, x_obst, y_obst, x0, xf)
-#    exit
     
     image_resolution_x, image_resolution_y = 3000,3000
     box_total = box_per_line_x * box_per_column_y
     for i in range(box_total):
         vx_tot[i] /= image_counter
         vy_tot[i] /= image_counter
-    # vel_win.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(%f*$3):(%f*$4):($5)  with vectors notitle head size  0.3,20,60  filled palette \n" % (0, box_per_line_x, 0, box_per_column_y, arrow, arrow))
-    vel_win.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(%f*$3):(%f*$4):($5)  with vectors notitle   filled palette \n" % (0, box_per_line_x, 0, box_per_column_y, arrow, arrow))
-
+#    vel_win.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(%f*$3):(%f*$4):($5)  with vectors notitle   filled palette \n" % (0, box_per_line_x, 0, box_per_column_y, arrow, arrow))
+    vel_win.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(%f*$3):(%f*$4):($5)  with vectors notitle   filled palette \n" % (-5, 5, -3, 3, arrow, arrow))
     ells = []
     lines = []
     for i in range(box_total):
@@ -1201,13 +1254,13 @@ def average_density_velocity_deformation_experiment(box_per_line_x, box_per_colu
         dy  = float(y[i] - y_obst ) / r_obst
         ddy = float(y[i] + dby - y_obst) / r_obst
         #coordinates of the lines representing the deviation
-        if dx > -x0  and dx < xf:
+        if dx >= -x0  and dx <= xf:
             lines.append([(dx,dy),(ddx,ddy)])
         if axis_b != 0. :
-            if dx > -x0 and dx < xf:
+            if dx >= -x0 and dx <= xf:
                 ells.append(Ellipse(np.array([dx,dy]),0.2*axis_b / axis_a,0.2*1.,ang))
         if module >0 :
-            if dx > -x0 and dx < xf:
+            if dx >= -x0 and dx <= xf:
                 vel_win.write("%f %f %f %f %f \n" % (dx, dy, vx_tot[i] / module, vy_tot[i] / module, module))
                 def_win.write("%f %f %f %f %f \n" % (dx, dy, axis_a, axis_b, ang))
                 texture_win_file.write("%f %f %f %f %f \n"% (dx, dy, axis_a / r_obst, axis_b / r_obst, ang))
@@ -1247,7 +1300,9 @@ def average_density_velocity_deformation_experiment(box_per_line_x, box_per_colu
     ax.set_xlim(-x0, xf)
     ax.set_ylim(-3.0, 3.0)
     plt.savefig(path+"/texture_win.png", dpi = 300,bbox_inches = "tight")
-
+    create_gnu_script(arrow, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0)
+    create_gnu_script_fluct_vel(arrow, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0)
+    create_gnu_script_texture_deformation(arrow, box_per_line_x, box_per_column_y, total_multiplier, path,r_obst,v0)
     
 def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_tot, vy_tot,  \
             density_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot, vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, NB_win, \
@@ -1298,18 +1353,47 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
     arrow_size = count_busy_box / module_mean/40
     #create script gnu to plot velocity-density
     create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0)
+    create_gnu_script_equilibrium_density(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0)
     #create_gnu_script_fluct_vel(arrow_size/2, box_per_line_x, box_per_column_y, vel_fluct_win_file_name, dens_win_file_name,path,r_obst)
     create_gnu_script_fluct_vel(arrow_size, box_per_line_x, box_per_column_y, vel_fluct_win_file_name, dens_win_file_name,path,r_obst,v0)
     ells = []
     lines = []
-    for bx in range(window_size_h + 1, box_per_line_x - window_size_h):
-        for by in range(window_size_h + 1, box_per_column_y - window_size_h):
+    limit_low_x  = window_size_h + 1
+    limit_high_x = box_per_line_x - window_size_h
+    limit_low_y  = window_size_h + 1
+    limit_high_y = box_per_column_y - window_size_h
+    for bx in range(limit_low_x, limit_high_x):
+        for by in range(limit_low_y, limit_high_y):
             box    = bx + (by * box_per_line_x)
             module = math.sqrt((vx_win[box] * vx_win[box]) + (vy_win[box] * vy_win[box]))
 	    if density_win[box] > 0.0 and module > 0.0 :
                 normalization      = float(image_counter * count_box_win[box])
                 density_win[box]  /= normalization
 	        dens_win.write("%d %d %f \n" % (bx, by, (density_win[box]*(area_1/(box_size*box_size))) ))
+                if bx == limit_low_x:
+                    #copia para coluna a esquerda
+                    dens_win.write("%d %d %f \n" % (bx-1, by, (density_win[box]*(area_1/(box_size*box_size)))))
+                    if by == limit_low_y:
+                        # canto inferior esquerdo
+                        dens_win.write("%d %d %f \n" % (bx-1, by-1, (density_win[box]*(area_1/(box_size*box_size)))))
+                    if by == limit_high_y:
+                        # canto superior esquerdo
+                        dens_win.write("%d %d %f \n" % (bx-1, by+1, (density_win[box]*(area_1/(box_size*box_size)))))
+                if bx == limit_high_x:
+                    #copia para coluna a direita
+                    dens_win.write("%d %d %f \n" % (bx+1, by, (density_win[box]*(area_1/(box_size*box_size)))))
+                    if by == limit_low_y:
+                        # canto inferior direito
+                        dens_win.write("%d %d %f \n" % (bx+1, by-1, (density_win[box]*(area_1/(box_size*box_size)))))
+                    if by == limit_high_y:
+                        # canto supeior direito
+                        dens_win.write("%d %d %f \n" % (bx+1, by+1, (density_win[box]*(area_1/(box_size*box_size)))))
+                if by == limit_low_y:
+                    #copia para linha de baixo
+                    dens_win.write("%d %d %f \n" % (bx, by-1, (density_win[box]*(area_1/(box_size*box_size)))))
+                if by == limit_high_y:
+                    #copia para linha de cima
+                    dens_win.write("%d %d %f \n" % (bx, by+1, (density_win[box]*(area_1/(box_size*box_size)))))
 #	        dens_win.write("%d %d %f \n" % (bx, by, density_win[box]))
                 vx_win[box]       /= normalization
                 vy_win[box]       /= normalization
@@ -1411,7 +1495,7 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
 
 
 
-def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, texture_tot, system_type, image_counter,r_obst):
+def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, texture_tot, system_type, image_counter,r_obst, x0, xf):
 
     #Attention in experiment no windowing average is done! That's why this function is called using _tot but _win is used.
     
@@ -1511,7 +1595,9 @@ def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_win, vy
 #            axis_b_axis2[i] += axis_b_axis6[i]
 #            ang_elipse_axis2[i] += ang_elipse_axis6[i]
 
-    for i in range(box_per_line_x):
+#    for i in range(box_per_line_x):
+#    print ((-x0*r_obst)+x_obst),((xf*r_obst)+x_obst+1)
+    for i in range(int((-x0*r_obst)+x_obst+1),int((xf*r_obst)+x_obst+1)):
         file_axis1.write("%d %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis1[i], vy_axis1[i], texture_axis_a_axis1[i], texture_axis_b_axis1[i], texture_ang_elipse_axis1[i]))
         file_axis2.write("%d %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis2[i], vy_axis2[i], texture_axis_a_axis2[i], texture_axis_b_axis2[i], texture_ang_elipse_axis2[i]))
         file_axis6.write("%d %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis6[i], vy_axis6[i], texture_axis_a_axis6[i], texture_axis_b_axis6[i], texture_ang_elipse_axis6[i]))
@@ -1534,6 +1620,7 @@ def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_win, vy
     
     plt.subplot(211)
     plt.ylabel('Vx')
+    plt.xlim(-x0,xf)
     plt.plot(axis_horiz,vx_axis1,'k',label="axis-1")
     plt.plot(axis_horiz,vx_axis2,'r',label="axis-2a")
     plt.plot(axis_horiz,vx_axis6,'g',label="axis-2b")
@@ -1541,6 +1628,7 @@ def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_win, vy
     plt.subplot(212)
     plt.ylabel('Vy')
     plt.xlabel('X')
+    plt.xlim(-x0,xf)
     plt.plot(axis_horiz,vy_axis1,'k',label="axis-1")
     plt.plot(axis_horiz,vy_axis2,'r',label="axis-2a")
     plt.plot(axis_horiz,vy_axis6,'g',label="axis-2b")
@@ -1566,6 +1654,7 @@ def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_win, vy
     
     plt.subplot(211)
     plt.title('(XX+YY)/2')
+    plt.xlim(-x0,xf)
     plt.plot(axis_horiz,texture_axis_a_axis1,'k',label='axis-1')
     plt.plot(axis_horiz,texture_axis_a_axis2,'r',label='axis-2a')
     plt.plot(axis_horiz,texture_axis_a_axis6,'g',label='axis-2b')
@@ -1580,6 +1669,7 @@ def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_win, vy
 
     plt.subplot(211)
     plt.title('(XX-YY)/2')
+    plt.xlim(-x0,xf)
     plt.plot(axis_horiz,texture_axis_b_axis1,'k',label='axis-1')
     plt.plot(axis_horiz,texture_axis_b_axis2,'r',label='axis-2a')
     plt.plot(axis_horiz,texture_axis_b_axis6,'g',label='axis-2b')
@@ -1594,6 +1684,7 @@ def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_win, vy
 
     plt.subplot(211)
     plt.title('XY')
+    plt.xlim(-x0,xf)
     plt.plot(axis_horiz,texture_ang_elipse_axis1,'k',label='axis-1')
     plt.plot(axis_horiz,texture_ang_elipse_axis2,'r',label='axis-2a')
     plt.plot(axis_horiz,texture_ang_elipse_axis6,'g',label='axis-2b')
@@ -3967,7 +4058,7 @@ if system_type == 'experiment':
     average_density_velocity_deformation_experiment(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst,
                                                             x0, xf, x, y, vx_tot, vy_tot, texture_tot, image_counter,path)
     # Five axis analysis for experiment
-    five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, texture_tot, system_type, image_counter,r_obst)
+    five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, texture_tot, system_type, image_counter,r_obst, x0, xf)
 else:
     box_per_line_x, box_per_column_y, density_tot, vx_tot, vy_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot= \
         zero_borders_and_obstacle_simu(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot, system_type)
@@ -3998,6 +4089,7 @@ file_axis5.close()
 
 os.chdir(path) 
 os.system('gnuplot scriptdenvel.gnu')
+os.system('gnuplot scripteqdenvel.gnu')
 os.system('gnuplot scriptdenvel_fluct.gnu')
 os.system('gnuplot scripttexture.gnu')
 os.chdir('../../') 
