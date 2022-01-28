@@ -296,7 +296,7 @@ def delaunay(points,max_dist):
     # exit()
     return list_neigh
 
-def create_gnu_script_fluct_vel(arrow_size, box_per_line_x, box_per_column_y, vel_fluct_win_file_name, dens_win_file_name, path,r_obst, v0):
+def create_gnu_script_fluct_vel(arrow_size, box_per_line_x, box_per_column_y, vel_fluct_win_file_name, dens_win_file_name, path,r_obst, v0, x0, xf):
 #    proportion_x, proportion_y             = 1.0, 0.7
     center_x, center_y                     = box_per_line_x / 2, box_per_column_y / 2
     grid_x, grid_y, levels                 = 200, 200, 4
@@ -304,8 +304,8 @@ def create_gnu_script_fluct_vel(arrow_size, box_per_line_x, box_per_column_y, ve
     name_output_map                        = "density-velocity-fluct.png"
     file_script_den_vel_fluct              = open(path+"/scriptdenvel_fluct.gnu","w")
 
-    x_min = -((center_x/r_obst)-0.2)
-    x_max =   (center_x/r_obst)-0.2
+    x_min = -x0#-((center_x/r_obst)-0.2)
+    x_max =  xf#  (center_x/r_obst)-0.2
     y_min = -((center_y/r_obst)-0.2)
     y_max =   (center_y/r_obst)-0.2
     
@@ -352,7 +352,7 @@ def create_gnu_script_fluct_vel(arrow_size, box_per_line_x, box_per_column_y, ve
     file_script_den_vel_fluct.write("set output \"%s\" \n"% name_output_map)
     file_script_den_vel_fluct.write("replot \n")  
     
-def create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0):
+def create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0, x0, xf):
     center_x, center_y                     = box_per_line_x / 2, box_per_column_y / 2
     proportion_x, proportion_y             = 1.0, 0.7
     grid_x, grid_y, levels                 = 200, 200, 4
@@ -360,8 +360,8 @@ def create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file
     name_output_map                        = "density-velocity.png"
     file_script_den_vel                    = open(path+"/scriptdenvel.gnu","w")
     
-    x_min = -((center_x/r_obst)-0.2)
-    x_max =   (center_x/r_obst)-0.2
+    x_min = -x0 #-((center_x/r_obst)-0.2)
+    x_max =  xf # (center_x/r_obst)-0.2
     y_min = -((center_y/r_obst)-0.2)
     y_max =   (center_y/r_obst)-0.2
    
@@ -407,7 +407,7 @@ def create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file
     file_script_den_vel.write("set output \"%s\" \n"% name_output_map)
     file_script_den_vel.write("replot \n")  
     
-def create_gnu_script_equilibrium_density(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0):
+def create_gnu_script_equilibrium_density(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0, x0, xf):
     center_x, center_y                     = box_per_line_x / 2, box_per_column_y / 2
     proportion_x, proportion_y             = 1.0, 0.7
     grid_x, grid_y, levels                 = 200, 200, 4
@@ -415,8 +415,8 @@ def create_gnu_script_equilibrium_density(arrow_size, box_per_line_x, box_per_co
     name_output_map                        = "density-eq-velocity.png"
     file_script_eq_den_vel                 = open(path+"/scripteqdenvel.gnu","w")
     
-    x_min = -((center_x/r_obst)-0.2)
-    x_max =   (center_x/r_obst)-0.2
+    x_min = -x0 # -((center_x/r_obst)-0.2)
+    x_max =  xf # (center_x/r_obst)-0.2
     y_min = -((center_y/r_obst)-0.2)
     y_max =   (center_y/r_obst)-0.2
    
@@ -463,15 +463,14 @@ def create_gnu_script_equilibrium_density(arrow_size, box_per_line_x, box_per_co
     file_script_eq_den_vel.write("set output \"%s\" \n"% name_output_map)
     file_script_eq_den_vel.write("replot \n")  
 
-def create_gnu_script_texture_deformation(arrow_size, box_per_line_x, box_per_column_y, total_multiplier, path,r_obst,v0): 
+def create_gnu_script_texture_deformation(arrow_size, box_per_line_x, box_per_column_y, total_multiplier, path,r_obst,v0, x0, xf): 
     center_x, center_y                     = box_per_line_x / 2, box_per_column_y / 2                                         
     file_script_texture                    = open(path+"/scripttexture.gnu","w")
     image_resolution_x, image_resolution_y = 2048, 2048
     arrow_size = 1.0
     
-
-    x_min = -((center_x/r_obst)-0.2)
-    x_max =   (center_x/r_obst)-0.2
+    x_min = -x0 #-((center_x/r_obst)-0.2)
+    x_max =  xf # (center_x/r_obst)-0.2
     y_min = -((center_y/r_obst)-0.2)
     y_max =   (center_y/r_obst)-0.2
     
@@ -520,7 +519,7 @@ def create_gnu_script_texture_deformation(arrow_size, box_per_line_x, box_per_co
     
     file_script_texture.write("mtf = %f \n"% arrow_size)
     
-    file_script_texture.write("plot [%f:%f][%f:%f] \"texture-win.dat\" u ($1):($2):(mtf/r_obst):(mtf*($4/$3)/r_obst):($5) with ellipses fs solid lt rgb \"black\" \n"% (x_min, x_max, y_min, y_max))
+    file_script_texture.write("plot [%f:%f][%f:%f] \"texture-win.dat\" u ($1):($2):(mtf/r_obst):(mtf*($4/$3)/r_obst):($5*180.0/3.141592654) with ellipses fs solid lt rgb \"black\" \n"% (x_min, x_max, y_min, y_max))
     file_script_texture.write("replot \"-\" u ($1):($2):(mtf*$3/r_obst):(mtf*$4/r_obst):($5*180.0/3.141592654) with ellipses fs solid lt rgb \"red\" \n")
     file_script_texture.write("0.0, 0.0, 1.0, 1.0, 0.0 \n") 
     file_script_texture.write("e \n")
@@ -815,8 +814,8 @@ def velocity_density_script(box_per_line_x, box_per_column_y, x, y, vx_now, vy_n
     #Here we write each image to the gnuplot velocity-density movie script
     # vid_veloc_dens.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(arrow*$3):(arrow*$4):($5) with vectors head size  0.6,20,60  filled palette title \"%d\"\n" % \
     # (0, box_per_line_x, 0, box_per_column_y, image))
-    vid_veloc_dens.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(arrow*$3):(arrow*$4):($5) with vectors   filled palette title \"%d\"\n" % \
-    (0, box_per_line_x, 0, box_per_column_y, image))
+#    vid_veloc_dens.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(arrow*$3):(arrow*$4):($5) with vectors   filled palette title \"%d\"\n" % \
+#    (0, box_per_line_x, 0, box_per_column_y, image))
     if system_type == "experiment":
         v0      = 1 #this should be the real velocity, if we can measure...
         density = 1 #this should be changed if we measure real density (density_now)
@@ -1235,11 +1234,11 @@ def average_density_velocity_deformation_experiment(box_per_line_x, box_per_colu
         vx_tot[i] /= image_counter
         vy_tot[i] /= image_counter
 #    vel_win.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(%f*$3):(%f*$4):($5)  with vectors notitle   filled palette \n" % (0, box_per_line_x, 0, box_per_column_y, arrow, arrow))
-    vel_win.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(%f*$3):(%f*$4):($5)  with vectors notitle   filled palette \n" % (-5, 5, -3, 3, arrow, arrow))
+    vel_win.write("plot [%f:%f] [%f:%f] \'-\' u ($1):($2):(%f*$3):(%f*$4):($5)  with vectors notitle   filled palette \n" % (
+    -x0, xf, -(box_per_column_y/(2.0*r_obst)), (box_per_column_y/(2.0*r_obst)), arrow, arrow))
     ells = []
     lines = []
     for i in range(box_total):
-        dens_win.write("%d %d %f \n" % (x[i], y[i], density_tot[i]))
         module               = math.sqrt(vx_tot[i]**2 + vy_tot[i]**2)
         texture_tot[i]      /= image_counter
         axis_a, axis_b, ang  = axis_angle(texture_tot[i])
@@ -1258,16 +1257,19 @@ def average_density_velocity_deformation_experiment(box_per_line_x, box_per_colu
             lines.append([(dx,dy),(ddx,ddy)])
         if axis_b != 0. :
             if dx >= -x0 and dx <= xf:
+                #ells.append(Ellipse(np.array([dx,dy]),0.2*axis_b / axis_a,0.2*1.,ang*180.0/3.1415))
                 ells.append(Ellipse(np.array([dx,dy]),0.2*axis_b / axis_a,0.2*1.,ang))
         if module >0 :
             if dx >= -x0 and dx <= xf:
-                vel_win.write("%f %f %f %f %f \n" % (dx, dy, vx_tot[i] / module, vy_tot[i] / module, module))
-                def_win.write("%f %f %f %f %f \n" % (dx, dy, axis_a, axis_b, ang))
+                dens_win.write("%d %d %f \n" % (x[i], y[i], density_tot[i]))
+                vel_win.write("%f %f %f %f %f \n" % (x[i], y[i], vx_tot[i] / module, vy_tot[i] / module, module))
+                def_win.write("%f %f %f %f %f \n" % (x[i], y[i], axis_a, axis_b, ang))
                 texture_win_file.write("%f %f %f %f %f \n"% (dx, dy, axis_a / r_obst, axis_b / r_obst, ang))
-                deform_win_file.write(" %f %f %f %f %f \n"% (dx, dy, ddx, ddy, ang_elipse))
+                #texture_win_file.write("%f %f %f %f %f \n"% (dx, dy, 1.0 / r_obst, axis_b/ axis_a / r_obst, ang))
+                deform_win_file.write(" %f %f %f %f %f \n"% (dx, dy, ddx-dx, ddy-dy, ang_elipse))
             
 
-    lines.append([(0.0,0.0),(1.0,0.0)])
+    lines.append([(0.0,0.0),(0.3465/r_obst,0.0)])
     ells.append(Ellipse(np.array([0.0,0.0]),0.2*1.0,0.2*1.0,0.0))
     fig=show_fig(lines)
     file_analyse_log.write("Magnifying deviation lines by 1\n")
@@ -1300,9 +1302,10 @@ def average_density_velocity_deformation_experiment(box_per_line_x, box_per_colu
     ax.set_xlim(-x0, xf)
     ax.set_ylim(-3.0, 3.0)
     plt.savefig(path+"/texture_win.png", dpi = 300,bbox_inches = "tight")
-    create_gnu_script(arrow, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0)
-    create_gnu_script_fluct_vel(arrow, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0)
-    create_gnu_script_texture_deformation(arrow, box_per_line_x, box_per_column_y, total_multiplier, path,r_obst,v0)
+    create_gnu_script(arrow, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0, x0, xf)
+    create_gnu_script_equilibrium_density(arrow, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0, x0, xf)
+    create_gnu_script_fluct_vel(arrow, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0, x0, xf)
+    create_gnu_script_texture_deformation(arrow, box_per_line_x, box_per_column_y, total_multiplier, path,r_obst,v0, x0, xf)
     
 def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_tot, vy_tot,  \
             density_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot, vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, NB_win, \
@@ -1352,10 +1355,10 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
 	    count_busy_box    += density_win[box]
     arrow_size = count_busy_box / module_mean/40
     #create script gnu to plot velocity-density
-    create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0)
-    create_gnu_script_equilibrium_density(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0)
+    create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0, x0, xf)
+    create_gnu_script_equilibrium_density(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0, x0, xf)
     #create_gnu_script_fluct_vel(arrow_size/2, box_per_line_x, box_per_column_y, vel_fluct_win_file_name, dens_win_file_name,path,r_obst)
-    create_gnu_script_fluct_vel(arrow_size, box_per_line_x, box_per_column_y, vel_fluct_win_file_name, dens_win_file_name,path,r_obst,v0)
+    create_gnu_script_fluct_vel(arrow_size, box_per_line_x, box_per_column_y, vel_fluct_win_file_name, dens_win_file_name,path,r_obst,v0, x0, xf)
     ells = []
     lines = []
     limit_low_x  = window_size_h + 1
@@ -1489,7 +1492,7 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
     plt.savefig(path+"/texture_win.png", dpi=300, bbox_inches="tight")    
         
         
-    create_gnu_script_texture_deformation(arrow_size, box_per_line_x, box_per_column_y, total_multiplier, path,r_obst,v0)    
+    create_gnu_script_texture_deformation(arrow_size, box_per_line_x, box_per_column_y, total_multiplier, path,r_obst,v0, x0, xf)    
     return vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, NB_win, NT_win, V_win, P_win
 
 
@@ -4044,6 +4047,8 @@ x_obst = (X_OBST - x0) / box_size
 y_obst = (Y_OBST - y0) / box_size
 
 if system_type == 'experiment':
+    for i in range(box_total):
+        density_tot[i] = 1
     zero_borders_and_obstacle_experiment(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, system_type)
     # Here we write the time averages of density, velocity and deformation elipse for experiment
     file_input_parameter.close()
