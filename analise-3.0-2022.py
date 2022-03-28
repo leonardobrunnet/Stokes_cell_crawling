@@ -32,7 +32,7 @@ def axis_angle(M):
     index_min  = np.argmin(w)
     axis_a     = w[index_max]
     axis_b     = w[index_min]
-    ang_elipse = math.atan2(v[1, index_max].real, v[0, index_max].real) * 180 / math.pi
+#    ang_elipse = math.atan2(v[1, index_max].real, v[0, index_max].real) * 180 / math.pi
     ang_elipse = math.atan2(v[1, index_max].real, v[0, index_max].real)
     return axis_a, axis_b, ang_elipse
             
@@ -407,7 +407,8 @@ def create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file
     file_script_den_vel.write("set output \"%s\" \n"% name_output_map)
     file_script_den_vel.write("replot \n")  
     
-def create_gnu_script_equilibrium_density(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0, x0, xf):
+def create_gnu_script_equilibrium_density(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, 
+                                          dens_win_file_name, path,r_obst,v0, x0, xf):
     center_x, center_y                     = box_per_line_x / 2, box_per_column_y / 2
     proportion_x, proportion_y             = 1.0, 0.7
     grid_x, grid_y, levels                 = 200, 200, 4
@@ -574,6 +575,7 @@ def read_param_vic_greg(file_par_simu) :
 def read_param(file_input_parameter) :
     box_mag = 1.0
     box_size = 1
+    obstacle = 1
     while 1 :
         line = file_input_parameter.readline()
         if not line:
@@ -590,8 +592,6 @@ def read_param(file_input_parameter) :
             time_0 = int(line_splitted[1])
         if line_splitted[0] == 'time_f' :
             time_f = int(line_splitted[1])
-        if line_splitted[0] == 'obstacle' :
-            obstacle = line_splitted[1]
         if line_splitted[0] == 'x0' :
             x0 = int(line_splitted[1])
         if line_splitted[0] == 'xf' :
@@ -604,6 +604,11 @@ def read_param(file_input_parameter) :
             box_size = float(line_splitted[1])
         if line_splitted[0] == 'area_1' :
             area_1   = float(line_splitted[1])
+        if line_splitted[0] == 'obstacle':
+            if line_splitted[1] == 'no' or line_splitted[1] == 'n' or line_splitted[1] == 'NO' or line_splitted[1] == 'N':
+                obstacle = 0;
+            else:
+                obstacle = 1;
     return window_size, time_0, time_f, obstacle, x0, xf, filename, box_mag, box_size, area_1
 
 
@@ -1303,13 +1308,16 @@ def average_density_velocity_deformation_experiment(box_per_line_x, box_per_colu
     ax.set_ylim(-3.0, 3.0)
     plt.savefig(path+"/texture_win.png", dpi = 300,bbox_inches = "tight")
     create_gnu_script(arrow, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0, x0, xf)
+    #print("x0 = ",x0,"xf = ",xf)
     create_gnu_script_equilibrium_density(arrow, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0, x0, xf)
     create_gnu_script_fluct_vel(arrow, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0, x0, xf)
     create_gnu_script_texture_deformation(arrow, box_per_line_x, box_per_column_y, total_multiplier, path,r_obst,v0, x0, xf)
     
-def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_tot, vy_tot,  \
-            density_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot, vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, NB_win, \
-                                         NT_win, V_win, P_win, count_events, v0, vel_win_file_name, vel_fluct_win_file_name, dens_win_file_name, path, image_counter, window_size, r_obst, x_obst, y_obst) :
+def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_tot, vy_tot, 
+            density_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot, vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, NB_win, 
+                                         NT_win, V_win, P_win, count_events, v0, vel_win_file_name, 
+                                         vel_fluct_win_file_name, dens_win_file_name, path, image_counter,  
+                                         window_size, r_obst, x_obst, y_obst, x0, xf) :
     box_total         = box_per_column_y*box_per_line_x
     window_size_h     = window_size/2
     count_box_win     = list(0 for i in range(box_total))
@@ -1355,10 +1363,13 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
 	    count_busy_box    += density_win[box]
     arrow_size = count_busy_box / module_mean/40
     #create script gnu to plot velocity-density
-    create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0, x0, xf)
-    create_gnu_script_equilibrium_density(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0, x0, xf)
+    create_gnu_script(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0, x0_num_robst, xf_num_robst)
+    #print("x0 = ",x0 , x0_num_robst,"xf = ",xf, xf_num_robst)
+    #    x0_num_robst = x0
+    #xf_num_robst = xf
+    create_gnu_script_equilibrium_density(arrow_size, box_per_line_x, box_per_column_y, vel_win_file_name, dens_win_file_name, path,r_obst,v0, x0_num_robst, xf_num_robst)
     #create_gnu_script_fluct_vel(arrow_size/2, box_per_line_x, box_per_column_y, vel_fluct_win_file_name, dens_win_file_name,path,r_obst)
-    create_gnu_script_fluct_vel(arrow_size, box_per_line_x, box_per_column_y, vel_fluct_win_file_name, dens_win_file_name,path,r_obst,v0, x0, xf)
+    create_gnu_script_fluct_vel(arrow_size, box_per_line_x, box_per_column_y, vel_fluct_win_file_name, dens_win_file_name,path,r_obst,v0, x0_num_robst, xf_num_robst)
     ells = []
     lines = []
     limit_low_x  = window_size_h + 1
@@ -1492,7 +1503,7 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
     plt.savefig(path+"/texture_win.png", dpi=300, bbox_inches="tight")    
         
         
-    create_gnu_script_texture_deformation(arrow_size, box_per_line_x, box_per_column_y, total_multiplier, path,r_obst,v0, x0, xf)    
+    create_gnu_script_texture_deformation(arrow_size, box_per_line_x, box_per_column_y, total_multiplier, path,r_obst,v0, x0_num_robst, xf_num_robst)    
     return vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, NB_win, NT_win, V_win, P_win
 
 
@@ -1600,19 +1611,19 @@ def five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_win, vy
 
 #    for i in range(box_per_line_x):
 #    print ((-x0*r_obst)+x_obst),((xf*r_obst)+x_obst+1)
-    for i in range(int((-x0*r_obst)+x_obst+1),int((xf*r_obst)+x_obst+1)):
-        file_axis1.write("%d %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis1[i], vy_axis1[i], texture_axis_a_axis1[i], texture_axis_b_axis1[i], texture_ang_elipse_axis1[i]))
-        file_axis2.write("%d %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis2[i], vy_axis2[i], texture_axis_a_axis2[i], texture_axis_b_axis2[i], texture_ang_elipse_axis2[i]))
-        file_axis6.write("%d %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis6[i], vy_axis6[i], texture_axis_a_axis6[i], texture_axis_b_axis6[i], texture_ang_elipse_axis6[i]))
+    for i in range(int((-x0*r_obst)+(x_obst-1)),int((xf*r_obst)+x_obst)):
+        file_axis1.write("%f %f %f %f %f %f\n" % ((i-caixas_meia_largura)/r_obst, vx_axis1[i], vy_axis1[i], texture_axis_a_axis1[i], texture_axis_b_axis1[i], texture_ang_elipse_axis1[i]))
+        file_axis2.write("%f %f %f %f %f %f\n" % ((i-caixas_meia_largura)/r_obst, vx_axis2[i], vy_axis2[i], texture_axis_a_axis2[i], texture_axis_b_axis2[i], texture_ang_elipse_axis2[i]))
+        file_axis6.write("%f %f %f %f %f %f\n" % ((i-caixas_meia_largura)/r_obst, vx_axis6[i], vy_axis6[i], texture_axis_a_axis6[i], texture_axis_b_axis6[i], texture_ang_elipse_axis6[i]))
         # file_axis1.write("%d %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis1[i], vy_axis1[i], axis_a_axis1[i], axis_b_axis1[i], ang_elipse_axis1[i]))
         # file_axis2.write("%d %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis2[i], vy_axis2[i], axis_a_axis2[i], axis_b_axis2[i], ang_elipse_axis2[i]))
         # file_axis6.write("%d %f %f %f %f %f\n" % (i-caixas_meia_largura, vx_axis6[i], vy_axis6[i], axis_a_axis6[i], axis_b_axis6[i], ang_elipse_axis6[i]))
 
 
     for i in range(box_per_column_y):
-        file_axis3.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis3[i], vy_axis3[i], texture_axis_a_axis3[i], texture_axis_b_axis3[i], texture_ang_elipse_axis3[i]))
-        file_axis4.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis4[i], vy_axis4[i], texture_axis_a_axis4[i], texture_axis_b_axis4[i], texture_ang_elipse_axis4[i]))
-        file_axis5.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis5[i], vy_axis5[i], texture_axis_a_axis5[i], texture_axis_b_axis5[i], texture_ang_elipse_axis5[i]))
+        file_axis3.write("%f %f %f %f %f %f\n" % ((i-caixas_meia_altura)/r_obst, vx_axis3[i], vy_axis3[i], texture_axis_a_axis3[i], texture_axis_b_axis3[i], texture_ang_elipse_axis3[i]))
+        file_axis4.write("%f %f %f %f %f %f\n" % ((i-caixas_meia_altura)/r_obst, vx_axis4[i], vy_axis4[i], texture_axis_a_axis4[i], texture_axis_b_axis4[i], texture_ang_elipse_axis4[i]))
+        file_axis5.write("%f %f %f %f %f %f\n" % ((i-caixas_meia_altura)/r_obst, vx_axis5[i], vy_axis5[i], texture_axis_a_axis5[i], texture_axis_b_axis5[i], texture_ang_elipse_axis5[i]))
         
         # file_axis3.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis3[i], vy_axis3[i], axis_a_axis3[i], axis_b_axis3[i], ang_elipse_axis3[i]))
         # file_axis4.write("%d %f %f %f %f %f\n" % (i-caixas_meia_altura, vx_axis4[i], vy_axis4[i], axis_a_axis4[i], axis_b_axis4[i], ang_elipse_axis4[i]))
@@ -2540,9 +2551,20 @@ if system_type == "superboids":
     x0                   = int(line_splitted[1])
     line_splitted        = file_input_parameter.readline().split()
     xf                   = int(line_splitted[1])
+    x0_num_robst = x0
+    xf_num_robst = xf
     box_mag              = float(file_input_parameter.readline().split()[1])
     box_size =  box_size * box_mag
     area_1               = float(file_input_parameter.readline().split()[1])
+#    try:
+    line_splitted = file_input_parameter.readline().split()
+    if line_splitted[0] == 'obstacle':
+        if line_splitted[1] == 'no' or line_splitted[1] == 'n' or line_splitted[1] == 'NO' or line_splitted[1] == 'N':
+            obstacle = 0
+        else:
+            obstacle = 1
+#    except:
+#        obstacle = 1
     max_number_particles,min_imag,max_imag,total_imag_number=imag_count(system_type, name_arq_neigh_in)
     file_input_parameter.close()
     image_0              = min_imag
@@ -2856,8 +2878,9 @@ if system_type == "szabo-boids":
     part           = list(particle(i) for i in range(max_number_particles))
     file_analyse_log.write("Box_size: %f Box_mag = %f "%(box_size,box_mag))
     file_analyse_log.write("\nInitial image = %d\nFinal image = %d\n"%(image_0,image_f))
-
-    #    print x0, xf
+    x0_num_robst = x0
+    xf_num_robst = xf
+    #print x0, xf
 
     #Reading szabo-boids  data file
     while 1 :
@@ -3160,6 +3183,8 @@ if system_type == "vicsek-gregoire":
     box_size =  box_size * box_mag
     file_par_simu.close()
     delta_x =int((xf+x0)*R_OBST/box_size)*box_size
+    x0_num_robst = x0
+    xf_num_robst = xf
     x0      = X_OBST-x0*R_OBST
     xf      = x0+delta_x
     y0      = 0.
@@ -3256,9 +3281,7 @@ if system_type == "vicsek-gregoire":
             for i in range(nlines) :
                 line_splitted  = file_arq_data_in.readline().split()
                 x, y = float(line_splitted[0]), float(line_splitted[1])
-                #if i == 8790 :
-                #        print x,x0
-
+                
                 if x > x0 and x < xf and y > y0 and y < yf : 
                     xx                = int((x-x0) / box_size)
                     yy                = int((y-y0) / box_size) * box_per_line_x
@@ -3449,11 +3472,13 @@ if system_type == "potts":
     Lx, Ly, R_OBST, X_OBST, Y_OBST, box_size, max_dist, Delta_t, v0 = read_param_potts(file_par_simu)
     box_size =  box_size * box_mag
     file_par_simu.close()
-    print x0,xf
+    #print x0,xf
+    x0_num_robst = x0
+    xf_num_robst = xf
     delta_x       = int((xf + x0) * R_OBST / box_size) * box_size
     x0            = X_OBST - x0 * R_OBST
     xf            = x0 + delta_x
-    print x0,xf
+    #print x0,xf
     #arquivo de posicoes e velocidades
     name_arq_data_in = "%s/posicoes.dat"% (system_type)
     print "\nYou analyse a", system_type, "system, data is read from files:\n", name_arq_data_in
@@ -3757,6 +3782,8 @@ if system_type == "voronoi":
     box_size =  box_size * box_mag
     max_dist =  max_dist * box_mag
     delta_x  =  int((xf + x0) * R_OBST / box_size) * box_size
+    x0_num_robst = x0
+    xf_num_robst = xf
     x0       =  X_OBST - x0 * R_OBST
     xf       =  x0 + delta_x
     print "\nYou analise a", system_type, "system \n"
@@ -4049,31 +4076,60 @@ y_obst = (Y_OBST - y0) / box_size
 if system_type == 'experiment':
     for i in range(box_total):
         density_tot[i] = 1
-    zero_borders_and_obstacle_experiment(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, system_type)
+    if obstacle == 1:
+        zero_borders_and_obstacle_experiment(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, system_type)
     # Here we write the time averages of density, velocity and deformation elipse for experiment
     file_input_parameter.close()
     file_input_parameter = open("parameter.in")
-    line_splitted        = file_input_parameter.readline().split()
-    system_type          = line_splitted[1]
+    while 1 :
+        line = file_par_simu.readline()
+        if not line:
+            break #EOF
+        if line == "":
+            line = file_par_simu.readline()
+            if not line:
+                break #EOF
+        if line.replace( '\r', '' ) == '\n' : #identifies blank lines
+            while line.replace( '\r' , '' ) == '\n' : # skip blank lines
+                line = file_par_simu.readline()
+        if line.replace( '\t', '' ) == '\n' : #identifies blank lines
+            while line.replace( '\r' , '' ) == '\n' : # skip blank lines
+                line = file_par_simu.readline()
+        if not line:
+            break #EOF
+        line_splitted = line.split()
+            
+        #line_splitted        = file_input_parameter.readline().split()
+        if line_splitted[0] == 'system':
+            system_type          = line_splitted[1]
     
-    line_splitted        = file_input_parameter.readline().split()
-    x0 = int(line_splitted[1])
-    line_splitted        = file_input_parameter.readline().split()
-    xf = int(line_splitted[1])
+            #line_splitted        = file_input_parameter.readline().split()
+        if line_splitted[0] == 'x0':
+            x0 = int(line_splitted[1])
+        #line_splitted        = file_input_parameter.readline().split()
+        if line_splitted[0] == 'xf':
+            xf = int(line_splitted[1])
+        if line_splitted[0] == 'obstacle':
+            if line_splitted[1] == 'no' or line_splitted[1] == 'n' or line_splitted[1] == 'NO' or line_splitted[1] == 'N':
+                obstacle = 0;
+            else:
+                obstacle = 1;
     average_density_velocity_deformation_experiment(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst,
                                                             x0, xf, x, y, vx_tot, vy_tot, texture_tot, image_counter,path)
     # Five axis analysis for experiment
     five_axis_experiment(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, texture_tot, system_type, image_counter,r_obst, x0, xf)
 else:
-    box_per_line_x, box_per_column_y, density_tot, vx_tot, vy_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot= \
+    if obstacle == 1:
+#        print ("obstacle:", obstacle)
+        box_per_line_x, box_per_column_y, density_tot, vx_tot, vy_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot= \
         zero_borders_and_obstacle_simu(box_per_line_x, box_per_column_y, r_obst, x_obst, y_obst, density_tot, vx_tot, vy_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot, system_type)
-
     
     axis_zero_simu(box_total, box_per_line_x, box_per_column_y, vx_tot, vy_tot, density_tot, NB_tot, NT_tot, V_tot, P_tot, DU_tot, DM_tot, box_size, image_counter, caixa_zero, v0,av_Delta, phi_tot) 
     # Here we write the time averages of density, velocity and deformation elipse for simus
     vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, NB_win, NT_win, V_win, P_win = average_density_velocity_deformation(box_per_line_x, \
-    box_per_column_y, vx_tot, vy_tot, density_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot, vx_win, vy_win, vx2_win, vy2_win,  density_win, texture_win, NB_win, \
-                                                                                                                                     NT_win, V_win, P_win, count_events, v0, vel_win_file_name, vel_fluct_win_file_name, dens_win_file_name, path, image_counter, window_size, r_obst, x_obst, y_obst)
+    box_per_column_y, vx_tot, vy_tot, density_tot, texture_tot, NB_tot, NT_tot, V_tot, P_tot, vx_win, vy_win, vx2_win, vy2_win, \
+    density_win, texture_win, NB_win, NT_win, V_win, P_win, count_events, v0, vel_win_file_name, vel_fluct_win_file_name, \
+    dens_win_file_name, path, image_counter, window_size, r_obst, x_obst, y_obst, (x0)/R_OBST, (xf)/R_OBST)
     # Five axis analysis for simulations
     five_axis_simu(box_total, box_per_line_x, box_per_column_y, vx_win, vy_win, texture_win, NB_win, NT_win, V_win, P_win, system_type, image_counter,path,r_obst)
     #Axis zero call
