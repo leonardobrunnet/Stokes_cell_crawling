@@ -1,7 +1,7 @@
 system experiment In_vitro_samplenumber_2_date_190418.dat 32
 x0       6  #regiao analisada
 xf       6  #regiao analisada
-
+obstacle yes
 
 
 
