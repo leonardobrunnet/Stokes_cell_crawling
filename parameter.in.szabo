@@ -9,6 +9,4 @@ xf       5  \\regiao analisada
 file     output_simu_szabo.dat
 box_magnification 0.8
 area_1   0.348368068
-
-
-
+obstacle yes
