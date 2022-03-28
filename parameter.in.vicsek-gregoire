@@ -2,10 +2,10 @@ model    vicsek-gregoire
 window   4
 time_0   1000
 time_f   13000
-obstacle yes
 voronoi  no
 x0       5  \\regiao analisada
 xf       5  \\regiao analisada
 file     param.h
 box_magnification   1.0
 area_1   0.502654825
+obstacle yes
