@@ -2,10 +2,9 @@ model    voronoi
 window   4
 time_0   5000
 time_f   500000
-obstacle yes
 x0       5  \\regiao analisada medida em R0
 xf       5  \\regiao analisada medida em R0
 file     make_initial.py
 box_magnification 2    \\factor to increase box size
 area_1   3.141592
-
+obstacle yes
