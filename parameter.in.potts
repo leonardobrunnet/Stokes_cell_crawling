@@ -8,4 +8,5 @@ xf       5  \\regiao analisada medida em R0
 file     Stokes_potts_4.py
 box_magnification 1.6    \\factor to increase box size
 area_1   100.0
+obstacle yes
 
