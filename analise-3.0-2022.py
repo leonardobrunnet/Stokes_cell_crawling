@@ -1376,6 +1376,7 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
     limit_high_x = box_per_line_x - window_size_h
     limit_low_y  = window_size_h + 1
     limit_high_y = box_per_column_y - window_size_h
+    half_window_size_h = window_size_h/4.
     for bx in range(limit_low_x, limit_high_x):
         for by in range(limit_low_y, limit_high_y):
             box    = bx + (by * box_per_line_x)
@@ -1420,7 +1421,8 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
                 NT_win[box]        /= normalization
                 V_win[box]        /= normalization
                 P_win[box]        /= normalization
-	        vel_win.write("%d %d %f %f %f %f %f \n"% (bx, by, vx_win[box], vy_win[box], module, density_tot[box]/float(count_events), density_win[box]))
+                if bx%2==0 and by%2==0 :
+	            vel_win.write("%f %f %f %f %f %f %f \n"% (bx-half_window_size_h, by-half_window_size_h, vx_win[box], vy_win[box], module, density_tot[box]/float(count_events), density_win[box]))
 	        vel_fluct_win.write("%d %d %f %f %f %f %f \n"% (bx, by, vx2_win[box], vy2_win[box], module, density_tot[box]/float(count_events), density_win[box]))
 #                print box, texture_win[box]
                 axis_a,axis_b, ang_elipse = axis_angle(texture_win[box])
