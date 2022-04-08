@@ -1213,42 +1213,40 @@ def average_density_velocity_deformation(box_per_line_x, box_per_column_y, vx_to
                 axis_a,axis_b, ang_elipse = axis_angle(texture_win[box])
                 
                 ells.append(Ellipse(np.array([(bx - box_per_line_x / 2.)/r_obst,(by - box_per_column_y / 2.) / r_obst]),1 / r_obst,axis_b / axis_a / r_obst, ang_elipse))
+
+                #deviation
+                if bx%2==0 and by%2 == 0 :
+                    dev=np.abs(np.log(axis_a/axis_b))/2. 
+                    dbx=dev*np.cos(ang_elipse)
+                    dby=dev*np.sin(ang_elipse)
+                    #reescaling to the obstacule radius and centering in zero
+                    dx=(bx - box_per_line_x / 2.) / r_obst
+                    ddx=(bx+dbx - box_per_line_x / 2.) / r_obst
+                    dy=(by - box_per_column_y / 2.) / r_obst
+                    ddy=(by+dby - box_per_column_y / 2.) / r_obst
+                    #coordinates of the lines representing the deviation
+                    lines.append([(dx,dy),(ddx,ddy)]) 
+	            texture_win_file.write("%f %f %f %f %f \n"% ((bx - box_per_line_x / 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, axis_a / r_obst, axis_b / r_obst, ang_elipse))
                 
-                dev=np.abs(np.log(axis_a/axis_b))/2. 
-                dbx=dev*np.cos(ang_elipse)
-                dby=dev*np.sin(ang_elipse)
-                #reescaling to the obstacule radius and centering in zero
-                dx=(bx - box_per_line_x / 2.) / r_obst
-                ddx=(bx+dbx - box_per_line_x / 2.) / r_obst
-                dy=(by - box_per_column_y / 2.) / r_obst
-                ddy=(by+dby - box_per_column_y / 2.) / r_obst
-                #coordinates of the lines representing the deviation
-                lines.append([(dx,dy),(ddx,ddy)]) 
-	        texture_win_file.write("%f %f %f %f %f \n"% ((bx - box_per_line_x / 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, 
-                axis_a / r_obst, axis_b / r_obst, ang_elipse))
-                
-                deform_win_file.write("%f %f %f %f %f %f \n"% ((bx - box_per_line_x / 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, 
-                dx, dy, ddx, ddy))
+                    deform_win_file.write("%f %f %f %f %f %f \n"% ((bx - box_per_line_x / 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, dx, dy, ddx, ddy))
 	        
-                axis_a, axis_b, ang_elipse = axis_angle(NB_win[box])
+                    axis_a, axis_b, ang_elipse = axis_angle(NB_win[box])
                 
-                NB_win_file.write("%f %f %f %f %f \n"% ((bx - box_per_line_x/ 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, 
-                axis_a / r_obst, axis_b / r_obst, ang_elipse))
+                    NB_win_file.write("%f %f %f %f %f \n"% ((bx - box_per_line_x/ 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, axis_a / r_obst, axis_b / r_obst, ang_elipse))
                 
-                axis_a,axis_b, ang_elipse = axis_angle(NT_win[box])
+                    axis_a,axis_b, ang_elipse = axis_angle(NT_win[box])
 	        
-                NT_win_file.write("%d %d %f %f %f \n"% ((bx - box_per_line_x / 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst,
-                axis_a / r_obst, axis_b / r_obst, ang_elipse))
+                    NT_win_file.write("%d %d %f %f %f \n"% ((bx - box_per_line_x / 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, axis_a / r_obst, axis_b / r_obst, ang_elipse))
                 
-                axis_a,axis_b, ang_elipse = axis_angle(V_win[box])
+                    axis_a,axis_b, ang_elipse = axis_angle(V_win[box])
 	        
-                V_win_file.write("%f %f %f %f %f \n"% ((bx - box_per_line_x/ 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, 
-                axis_a / r_obst, axis_b / r_obst, ang_elipse))
+                    V_win_file.write("%f %f %f %f %f \n"% ((bx - box_per_line_x/ 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, 
+                                                           axis_a / r_obst, axis_b / r_obst, ang_elipse))
                 
-                axis_a,axis_b, ang_elipse = axis_angle(P_win[box])
+                    axis_a,axis_b, ang_elipse = axis_angle(P_win[box])
                 
-	        P_win_file.write("%d %d %f %f %f \n"% ((bx - box_per_line_x / 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, 
-                axis_a.real / r_obst, axis_b.real / r_obst, ang_elipse))
+	            P_win_file.write("%d %d %f %f %f \n"% ((bx - box_per_line_x / 2.) / r_obst,(by - box_per_column_y / 2.) / r_obst, 
+                                                           axis_a.real / r_obst, axis_b.real / r_obst, ang_elipse))
 	    else :
 	        vx_win[box] = 0.0
 	        vy_win[box] = 0.0
